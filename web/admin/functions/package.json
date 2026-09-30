@@ -1,0 +1,16 @@
+{
+  "name": "functions",
+  "description": "FaceFit AI — Administrator Cloud Functions",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^5.1.1"
+  },
+  "scripts": {
+    "deploy": "firebase deploy --only functions"
+  }
+}

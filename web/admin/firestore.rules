@@ -1,0 +1,109 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------
+    // admins/{uid}
+    // Purpose: the single source of truth for "is this account an
+    // Administrator?" Document ID = the user's Firebase Auth UID.
+    //
+    // - A signed-in user may READ ONLY their own admin document.
+    //   This is what admin-guard.js and auth.js rely on.
+    // - NO client-side writes are allowed, ever. Admin documents
+    //   are created manually via the Firebase Console. This is
+    //   what stops anyone from granting themselves admin access
+    //   from the browser.
+    // ------------------------------------------------------------
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // Shared helper: is the signed-in caller a verified Administrator?
+    // Reused by every collection below that needs an admin check.
+    // ------------------------------------------------------------
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // ------------------------------------------------------------
+    // retailers/{retailerId}
+    // Purpose: retailer applications reviewed by Administrators.
+    //
+    // - Read: a verified admin can read any retailer application.
+    //   A retailer can read their own (userId == caller's uid) —
+    //   forward-looking; there's no retailer portal yet, but this
+    //   is already correct for when one exists.
+    // - Write: NONE from the client, ever — not even for admins.
+    //   Approval/rejection happens exclusively through the
+    //   approveRetailer / rejectRetailer Cloud Functions, which use
+    //   the Admin SDK and bypass these rules entirely. Retailer
+    //   creation is deferred to the future Retailer Portal phase.
+    // ------------------------------------------------------------
+    match /retailers/{retailerId} {
+      allow read: if isAdmin() ||
+        (request.auth != null && resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // notifications/{notificationId}
+    // Purpose: system notifications for retailers/users.
+    //
+    // - Read: only the notification's own recipient (userId match).
+    // - Write: NONE from the client. Notifications are created only
+    //   by Cloud Functions (approveRetailer / rejectRetailer /
+    //   validateFrame / hideFrame).
+    // ------------------------------------------------------------
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // frames/{frameId}
+    // Purpose: retailer-submitted frame listings, moderated by
+    // Administrators. Frame Catalog (the "accepted records" admin
+    // view) reads this SAME collection filtered to status ==
+    // "approved" — there is no separate catalog collection, since
+    // the ERD defines only one FRAME entity.
+    //
+    // - Read: verified admins only, for now. (A future Retailer
+    //   Portal would add "own retailId" read access, same pattern
+    //   as retailers — not added yet since that portal doesn't exist.)
+    // - Write: NONE from the client. validateFrame / hideFrame
+    //   Cloud Functions are the only write path, mirroring
+    //   approveRetailer / rejectRetailer exactly.
+    // ------------------------------------------------------------
+    match /frames/{frameId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // users/{userId}
+    // Purpose: registered FaceFit AI eyewear user/retailer-owner
+    // accounts (per the USER entity). Administrator system is
+    // READ-ONLY against this collection — no admin write action
+    // was ever requested for user accounts.
+    // ------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------
+    // Everything else is denied by default until we design and
+    // approve each collection's rules in a later phase (faceScans,
+    // recommendations, etc.), using your ERD/Data Dictionary
+    // as the source of truth.
+    // ------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
