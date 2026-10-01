@@ -1,0 +1,151 @@
+/* ============================================================
+   FaceFit AI — Administrator Layout
+   Login screen + protected dashboard shell (sidebar/topbar)
+   Built with Bootstrap 5 utility/grid classes in the HTML;
+   this file only adds what Bootstrap doesn't provide.
+   ============================================================ */
+
+/* ---------- Login screen ---------- */
+.login-hero {
+  background: linear-gradient(160deg, var(--ff-navy-900) 0%, var(--ff-navy-700) 100%);
+  color: #fff;
+  min-height: 100vh;
+}
+
+.login-hero .brand-mark,
+.sidebar .brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--ff-blue-accent);
+  flex-shrink: 0;
+}
+
+.login-hero .feature-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.login-hero .eyebrow-light {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ff-teal-600);
+}
+
+/* ---------- Dashboard shell ---------- */
+.sidebar {
+  background: linear-gradient(180deg, var(--ff-navy-900) 0%, var(--ff-navy-800) 100%);
+  color: #fff;
+  min-height: 100vh;
+  width: 250px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar .nav-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 16px 10px 8px;
+}
+
+.sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.sidebar .nav-link.active {
+  background: var(--ff-blue-accent);
+  color: #fff;
+}
+
+.sidebar .nav-link.disabled-link {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.soon-tag {
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.logout-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-value-placeholder {
+  color: var(--ff-text-muted);
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.phase-notice {
+  background: #fff;
+  border: 1px dashed #dde6e9;
+  border-radius: var(--bs-border-radius-lg);
+}
