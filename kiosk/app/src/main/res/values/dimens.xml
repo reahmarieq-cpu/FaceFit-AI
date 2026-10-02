@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">28dp</dimen>
+    <dimen name="panel_radius">22dp</dimen>
+    <dimen name="card_radius">14dp</dimen>
+    <dimen name="field_radius">10dp</dimen>
+    <dimen name="button_height">54dp</dimen>
+    <dimen name="kiosk_max_content_width">1180dp</dimen>
+</resources>
+
