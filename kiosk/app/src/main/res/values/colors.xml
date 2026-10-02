@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="facefit_ink">#143341</color>
+    <color name="facefit_ink_muted">#6C8A98</color>
+    <color name="facefit_teal">#1FA4B4</color>
+    <color name="facefit_teal_dark">#073343</color>
+    <color name="facefit_teal_panel">#073949</color>
+    <color name="facefit_teal_soft">#EAF6F8</color>
+    <color name="facefit_mint">#DDF8EE</color>
+    <color name="facefit_surface">#FFFFFF</color>
+    <color name="facefit_surface_soft">#F3FAFB</color>
+    <color name="facefit_border">#D7E7EC</color>
+    <color name="facefit_error">#B3261E</color>
+    <color name="facefit_success">#16A878</color>
+    <color name="facefit_scrim">#66000000</color>
+</resources>
+
