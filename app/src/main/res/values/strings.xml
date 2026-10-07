@@ -119,6 +119,14 @@
     <string name="processing_analyzing_body">FaceFit AI is checking whether the captured image contains one clear face.</string>
     <string name="processing_success_title">Face detected successfully</string>
     <string name="processing_success_body">The scan found one valid face and prepared %1$d facial landmarks for the next step.</string>
+    <string name="processing_stage4_success_title">Face analysis completed</string>
+    <string name="processing_stage4_success_body">The scan found one valid face and extracted normalized facial feature ratios for the next prototype stage. These are not physical measurements.</string>
+    <string name="processing_metric_face_length">Face length image ratio: %1$s</string>
+    <string name="processing_metric_face_aspect">Face aspect ratio: %1$s</string>
+    <string name="processing_metric_forehead">Estimated forehead / face width: %1$s</string>
+    <string name="processing_metric_jawline">Jawline / face width: %1$s</string>
+    <string name="processing_metric_eye_spacing">Eye spacing / face width: %1$s</string>
+    <string name="processing_metric_face_shape">Face shape: %1$s</string>
     <string name="processing_no_face_title">No face detected</string>
     <string name="processing_no_face_body">Please make sure your face is clearly visible inside the guide and try again.</string>
     <string name="processing_multiple_faces_title">Multiple faces detected</string>

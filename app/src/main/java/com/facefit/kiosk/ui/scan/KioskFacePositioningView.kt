@@ -331,6 +331,7 @@ class KioskFacePositioningView(
     private fun discardStoredCapture() {
         sessionStore.faceLandmarkScan = null
         sessionStore.latestFaceAnalysisResult = null
+        sessionStore.facialFeatureMetrics = null
         sessionStore.capturedFaceImagePath?.let { File(it).delete() }
         sessionStore.capturedFaceImagePath = null
     }

@@ -11,8 +11,12 @@ import com.facefit.kiosk.data.session.KioskSessionStore
 import com.facefit.kiosk.databinding.ScreenProcessingBinding
 import com.facefit.kiosk.facefit.analysis.FaceAnalysisGateway
 import com.facefit.kiosk.facefit.analysis.FaceAnalysisResult
+import com.facefit.kiosk.facefit.features.FacialFeatureExtractionResult
+import com.facefit.kiosk.facefit.features.FacialFeatureExtractor
+import com.facefit.kiosk.model.FacialFeatureMetrics
 import com.facefit.kiosk.navigation.KioskDestination
 import com.facefit.kiosk.navigation.KioskNavigator
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -26,6 +30,7 @@ class KioskProcessingView(
     private val binding = ScreenProcessingBinding.inflate(LayoutInflater.from(context), this, true)
     private val mainHandler = Handler(Looper.getMainLooper())
     private val analysisExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val facialFeatureExtractor = FacialFeatureExtractor()
     private var isViewAttached = false
     private var didStartAnalysis = false
 
@@ -71,18 +76,30 @@ class KioskProcessingView(
         when (result) {
             is FaceAnalysisResult.SingleFace -> {
                 sessionStore.faceLandmarkScan = result.scan
-                showSuccess(result.scan.landmarks.size)
+                when (val featureResult = facialFeatureExtractor.extract(result.scan)) {
+                    is FacialFeatureExtractionResult.Success -> {
+                        sessionStore.facialFeatureMetrics = featureResult.metrics
+                        showSuccess(featureResult.metrics)
+                    }
+                    is FacialFeatureExtractionResult.Failure -> {
+                        sessionStore.facialFeatureMetrics = null
+                        showFailure()
+                    }
+                }
             }
             FaceAnalysisResult.NoFaceDetected -> {
                 sessionStore.faceLandmarkScan = null
+                sessionStore.facialFeatureMetrics = null
                 showNoFace()
             }
             FaceAnalysisResult.MultipleFacesDetected -> {
                 sessionStore.faceLandmarkScan = null
+                sessionStore.facialFeatureMetrics = null
                 showMultipleFaces()
             }
             FaceAnalysisResult.AnalysisFailure -> {
                 sessionStore.faceLandmarkScan = null
+                sessionStore.facialFeatureMetrics = null
                 showFailure()
             }
         }
@@ -95,17 +112,15 @@ class KioskProcessingView(
         binding.processingBodyText.text = context.getString(R.string.processing_analyzing_body)
     }
 
-    private fun showSuccess(landmarkCount: Int) {
+    private fun showSuccess(metrics: FacialFeatureMetrics) {
         binding.processingProgress.visibility = View.GONE
         binding.processingActions.visibility = View.VISIBLE
         binding.processingRetakeButton.visibility = View.VISIBLE
         binding.processingPrimaryButton.visibility = View.VISIBLE
         binding.processingPrimaryButton.text = context.getString(R.string.processing_continue_button)
-        binding.processingTitleText.text = context.getString(R.string.processing_success_title)
-        binding.processingBodyText.text = context.getString(
-            R.string.processing_success_body,
-            landmarkCount
-        )
+        binding.processingTitleText.text = context.getString(R.string.processing_stage4_success_title)
+        binding.processingBodyText.text = context.getString(R.string.processing_stage4_success_body) +
+            "\n\n" + metrics.toDisplayText()
     }
 
     private fun showNoFace() {
@@ -141,5 +156,20 @@ class KioskProcessingView(
     private fun retakeCapture() {
         sessionStore.clearCustomerSession()
         navigator.navigateTo(KioskDestination.FacePositioning)
+    }
+
+    private fun FacialFeatureMetrics.toDisplayText(): String {
+        return listOf(
+            context.getString(R.string.processing_metric_face_length, faceLengthImageRatio.formatMetric()),
+            context.getString(R.string.processing_metric_face_aspect, faceAspectRatio.formatMetric()),
+            context.getString(R.string.processing_metric_forehead, foreheadToFaceWidthRatio.formatMetric()),
+            context.getString(R.string.processing_metric_jawline, jawToFaceWidthRatio.formatMetric()),
+            context.getString(R.string.processing_metric_eye_spacing, eyeSpacingToFaceWidthRatio.formatMetric()),
+            context.getString(R.string.processing_metric_face_shape, faceShape.name)
+        ).joinToString(separator = "\n")
+    }
+
+    private fun Double.formatMetric(): String {
+        return String.format(Locale.US, "%.3f", this)
     }
 }
