@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="0dp"
+    android:layout_height="130dp"
+    android:layout_weight="1"
+    android:background="@drawable/bg_step_card"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/stepNumberText"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_step_badge"
+        android:gravity="center"
+        android:textColor="@color/facefit_teal"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/stepTitleText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="@color/facefit_ink"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/stepBodyText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_weight="1"
+        android:textColor="@color/facefit_ink_muted"
+        android:textSize="12sp" />
+</LinearLayout>
+
