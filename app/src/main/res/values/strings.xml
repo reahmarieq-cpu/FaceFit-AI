@@ -114,4 +114,17 @@
     <string name="scan_retry_camera_button">Retry Camera</string>
     <string name="scan_captured_image_description">Captured face image preview</string>
     <string name="scan_mock_retry_message">Development camera state reset to ready.</string>
+    <string name="processing_eyebrow">FACE ANALYSIS</string>
+    <string name="processing_analyzing_title">Analyzing your face...</string>
+    <string name="processing_analyzing_body">FaceFit AI is checking whether the captured image contains one clear face.</string>
+    <string name="processing_success_title">Face detected successfully</string>
+    <string name="processing_success_body">The scan found one valid face and prepared %1$d facial landmarks for the next step.</string>
+    <string name="processing_no_face_title">No face detected</string>
+    <string name="processing_no_face_body">Please make sure your face is clearly visible inside the guide and try again.</string>
+    <string name="processing_multiple_faces_title">Multiple faces detected</string>
+    <string name="processing_multiple_faces_body">Only one person should be visible during the face scan.</string>
+    <string name="processing_failed_title">We couldn\'t analyze the image</string>
+    <string name="processing_failed_body">Please retake the photo with the customer facing the kiosk camera.</string>
+    <string name="processing_retake_button">Retake</string>
+    <string name="processing_continue_button">Continue</string>
 </resources>

@@ -14,12 +14,14 @@ import androidx.core.content.ContextCompat
 import com.facefit.kiosk.data.auth.MockShopAuthRepository
 import com.facefit.kiosk.data.session.InMemoryKioskSessionStore
 import com.facefit.kiosk.databinding.ActivityMainBinding
+import com.facefit.kiosk.facefit.analysis.MediaPipeFaceAnalysisGateway
 import com.facefit.kiosk.facefit.camera.CameraXCameraCaptureGateway
 import com.facefit.kiosk.navigation.KioskDestination
 import com.facefit.kiosk.navigation.KioskNavigator
 import com.facefit.kiosk.permissions.CameraPermissionController
 import com.facefit.kiosk.ui.auth.ShopLoginView
 import com.facefit.kiosk.ui.consent.KioskConsentView
+import com.facefit.kiosk.ui.processing.KioskProcessingView
 import com.facefit.kiosk.ui.scan.KioskFacePositioningView
 import com.facefit.kiosk.ui.welcome.KioskWelcomeView
 
@@ -29,6 +31,7 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
     private val sessionStore = InMemoryKioskSessionStore()
     private val authRepository = MockShopAuthRepository()
     private val cameraGateway by lazy { CameraXCameraCaptureGateway(applicationContext) }
+    private var faceAnalysisGateway: MediaPipeFaceAnalysisGateway? = null
     private var pendingCameraPermissionResult: ((Boolean) -> Unit)? = null
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -53,7 +56,7 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
             KioskDestination.Welcome -> showWelcome()
             KioskDestination.Consent -> showConsent()
             KioskDestination.FacePositioning -> showFacePositioning()
-            KioskDestination.Processing -> showFutureScreen(destination)
+            KioskDestination.Processing -> showProcessing()
             KioskDestination.Results -> showFutureScreen(destination)
             KioskDestination.FrameDetails -> showFutureScreen(destination)
             KioskDestination.SelectionConfirmation -> showFutureScreen(destination)
@@ -70,6 +73,23 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
         )
         binding.screenContainer.removeAllViews()
         binding.screenContainer.addView(view)
+    }
+
+    private fun showProcessing() {
+        val view = KioskProcessingView(
+            context = this,
+            sessionStore = sessionStore,
+            faceAnalysisGateway = getFaceAnalysisGateway(),
+            navigator = this
+        )
+        binding.screenContainer.removeAllViews()
+        binding.screenContainer.addView(view)
+    }
+
+    private fun getFaceAnalysisGateway(): MediaPipeFaceAnalysisGateway {
+        return faceAnalysisGateway ?: MediaPipeFaceAnalysisGateway(applicationContext).also {
+            faceAnalysisGateway = it
+        }
     }
 
     private fun showWelcome() {
@@ -135,6 +155,11 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
             Uri.fromParts("package", packageName, null)
         )
         startActivity(intent)
+    }
+
+    override fun onDestroy() {
+        faceAnalysisGateway?.close()
+        super.onDestroy()
     }
 
     private fun showFutureScreen(destination: KioskDestination) {
