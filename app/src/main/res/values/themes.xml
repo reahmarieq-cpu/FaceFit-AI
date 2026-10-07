@@ -20,6 +20,14 @@
         <item name="textAllCaps">false</item>
     </style>
 
+    <style name="Widget.FaceFit.Button.Secondary" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="cornerRadius">18dp</item>
+        <item name="strokeColor">@color/facefit_teal</item>
+        <item name="android:textColor">@color/facefit_teal</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
     <style name="Widget.FaceFit.TextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusBottomEnd">@dimen/field_radius</item>
         <item name="boxCornerRadiusBottomStart">@dimen/field_radius</item>
@@ -30,4 +38,3 @@
         <item name="errorTextColor">@color/facefit_error</item>
     </style>
 </resources>
-

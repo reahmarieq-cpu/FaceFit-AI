@@ -1,25 +1,41 @@
 package com.facefit.kiosk
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.facefit.kiosk.data.auth.MockShopAuthRepository
 import com.facefit.kiosk.data.session.InMemoryKioskSessionStore
 import com.facefit.kiosk.databinding.ActivityMainBinding
-import com.facefit.kiosk.facefit.camera.MockCameraCaptureGateway
+import com.facefit.kiosk.facefit.camera.CameraXCameraCaptureGateway
 import com.facefit.kiosk.navigation.KioskDestination
 import com.facefit.kiosk.navigation.KioskNavigator
+import com.facefit.kiosk.permissions.CameraPermissionController
 import com.facefit.kiosk.ui.auth.ShopLoginView
 import com.facefit.kiosk.ui.consent.KioskConsentView
 import com.facefit.kiosk.ui.scan.KioskFacePositioningView
 import com.facefit.kiosk.ui.welcome.KioskWelcomeView
 
-class MainActivity : AppCompatActivity(), KioskNavigator {
+class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionController {
 
     private lateinit var binding: ActivityMainBinding
     private val sessionStore = InMemoryKioskSessionStore()
     private val authRepository = MockShopAuthRepository()
-    private val cameraGateway = MockCameraCaptureGateway()
+    private val cameraGateway by lazy { CameraXCameraCaptureGateway(applicationContext) }
+    private var pendingCameraPermissionResult: ((Boolean) -> Unit)? = null
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        pendingCameraPermissionResult?.invoke(isGranted)
+        pendingCameraPermissionResult = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,11 +100,41 @@ class MainActivity : AppCompatActivity(), KioskNavigator {
     private fun showFacePositioning() {
         val view = KioskFacePositioningView(
             context = this,
+            lifecycleOwner = this,
             cameraGateway = cameraGateway,
+            permissionController = this,
+            sessionStore = sessionStore,
             navigator = this
         )
         binding.screenContainer.removeAllViews()
         binding.screenContainer.addView(view)
+    }
+
+    override fun isCameraPermissionGranted(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun shouldShowCameraPermissionRationale(): Boolean {
+        return ActivityCompat.shouldShowRequestPermissionRationale(
+            this,
+            Manifest.permission.CAMERA
+        )
+    }
+
+    override fun requestCameraPermission(onResult: (Boolean) -> Unit) {
+        pendingCameraPermissionResult = onResult
+        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    override fun openAppSettings() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null)
+        )
+        startActivity(intent)
     }
 
     private fun showFutureScreen(destination: KioskDestination) {
