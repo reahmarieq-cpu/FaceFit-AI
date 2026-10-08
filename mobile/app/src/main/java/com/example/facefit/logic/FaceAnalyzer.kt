@@ -14,10 +14,12 @@ import kotlin.math.sqrt
 
 class FaceAnalyzer(
     context: Context,
+    private val videoTracking: Boolean = false,
     private val onResult: (FaceMetrics) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     private val faceLandmarker: FaceLandmarker
+    private var lastTimestampMs = -1L
 
     init {
         val baseOptions = BaseOptions.builder()
@@ -26,7 +28,7 @@ class FaceAnalyzer(
 
         val options = FaceLandmarker.FaceLandmarkerOptions.builder()
             .setBaseOptions(baseOptions)
-            .setRunningMode(RunningMode.IMAGE)
+            .setRunningMode(if (videoTracking) RunningMode.VIDEO else RunningMode.IMAGE)
             .setNumFaces(1)
             .build()
 
@@ -34,11 +36,24 @@ class FaceAnalyzer(
     }
 
     override fun analyze(image: ImageProxy) {
+        var sourceBitmap: Bitmap? = null
+        var rotatedBitmap: Bitmap? = null
         try {
-            val bitmap = image.toBitmap().rotate(image.imageInfo.rotationDegrees)
+            val source = image.toBitmap().also { sourceBitmap = it }
+            val bitmap = source.rotate(image.imageInfo.rotationDegrees).also { rotatedBitmap = it }
             val mpImage = BitmapImageBuilder(bitmap).build()
 
-            val result = faceLandmarker.detect(mpImage)
+            // Video mode reuses tracking rather than rerunning face detection for every image.
+            val result = try {
+                if (videoTracking) {
+                    val timestampMs = (image.imageInfo.timestamp / 1_000_000L)
+                        .coerceAtLeast(lastTimestampMs + 1L)
+                    lastTimestampMs = timestampMs
+                    faceLandmarker.detectForVideo(mpImage, timestampMs)
+                } else faceLandmarker.detect(mpImage)
+            } finally {
+                mpImage.close()
+            }
 
             if (result.faceLandmarks().isNotEmpty()) {
                 val landmarks = result.faceLandmarks()[0]
@@ -57,7 +72,7 @@ class FaceAnalyzer(
                 val faceWidth = calculateDistance(landmarks[234], landmarks[454]) // Cheek to cheek
                 val faceShape = detectFaceShape(faceWidth, faceHeight)
 
-                val landmarkPoints = landmarks.map { LandmarkPoint(it.x(), it.y()) }
+                val landmarkPoints = landmarks.map { LandmarkPoint(it.x(), it.y(), it.z()) }
 
                 onResult(
                     FaceMetrics(
@@ -75,6 +90,8 @@ class FaceAnalyzer(
                 onResult(noFaceMetrics())
             }
         } finally {
+            rotatedBitmap?.recycle()
+            if (sourceBitmap !== rotatedBitmap) sourceBitmap?.recycle()
             image.close()
         }
     }
@@ -83,6 +100,10 @@ class FaceAnalyzer(
         if (rotationDegrees == 0) return this
         val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
+
+    fun close() {
+        faceLandmarker.close()
     }
 
     private fun noFaceMetrics(): FaceMetrics {
@@ -112,7 +133,7 @@ class FaceAnalyzer(
         }
     }
 
-    data class LandmarkPoint(val x: Float, val y: Float)
+    data class LandmarkPoint(val x: Float, val y: Float, val z: Float = 0f)
 
     data class FaceMetrics(
         val foreheadWidth: Float,

@@ -21,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +44,8 @@ import com.example.facefit.ui.theme.FaceFitTextSecondary
 fun ScanResultsScreen(
     metrics: FaceAnalyzer.FaceMetrics,
     onBack: () -> Unit,
-    onScanAgain: () -> Unit
+    onScanAgain: () -> Unit,
+    onNext: () -> Unit
 ) {
     val result = remember(metrics) { RecommendationResult.from(metrics) }
 
@@ -188,11 +191,20 @@ fun ScanResultsScreen(
                 }
             }
         }
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = FaceFitTeal)
+        ) {
+            Text("Next", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
 @Composable
-private fun ResultIconButton(
+internal fun ResultIconButton(
     onClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -248,7 +260,7 @@ private fun ResultChip(text: String) {
     }
 }
 
-private data class RecommendationResult(
+internal data class RecommendationResult(
     val confidence: Int,
     val symmetryScore: Int,
     val jawlineLabel: String,
