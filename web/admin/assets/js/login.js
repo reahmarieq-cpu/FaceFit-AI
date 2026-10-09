@@ -64,7 +64,7 @@ form.addEventListener("submit", async (event) => {
   setLoading(true);
   try {
     await loginAdmin(email, password);
-    window.location.href = "dashboard.html";
+    window.location.href = new URLSearchParams(window.location.search).get("useEmulators") === "true" ? "dashboard.html?useEmulators=true" : "dashboard.html";
   } catch (error) {
     console.error("Login failed:", error);
     showError(friendlyErrorMessage(error));

@@ -1,113 +1,291 @@
 /* ============================================================
-   FaceFit AI — Global Theme Layer
-   Sits ON TOP of Bootstrap 5. Defines brand colors as CSS
-   variables + Bootstrap variable overrides, plus small shared
-   utility classes. Bootstrap handles grid/spacing/components;
-   this file only carries brand identity.
+   FaceFit AI — Global Design System
+   Sits ON TOP of Bootstrap 5 (CDN). Brand tokens, typography and
+   the reusable components shared by every Administrator page:
+   buttons, status badges, filter pills, panels, tables, avatars.
+   Colors are sampled from the approved FaceFit AI reference screens.
    ============================================================ */
 
 :root {
+  /* Brand */
+  --ff-navy-950: #0b1b28;
   --ff-navy-900: #0d1f2d;
-  --ff-navy-800: #102b3e;
-  --ff-navy-700: #16374d;
-  --ff-teal-600: #1f9893;
-  --ff-teal-700: #17807c;
-  --ff-blue-accent: #3794b3;
+  --ff-navy-800: #112c43;
+  --ff-navy-700: #1a4568;
+  --ff-teal: #1b9aa6;
+  --ff-teal-dark: #158490;
+  --ff-teal-soft: #e1f3f5;
+  --ff-blue: #3b7dd8;
+  --ff-blue-light: #2f93c9;
 
-  --ff-success: #2e9e63;
-  --ff-success-bg: #d9f4e3;
-  --ff-warning: #b5811a;
-  --ff-warning-bg: #ffe6c2;
-  --ff-danger: #b3453f;
-  --ff-danger-bg: #f7d9d7;
-  --ff-info: #3d6fbf;
-  --ff-info-bg: #dce6f7;
+  /* Status */
+  --ff-green: #1b9a5a;
+  --ff-green-bg: #def5e8;
+  --ff-amber: #c8800d;
+  --ff-amber-bg: #fdecd2;
+  --ff-red: #d4483b;
+  --ff-red-bg: #fde5e2;
+  --ff-slate: #5b7581;
+  --ff-slate-bg: #e9eef0;
 
-  --ff-bg: #e9f1f3;
-  --ff-text-secondary: #5b7581;
-  --ff-text-muted: #8ea0a8;
+  /* Neutrals */
+  --ff-page: #e8f0f2;
+  --ff-surface: #ffffff;
+  --ff-line: #e4edf0;
+  --ff-line-strong: #d8e4e8;
+  --ff-text: #10242f;
+  --ff-text-2: #5b7581;
+  --ff-text-3: #8ea0a8;
+  --ff-head: #9bb0b9;
+
+  /* Shape */
+  --ff-radius-sm: 10px;
+  --ff-radius-md: 14px;
+  --ff-radius-lg: 18px;
+  --ff-shadow: 0 10px 30px rgba(15, 40, 60, 0.07);
+  --ff-shadow-sm: 0 2px 8px rgba(15, 40, 60, 0.06);
 
   /* Bootstrap variable overrides */
-  --bs-primary: var(--ff-teal-600);
-  --bs-primary-rgb: 31, 152, 147;
-  --bs-body-bg: var(--ff-bg);
-  --bs-body-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bs-body-bg: var(--ff-page);
+  --bs-body-color: var(--ff-text);
+  --bs-body-font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bs-primary: var(--ff-teal);
+  --bs-primary-rgb: 27, 154, 166;
   --bs-border-radius: 10px;
-  --bs-border-radius-lg: 14px;
+  --bs-link-color: var(--ff-teal);
 }
 
 body {
-  background-color: var(--ff-bg);
+  background: var(--ff-page);
+  color: var(--ff-text);
+  font-family: var(--bs-body-font-family);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Bootstrap's .btn-primary reads --bs-primary automatically once
-   the variable above is set, but we still pin the hover state. */
-.btn-primary:hover,
-.btn-primary:focus {
-  background-color: var(--ff-teal-700);
-  border-color: var(--ff-teal-700);
+h1, h2, h3, h4 { letter-spacing: -0.01em; }
+
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--ff-blue-light);
+  outline-offset: 2px;
 }
 
-.text-muted-ff {
-  color: var(--ff-text-secondary) !important;
-}
+.text-muted-ff { color: var(--ff-text-2) !important; }
 
-.card-ff {
+/* ---------- Panels ---------- */
+.card-ff,
+.panel {
+  background: var(--ff-surface);
   border: none;
-  border-radius: var(--bs-border-radius-lg);
-  box-shadow: 0 1px 3px rgba(13, 31, 45, 0.06), 0 1px 2px rgba(13, 31, 45, 0.04);
+  border-radius: var(--ff-radius-lg);
+  box-shadow: var(--ff-shadow);
 }
 
-.icon-circle {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
+.panel-pad { padding: 22px 24px; }
+
+.panel-head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 8px;
 }
 
-.icon-amber { background: var(--ff-warning-bg); color: var(--ff-warning); }
-.icon-teal  { background: rgba(31, 152, 147, 0.14); color: var(--ff-teal-600); }
-.icon-coral { background: var(--ff-danger-bg); color: var(--ff-danger); }
-.icon-blue  { background: var(--ff-info-bg); color: var(--ff-info); }
+.panel-head h2 { font-size: 1rem; font-weight: 800; margin: 0; }
 
-/* ---------- Status badges (used on retailer/frame/etc. records) ---------- */
+/* ---------- Buttons ---------- */
+.btn-teal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--ff-teal);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 22px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: 0 10px 24px rgba(27, 154, 166, 0.28);
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.btn-teal:hover:not(:disabled) { background: var(--ff-teal-dark); color: #fff; }
+.btn-teal:active { transform: scale(0.99); }
+.btn-teal:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--ff-radius-sm);
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.btn-soft:hover:not(:disabled) { filter: brightness(0.96); }
+.btn-soft:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-soft-green   { background: var(--ff-green-bg); color: var(--ff-green); }
+.btn-soft-red     { background: var(--ff-red-bg);   color: var(--ff-red); }
+.btn-soft-neutral { background: #edf1f3;            color: var(--ff-slate); }
+.btn-soft-teal    { background: var(--ff-teal-soft); color: var(--ff-teal-dark); }
+.btn-soft-green:hover, .btn-soft-red:hover, .btn-soft-neutral:hover, .btn-soft-teal:hover { text-decoration: none; }
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ff-line-strong);
+  background: #fff;
+  color: var(--ff-slate);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.btn-icon:hover:not(:disabled) { background: var(--ff-teal-soft); color: var(--ff-teal-dark); }
+.btn-icon:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---------- Status badges ---------- */
 .badge-status {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 5px 12px;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
+.badge-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge-status-pending  { background: var(--ff-amber-bg); color: var(--ff-amber); }
+.badge-status-approved { background: var(--ff-green-bg); color: var(--ff-green); }
+.badge-status-rejected { background: var(--ff-red-bg);   color: var(--ff-red); }
+.badge-status-hidden   { background: var(--ff-slate-bg); color: var(--ff-slate); }
+.badge-status-neutral  { background: var(--ff-slate-bg); color: var(--ff-slate); }
 
-.badge-status-pending  { background: var(--ff-warning-bg); color: var(--ff-warning); }
-.badge-status-approved { background: var(--ff-success-bg); color: var(--ff-success); }
-.badge-status-rejected { background: var(--ff-danger-bg);  color: var(--ff-danger); }
-.badge-status-hidden   { background: #e4e9eb; color: var(--ff-text-secondary); }
-
-/* ---------- Filter pills ---------- */
-.filter-pill {
-  border: 1px solid var(--ff-border, #dde6e9);
-  background: #fff;
-  color: var(--ff-text-secondary);
+.chip {
+  display: inline-block;
+  padding: 4px 10px;
   border-radius: 999px;
-  padding: 7px 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
+.chip-amber { background: var(--ff-amber-bg); color: var(--ff-amber); }
+.chip-red   { background: var(--ff-red-bg);   color: var(--ff-red); }
 
-.filter-pill.active {
-  background: var(--ff-navy-900);
-  border-color: var(--ff-navy-900);
+/* ---------- Filter pills / tabs ---------- */
+.pill-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: #fff;
+  color: var(--ff-text-2);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: var(--ff-shadow-sm);
+}
+.filter-pill .pill-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e2eef2;
+  color: var(--ff-teal-dark);
+  font-size: 0.7rem;
+  text-align: center;
+}
+.filter-pill.active { background: var(--ff-navy-800); color: #fff; }
+.filter-pill.active .pill-count { background: rgba(255, 255, 255, 0.2); color: #fff; }
+
+/* ---------- Tables ---------- */
+.table-wrap { overflow-x: auto; }
+
+.ff-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.ff-table thead th {
+  padding: 20px 16px 12px;
+  color: var(--ff-head);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+.ff-table thead th:first-child, .ff-table tbody td:first-child { padding-left: 24px; }
+.ff-table thead th:last-child,  .ff-table tbody td:last-child  { padding-right: 24px; }
+.ff-table tbody td {
+  padding: 16px;
+  border-top: 1px solid var(--ff-line);
+  vertical-align: middle;
+}
+.ff-table .th-end, .ff-table .td-end { text-align: right; }
+
+/* Entity cell: avatar + title + subtitle */
+.entity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.entity-title { font-weight: 700; color: var(--ff-text); text-decoration: none; display: block; }
+a.entity-title:hover { color: var(--ff-teal-dark); }
+.entity-sub { font-size: 0.75rem; color: var(--ff-text-2); margin-top: 1px; }
+
+.avatar-soft {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ff-teal-soft);
+  color: var(--ff-teal-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 800;
+}
+.avatar-blue {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f93c9, #3b7dd8);
   color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 800;
 }
 
-.filter-pill:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
+.frame-ico {
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
+.frame-ico img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------- States ---------- */
+.state-msg { text-align: center; color: var(--ff-text-2); padding: 40px 16px; font-size: 0.9rem; }
+
+/* ---------- Detail fields ---------- */
+.field-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ff-head); }
+.field-value { font-weight: 600; margin-top: 2px; word-break: break-word; }
+
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--ff-text-2); font-size: 0.85rem; font-weight: 600;
+  text-decoration: none; margin-bottom: 16px;
+}
+.back-link:hover { color: var(--ff-teal-dark); }
+
+/* Bootstrap alerts, softened to match the system */
+.alert { border: none; border-radius: var(--ff-radius-md); font-size: 0.88rem; }
+.alert-danger { background: var(--ff-red-bg); color: #a3352b; }
+.alert-success { background: var(--ff-green-bg); color: #14764a; }

@@ -3,81 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Frame Listing · FaceFit AI Admin</title>
+  <title>Frame Review · FaceFit AI Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/global.css" />
   <link rel="stylesheet" href="../assets/css/admin.css" />
 </head>
 <body>
 
-  <div class="d-flex">
+<div id="app-shell" data-active="frames" data-title="Frame Review" data-subtitle="Review the submitted frame before making a decision" data-search="off">
+<div id="page-content" class="review-detail-page">
 
-    <!-- Sidebar -->
-    <aside class="sidebar d-flex flex-column p-3">
-      <div class="d-flex align-items-center gap-2 px-1 pb-4">
-        <div class="brand-mark">FF</div>
-        <div>
-          <div class="fw-bold" style="font-size:0.98rem;">FaceFit AI</div>
-          <div style="font-size:0.68rem; color:rgba(255,255,255,0.5);">Admin</div>
-        </div>
-      </div>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <a href="frame-listings.html" class="back-link mb-0"><i class="bi bi-arrow-left"></i> Back to Frame Review</a>
+    <span id="status-badge" class="badge-status badge-status-pending">Pending</span>
+  </div>
 
-      <p class="nav-section-label mb-0">OVERVIEW</p>
-      <nav class="nav flex-column mb-2">
-        <a href="dashboard.html" class="nav-link">
-          <span>▦</span> Dashboard
-        </a>
-      </nav>
 
-      <p class="nav-section-label mb-0">MODERATION</p>
-      <nav class="nav flex-column mb-2">
-        <a href="retailers.html" class="nav-link">
-          <span>⌂</span> Retailer Applications
-        </a>
-        <a href="frame-listings.html" class="nav-link active">
-          <span>◎</span> Frame Listings
-        </a>
-      </nav>
-
-      <p class="nav-section-label mb-0">RECORDS</p>
-      <nav class="nav flex-column">
-        <a href="users.html" class="nav-link">
-          <span>◈</span> Users
-        </a>
-        <a href="frame-catalog.html" class="nav-link">
-          <span>≡</span> Frame Catalog
-        </a>
-      </nav>
-
-      <div class="flex-grow-1"></div>
-
-      <div class="sidebar-footer d-flex align-items-center gap-2 pt-3">
-        <div class="avatar-circle" id="admin-avatar">AD</div>
-        <div class="flex-grow-1 overflow-hidden">
-          <div class="fw-semibold text-truncate" style="font-size:0.85rem;" id="admin-name">Administrator</div>
-          <div class="text-truncate" style="font-size:0.72rem; color:rgba(255,255,255,0.5);" id="admin-email">—</div>
-        </div>
-        <button class="logout-btn" id="logout-btn" title="Log out" aria-label="Log out">⏻</button>
-      </div>
-    </aside>
-
-    <!-- Main content -->
-    <main class="flex-grow-1 p-4 p-md-5">
-
-      <a href="frame-listings.html" class="text-muted-ff text-decoration-none d-inline-flex align-items-center gap-1 mb-3" style="font-size:0.88rem;">
-        ← Back to Frame Listings
-      </a>
-
-      <div class="d-flex justify-content-between align-items-start mb-4">
-        <div>
-          <h1 class="fw-bold h3 mb-1" id="page-title">Frame Listing</h1>
-          <p class="text-muted-ff mb-0">Review the submitted frame before making a decision</p>
-        </div>
-        <span id="status-badge" class="badge-status badge-status-pending">Pending</span>
-      </div>
+      
 
       <div id="loading-state" class="text-center text-muted-ff py-5">
         Loading frame listing…
@@ -87,45 +34,45 @@
 
       <div id="detail-content" class="d-none">
 
-        <div class="card card-ff p-4 mb-4">
-          <h2 class="h6 fw-bold mb-3">Frame Information</h2>
+        <div class="panel panel-pad mb-3 review-detail-card">
+          <div class="review-card-heading"><span class="review-card-icon"><i class="bi bi-eyeglasses"></i></span><div><div class="review-card-eyebrow">CATALOG SUBMISSION</div><h2 class="h5 fw-bold mb-0">Frame Information</h2></div></div>
           <div class="row gy-3">
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Brand</div>
-              <div class="fw-semibold" id="field-brand">—</div>
+              <div class="field-label">Brand</div>
+              <div class="field-value" id="field-brand">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Model</div>
-              <div class="fw-semibold" id="field-model">—</div>
+              <div class="field-label">Model</div>
+              <div class="field-value" id="field-model">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Type</div>
-              <div class="fw-semibold" id="field-type">—</div>
+              <div class="field-label">Type</div>
+              <div class="field-value" id="field-type">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Shape</div>
-              <div class="fw-semibold" id="field-shape">—</div>
+              <div class="field-label">Shape</div>
+              <div class="field-value" id="field-shape">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Material</div>
-              <div class="fw-semibold" id="field-material">—</div>
+              <div class="field-label">Material</div>
+              <div class="field-value" id="field-material">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Color</div>
-              <div class="fw-semibold" id="field-color">—</div>
+              <div class="field-label">Color</div>
+              <div class="field-value" id="field-color">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Retailer ID</div>
-              <div class="fw-semibold" id="field-retailId">—</div>
+              <div class="field-label">Retailer ID</div>
+              <div class="field-value" id="field-retailId">—</div>
             </div>
             <div class="col-md-6">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Created At</div>
-              <div class="fw-semibold" id="field-createdAt">—</div>
+              <div class="field-label">Created At</div>
+              <div class="field-value" id="field-createdAt">—</div>
             </div>
             <div class="col-12">
-              <div class="text-muted-ff" style="font-size:0.78rem;">Frame Image</div>
+              <div class="field-label">Frame Image</div>
               <div id="field-frameImage-wrap">
-                <img id="field-frameImage" src="" alt="Frame image" class="d-none mt-1 rounded" style="max-width:220px; max-height:220px; object-fit:cover;" />
+                <img id="field-frameImage" src="" alt="Frame image" class="d-none mt-1 rounded review-frame-image" />
                 <div id="field-frameImage-empty" class="fw-semibold">—</div>
               </div>
             </div>
@@ -134,20 +81,20 @@
 
         <div id="action-feedback" class="alert d-none" role="alert"></div>
 
-        <div id="review-actions" class="d-flex gap-2">
-          <button id="validate-btn" class="btn btn-success text-white">Approve</button>
-          <button id="hide-btn" class="btn btn-outline-secondary">Hide</button>
-        </div>
+        <div class="review-decision-bar"><div><strong>Frame review decision</strong><p class="mb-0">Check the frame details and image before taking action.</p></div><div id="review-actions" class="d-flex gap-2 flex-wrap">
+          <button id="validate-btn" class="btn-soft btn-soft-green px-4 py-2">Approve</button>
+          <button id="hide-btn" class="btn-soft btn-soft-neutral px-4 py-2">Hide</button>
+        </div></div>
 
         <p id="already-reviewed-note" class="text-muted-ff d-none" style="font-size:0.88rem;">
           This listing has already been reviewed. No further action is available here.
         </p>
 
       </div>
-    </main>
+    
+</div>
+</div>
 
-  </div>
-
-  <script type="module" src="../assets/js/frame-listing-detail.js"></script>
+<script type="module" src="../assets/js/frame-listing-detail.js"></script>
 </body>
 </html>

@@ -1,11 +1,14 @@
 // ============================================================
-// FaceFit AI — Retailer Applications List
+// FaceFit AI — Shop Applications (retailers collection)
 // ------------------------------------------------------------
-// Reads existing retailers/ documents from Firestore. Never
-// creates or modifies documents — this page is read-only.
-// Approve/Reject happen only on retailer-detail.html.
+// Read-only list. Same Firestore query as before
+// (retailers, orderBy createdAt desc, filtered client-side).
+// Approve/Reject still happen ONLY on retailer-detail.html via
+// the approveRetailer / rejectRetailer Cloud Functions — the
+// "Decision" column here just routes pending rows to that page.
 // ============================================================
 
+import { escapeHtml, formatDate, initialsOf, statusBadge, onSearch } from "./admin-layout.js";
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
@@ -27,74 +30,67 @@ const loadingState = document.getElementById("loading-state");
 const emptyState = document.getElementById("empty-state");
 const errorState = document.getElementById("error-state");
 
-let allRetailers = [];   // full list, fetched once
+let allRetailers = [];
 let activeFilter = "all";
+let searchTerm = "";
 
 function initials(email) {
   return email ? email.slice(0, 2).toUpperCase() : "AD";
 }
 
-// ---------- Rendering helpers ----------
-
-function statusBadgeClass(status) {
-  if (status === "approved") return "badge-status badge-status-approved";
-  if (status === "rejected") return "badge-status badge-status-rejected";
-  return "badge-status badge-status-pending"; // default/fallback
-}
-
-function statusLabel(status) {
-  if (status === "approved") return "Approved";
-  if (status === "rejected") return "Rejected";
-  return "Pending";
-}
-
-function formatDate(timestamp) {
-  if (!timestamp || typeof timestamp.toDate !== "function") return "—";
-  return timestamp.toDate().toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
-}
-
-function escapeHtml(value) {
-  const div = document.createElement("div");
-  div.textContent = value ?? "";
-  return div.innerHTML;
+function matchesSearch(r) {
+  if (!searchTerm) return true;
+  return [r.retailName, r.contactPerson, r.permit, r.emailAddress, r.retailAddress]
+    .some((v) => String(v || "").toLowerCase().includes(searchTerm));
 }
 
 function renderRows(retailers) {
   tbody.innerHTML = "";
 
-  retailers.forEach((retailer) => {
+  retailers.forEach((r) => {
+    const detailHref = `retailer-detail.html?id=${encodeURIComponent(r.id)}`;
+    const decision =
+      r.status === "pending"
+        ? `<a href="${detailHref}" class="btn-soft btn-soft-teal"><i class="bi bi-eye"></i> Review</a>`
+        : `<span class="text-muted-ff" style="font-size:0.8rem;">Reviewed</span>`;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="ps-4 fw-semibold">${escapeHtml(retailer.retailName)}</td>
-      <td>${escapeHtml(retailer.contactPerson)}</td>
-      <td class="text-muted-ff">${escapeHtml(retailer.emailAddress)}</td>
-      <td><span class="${statusBadgeClass(retailer.status)}">${statusLabel(retailer.status)}</span></td>
-      <td class="text-muted-ff">${formatDate(retailer.createdAt)}</td>
-      <td class="pe-4">
-        <a href="retailer-detail.html?id=${encodeURIComponent(retailer.id)}" class="btn btn-sm btn-outline-secondary">
-          View
-        </a>
+      <td class="cell-primary">
+        <div class="entity">
+          <span class="avatar-soft">${escapeHtml(initialsOf(r.retailName))}</span>
+          <div>
+            <a href="${detailHref}" class="entity-title">${escapeHtml(r.retailName)}</a>
+            <div class="entity-sub">${escapeHtml(r.retailAddress)}</div>
+          </div>
+        </div>
       </td>
+      <td data-label="Contact">${escapeHtml(r.contactPerson)}</td>
+      <td data-label="Permit No." class="fw-bold" style="font-size:0.82rem;">${escapeHtml(r.permit)}</td>
+      <td data-label="Submitted" class="text-muted-ff">${formatDate(r.createdAt)}</td>
+      <td data-label="Status">${statusBadge(r.status)}</td>
+      <td data-label="Decision" class="td-end">${decision}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-function applyFilterAndRender() {
-  const filtered =
-    activeFilter === "all"
-      ? allRetailers
-      : allRetailers.filter((r) => r.status === activeFilter);
-
-  renderRows(filtered);
-  emptyState.classList.toggle("d-none", filtered.length > 0);
+function updateCounts() {
+  const count = (s) => allRetailers.filter((r) => r.status === s).length;
+  document.getElementById("count-all").textContent = allRetailers.length;
+  document.getElementById("count-pending").textContent = count("pending");
+  document.getElementById("count-approved").textContent = count("approved");
+  document.getElementById("count-rejected").textContent = count("rejected");
 }
 
-// ---------- Data loading ----------
+function applyFilterAndRender() {
+  const filtered = allRetailers
+    .filter((r) => activeFilter === "all" || r.status === activeFilter)
+    .filter(matchesSearch);
+
+  renderRows(filtered);
+  emptyState.classList.toggle("d-none", filtered.length > 0 || !errorState.classList.contains("d-none"));
+}
 
 async function loadRetailers() {
   loadingState.classList.remove("d-none");
@@ -105,23 +101,19 @@ async function loadRetailers() {
     const retailersQuery = query(collection(db, "retailers"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(retailersQuery);
 
-    allRetailers = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    allRetailers = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 
+    updateCounts();
     applyFilterAndRender();
   } catch (error) {
-    console.error("Failed to load retailer applications:", error);
+    console.error("Failed to load shop applications:", error);
     errorState.textContent =
-      "Unable to load retailer applications right now. Please refresh the page or try again shortly.";
+      "Unable to load shop applications right now. Please refresh the page or try again shortly.";
     errorState.classList.remove("d-none");
   } finally {
     loadingState.classList.add("d-none");
   }
 }
-
-// ---------- Filter bar wiring ----------
 
 filterBar.addEventListener("click", (event) => {
   const button = event.target.closest(".filter-pill");
@@ -134,7 +126,10 @@ filterBar.addEventListener("click", (event) => {
   applyFilterAndRender();
 });
 
-// ---------- Page init ----------
+onSearch((term) => {
+  searchTerm = term;
+  applyFilterAndRender();
+});
 
 guardAdminPage().then(({ user }) => {
   emailEl.textContent = user.email;
