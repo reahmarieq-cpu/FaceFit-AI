@@ -42,7 +42,10 @@ function initials(email) {
 }
 
 function setText(id, value) {
-  document.getElementById(id).textContent = value;
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
 }
 
 function renderQueue() {
@@ -79,11 +82,10 @@ async function loadDashboardData() {
   metricsContent.classList.add("d-none");
 
   try {
-    const [retailersRes, framesRes, usersRes] = await Promise.allSettled([
-      getDocs(query(collection(db, "retailers"), orderBy("createdAt", "desc"))),
-      getDocs(collection(db, "frames")),
-      getDocs(collection(db, "users"))
-    ]);
+    const [retailersRes, framesRes] = await Promise.allSettled([
+  getDocs(query(collection(db, "retailers"), orderBy("createdAt", "desc"))),
+  getDocs(collection(db, "frames"))
+]);
 
     if (retailersRes.status === "rejected") throw retailersRes.reason;
 
@@ -107,18 +109,6 @@ async function loadDashboardData() {
     } else {
       console.error("Dashboard: could not read frames:", framesRes.reason);
       ["stat-frames-review", "health-awaiting", "health-validated"].forEach((id) => setText(id, "—"));
-    }
-
-    // Users (optional section)
-    if (usersRes.status === "fulfilled") {
-      const users = usersRes.value.docs.map((d) => d.data());
-      const active = users.filter((u) => String(u.accountStatus || "").toLowerCase() === "active").length;
-      setText("stat-users", users.length);
-      setText("health-total-users", users.length);
-      setText("health-active-users", active);
-    } else {
-      console.error("Dashboard: could not read users:", usersRes.reason);
-      ["stat-users", "health-total-users", "health-active-users"].forEach((id) => setText(id, "—"));
     }
 
     renderQueue();

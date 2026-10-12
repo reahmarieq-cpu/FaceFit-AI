@@ -12,15 +12,17 @@ import { getFirestore, connectFirestoreEmulator } from "https://www.gstatic.com/
 import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-functions.js";
 
 // Your project's actual web config (facefit-ai-ca57f)
+
 const firebaseConfig = {
-  apiKey: "AIzaSyC2WK1jO_-HYsXN9hjd7Noo7mMgy7Be5f0",
-  authDomain: "facefit-ai-ca57f.firebaseapp.com",
-  projectId: "facefit-ai-ca57f",
-  storageBucket: "facefit-ai-ca57f.firebasestorage.app",
-  messagingSenderId: "150859960988",
-  appId: "1:150859960988:web:5360f0e27b51ce72dbd359",
-  measurementId: "G-JLJH94YL54"
+  apiKey: "AIzaSyAgeovMQTw_hWbeUbAGZQUaHbH1Kgy3J4c",
+  authDomain: "facefit-ai-capstone.firebaseapp.com",
+  projectId: "facefit-ai-capstone",
+  storageBucket: "facefit-ai-capstone.firebasestorage.app",
+  messagingSenderId: "4320357308",
+  appId: "1:4320357308:web:feff8276960d54cad759b9",
+  measurementId: "G-YF6KFFG58C"
 };
+  
 
 // initializeApp() is called ONCE, here. Every other module (auth.js,
 // admin-guard.js, retailers.js, retailer-detail.js, etc.) imports the
