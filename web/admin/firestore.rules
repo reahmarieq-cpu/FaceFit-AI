@@ -47,7 +47,13 @@ service cloud.firestore {
     match /retailers/{retailerId} {
       allow read: if isAdmin() ||
         (request.auth != null && resource.data.userId == request.auth.uid);
-      allow write: if false;
+      // TEMPORARY: verified admin can only change pending -> approved/rejected.
+      // No other retailer fields may be edited through the client.
+      allow update: if isAdmin()
+        && resource.data.status == "pending"
+        && request.resource.data.status in ["approved", "rejected"]
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
+      allow create, delete: if false;
     }
 
     // ------------------------------------------------------------
@@ -81,7 +87,12 @@ service cloud.firestore {
     // ------------------------------------------------------------
     match /frames/{frameId} {
       allow read: if isAdmin();
-      allow write: if false;
+      // TEMPORARY: verified admin can only change pending -> approved/hidden.
+      allow update: if isAdmin()
+        && resource.data.status == "pending"
+        && request.resource.data.status in ["approved", "hidden"]
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
+      allow create, delete: if false;
     }
 
     // ------------------------------------------------------------

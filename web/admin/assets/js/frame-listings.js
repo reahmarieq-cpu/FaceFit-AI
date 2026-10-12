@@ -1,16 +1,15 @@
 // ============================================================
-// FaceFit AI — Frame Listings (read-only)
+// FaceFit AI — Frame Review (frames collection)
 // ------------------------------------------------------------
-// Reads existing frames/ documents from Firestore. Read-only —
-// no create/update/delete anywhere in this file. Status values
-// (pending/approved/hidden) are PROPOSED, not yet confirmed —
-// this file is deliberately not writing anything that depends
-// on them being final. Validate/Hide actions and the detail page
-// are intentionally NOT built here; those need a trusted Cloud
-// Function, same as retailer approval, and require separate
-// explicit approval before being built.
+// Read-only list. Same Firestore query as before
+// (frames, orderBy createdAt desc, filtered client-side).
+// Validate / Hide still happen ONLY on frame-listing-detail.html
+// through the validateFrame / hideFrame Cloud Functions.
+// The shop name is resolved with a read-only lookup of
+// retailers/{retailId} (frames store retailId only, per schema).
 // ============================================================
 
+import { escapeHtml, frameIconHtml, statusBadge, onSearch } from "./admin-layout.js";
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
@@ -33,66 +32,78 @@ const emptyState = document.getElementById("empty-state");
 const errorState = document.getElementById("error-state");
 
 let allFrames = [];
-let activeFilter = "all";
+let shopNames = {};          // retailId -> retailName
+let activeFilter = "pending";
+let searchTerm = "";
 
 function initials(email) {
   return email ? email.slice(0, 2).toUpperCase() : "AD";
 }
 
-function statusBadgeClass(status) {
-  if (status === "approved") return "badge-status badge-status-approved";
-  if (status === "hidden") return "badge-status badge-status-hidden";
-  return "badge-status badge-status-pending";
-}
+const shopOf = (f) => shopNames[f.retailId] || f.retailId || "—";
+const titleOf = (f) => [f.brand, f.model].filter(Boolean).join(" ") || "—";
+const subOf = (f) => [f.shape, f.material].filter(Boolean).join(" · ");
 
-function statusLabel(status) {
-  if (status === "approved") return "Approved";
-  if (status === "hidden") return "Hidden";
-  return "Pending";
-}
-
-function formatDate(timestamp) {
-  if (!timestamp || typeof timestamp.toDate !== "function") return "—";
-  return timestamp.toDate().toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
-}
-
-function escapeHtml(value) {
-  const div = document.createElement("div");
-  div.textContent = value ?? "";
-  return div.innerHTML;
+function matchesSearch(f) {
+  if (!searchTerm) return true;
+  return [f.brand, f.model, f.shape, f.material, shopOf(f)]
+    .some((v) => String(v || "").toLowerCase().includes(searchTerm));
 }
 
 function renderRows(frames) {
   tbody.innerHTML = "";
 
-  frames.forEach((frame) => {
+  frames.forEach((f) => {
+    const detailHref = `frame-listing-detail.html?id=${encodeURIComponent(f.id)}`;
+    const moderate =
+      f.status === "pending"
+        ? `<a href="${detailHref}" class="btn-soft btn-soft-teal"><i class="bi bi-eye"></i> Review</a>`
+        : `<span class="text-muted-ff" style="font-size:0.8rem;">Reviewed</span>`;
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="ps-4 fw-semibold">${escapeHtml(frame.brand)}</td>
-      <td>${escapeHtml(frame.model)}</td>
-      <td class="text-muted-ff">${escapeHtml(frame.type)}</td>
-      <td><span class="${statusBadgeClass(frame.status)}">${statusLabel(frame.status)}</span></td>
-      <td class="text-muted-ff">${formatDate(frame.createdAt)}</td>
-      <td class="pe-4">
-        <a href="frame-listing-detail.html?id=${encodeURIComponent(frame.id)}" class="btn btn-sm btn-outline-secondary">
-          View
-        </a>
+      <td class="cell-primary">
+        <div class="entity">
+          ${frameIconHtml(f)}
+          <div>
+            <a href="${detailHref}" class="entity-title">${escapeHtml(titleOf(f))}</a>
+            <div class="entity-sub">${escapeHtml(subOf(f))}</div>
+          </div>
+        </div>
       </td>
+      <td data-label="Shop" class="fw-semibold">${escapeHtml(shopOf(f))}</td>
+      <td data-label="Status">${statusBadge(f.status, { approved: "Valid" })}</td>
+      <td data-label="Moderate" class="td-end">${moderate}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+function updateCounts() {
+  const count = (s) => allFrames.filter((f) => f.status === s).length;
+  document.getElementById("count-all").textContent = allFrames.length;
+  document.getElementById("count-pending").textContent = count("pending");
+  document.getElementById("count-approved").textContent = count("approved");
+  document.getElementById("count-hidden").textContent = count("hidden");
+}
+
 function applyFilterAndRender() {
-  const filtered =
-    activeFilter === "all" ? allFrames : allFrames.filter((f) => f.status === activeFilter);
+  const filtered = allFrames
+    .filter((f) => activeFilter === "all" || f.status === activeFilter)
+    .filter(matchesSearch);
 
   renderRows(filtered);
-  emptyState.classList.toggle("d-none", filtered.length > 0);
+  emptyState.classList.toggle("d-none", filtered.length > 0 || !errorState.classList.contains("d-none"));
+}
+
+async function loadShopNames() {
+  // Read-only helper; a failure just falls back to showing the retailId.
+  try {
+    const snap = await getDocs(collection(db, "retailers"));
+    snap.docs.forEach((d) => { shopNames[d.id] = d.data().retailName; });
+  } catch (error) {
+    console.warn("Frame Review: could not resolve shop names:", error?.code || error);
+  }
 }
 
 async function loadFrames() {
@@ -102,18 +113,16 @@ async function loadFrames() {
 
   try {
     const framesQuery = query(collection(db, "frames"), orderBy("createdAt", "desc"));
-    const snapshot = await getDocs(framesQuery);
+    const [snapshot] = await Promise.all([getDocs(framesQuery), loadShopNames()]);
 
-    allFrames = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    allFrames = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
 
+    updateCounts();
     applyFilterAndRender();
   } catch (error) {
-    console.error("Failed to load frame listings:", error);
+    console.error("Failed to load frame submissions:", error);
     errorState.textContent =
-      "Unable to load frame listings right now. Please refresh the page or try again shortly.";
+      "Unable to load frame submissions right now. Please refresh the page or try again shortly.";
     errorState.classList.remove("d-none");
   } finally {
     loadingState.classList.add("d-none");
@@ -128,6 +137,11 @@ filterBar.addEventListener("click", (event) => {
   button.classList.add("active");
 
   activeFilter = button.dataset.filter;
+  applyFilterAndRender();
+});
+
+onSearch((term) => {
+  searchTerm = term;
   applyFilterAndRender();
 });
 

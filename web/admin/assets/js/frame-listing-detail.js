@@ -7,11 +7,12 @@
 // retailer-detail.js pattern exactly.
 // ============================================================
 
+import "./admin-layout.js"; // renders sidebar/topbar before the ids below are looked up
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
-import { db, functions } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-functions.js";
+import { APPROVAL_MODE, executeApproval } from "./approval-service.js";
 
 const nameEl = document.getElementById("admin-name");
 const emailEl = document.getElementById("admin-email");
@@ -31,8 +32,6 @@ const alreadyReviewedNote = document.getElementById("already-reviewed-note");
 const frameImageEl = document.getElementById("field-frameImage");
 const frameImageEmptyEl = document.getElementById("field-frameImage-empty");
 
-const validateFrameFn = httpsCallable(functions, "validateFrame");
-const hideFrameFn = httpsCallable(functions, "hideFrame");
 
 function initials(email) {
   return email ? email.slice(0, 2).toUpperCase() : "AD";
@@ -144,7 +143,6 @@ async function loadFrame() {
 
 async function handleDecision(decision) {
   const isValidate = decision === "validate";
-  const fn = isValidate ? validateFrameFn : hideFrameFn;
   const triggeringBtn = isValidate ? validateBtn : hideBtn;
 
   triggeringBtn.dataset.pending = "true";
@@ -152,8 +150,9 @@ async function handleDecision(decision) {
   actionFeedback.classList.add("d-none");
 
   try {
-    const result = await fn({ frameId });
-    const newStatus = result?.data?.status || (isValidate ? "approved" : "hidden");
+    const newStatus = await executeApproval(
+      isValidate ? "validateFrame" : "hideFrame", frameId
+    );
 
     statusBadge.className = statusBadgeClass(newStatus);
     statusBadge.textContent = statusLabel(newStatus);

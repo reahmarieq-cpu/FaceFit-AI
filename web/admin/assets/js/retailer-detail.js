@@ -7,11 +7,12 @@
 // Functions, which are the only trusted write path.
 // ============================================================
 
+import "./admin-layout.js"; // renders sidebar/topbar before the ids below are looked up
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
-import { db, functions } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-functions.js";
+import { APPROVAL_MODE, executeApproval } from "./approval-service.js";
 
 const nameEl = document.getElementById("admin-name");
 const emailEl = document.getElementById("admin-email");
@@ -28,8 +29,6 @@ const rejectBtn = document.getElementById("reject-btn");
 const actionFeedback = document.getElementById("action-feedback");
 const alreadyReviewedNote = document.getElementById("already-reviewed-note");
 
-const approveRetailerFn = httpsCallable(functions, "approveRetailer");
-const rejectRetailerFn = httpsCallable(functions, "rejectRetailer");
 
 function initials(email) {
   return email ? email.slice(0, 2).toUpperCase() : "AD";
@@ -147,7 +146,6 @@ async function loadRetailer() {
 
 async function handleDecision(decision) {
   const isApprove = decision === "approve";
-  const fn = isApprove ? approveRetailerFn : rejectRetailerFn;
   const triggeringBtn = isApprove ? approveBtn : rejectBtn;
 
   triggeringBtn.dataset.pending = "true";
@@ -155,17 +153,17 @@ async function handleDecision(decision) {
   actionFeedback.classList.add("d-none");
 
   try {
-    const result = await fn({ retailerId });
-    const newStatus = result?.data?.status || (isApprove ? "approved" : "rejected");
+    const newStatus = await executeApproval(
+      isApprove ? "approveRetailer" : "rejectRetailer", retailerId
+    );
 
     statusBadge.className = statusBadgeClass(newStatus);
     statusBadge.textContent = statusLabel(newStatus);
     updateReviewControls(newStatus);
 
     showActionFeedback(
-      isApprove
-        ? "Retailer application approved. The retailer has been notified."
-        : "Retailer application rejected. The retailer has been notified.",
+      `Retailer application ${isApprove ? "approved" : "rejected"}.` +
+        (APPROVAL_MODE === "firestore" ? " (Temporary mode: no notification sent.)" : ""),
       "success"
     );
   } catch (error) {

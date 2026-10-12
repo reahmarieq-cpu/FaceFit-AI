@@ -102,7 +102,7 @@ export async function loginAdmin(email, password) {
 /** Signs the current user out and returns them to the login page. */
 export async function logoutAdmin() {
   await signOut(auth);
-  window.location.href = "login.html";
+  window.location.href = new URLSearchParams(window.location.search).get("useEmulators") === "true" ? "login.html?useEmulators=true" : "login.html";
 }
 
 /** Thin wrapper around onAuthStateChanged for pages that need it directly. */
