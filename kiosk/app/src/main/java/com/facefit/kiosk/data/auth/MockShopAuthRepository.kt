@@ -6,12 +6,12 @@ class MockShopAuthRepository : ShopAuthRepository {
 
     override fun signIn(email: String, password: String): AuthResult {
         val normalizedEmail = email.trim().lowercase()
-        return if (normalizedEmail == MOCK_EMAIL && password == MOCK_PASSWORD) {
+        return if (normalizedEmail == DEMO_EMAIL && password.isNotBlank()) {
             AuthResult.Success(
                 ShopAccount(
-                    id = "mock-clearview",
-                    displayName = "ClearView Optical",
-                    email = MOCK_EMAIL
+                    id = "demo-shop",
+                    displayName = "FaceFit Demo Shop",
+                    email = DEMO_EMAIL
                 )
             )
         } else {
@@ -20,8 +20,6 @@ class MockShopAuthRepository : ShopAuthRepository {
     }
 
     private companion object {
-        const val MOCK_EMAIL = "personnel@clearview.ph"
-        const val MOCK_PASSWORD = "facefit123"
+        const val DEMO_EMAIL = "demo@facefit.local"
     }
 }
-

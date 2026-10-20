@@ -10,3 +10,5 @@ externalNativeBuild/
 *.aab
 *.ap_
 
+web/admin/.firebase/
+web/admin/firestore-debug.log
