@@ -21,6 +21,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +44,8 @@ import com.example.facefit.ui.theme.FaceFitTextSecondary
 fun ScanResultsScreen(
     metrics: FaceAnalyzer.FaceMetrics,
     onBack: () -> Unit,
-    onScanAgain: () -> Unit
+    onScanAgain: () -> Unit,
+    onNext: () -> Unit
 ) {
     val result = remember(metrics) { RecommendationResult.from(metrics) }
 
@@ -98,7 +101,7 @@ fun ScanResultsScreen(
                             fontWeight = FontWeight.Black
                         )
                         Text(
-                            text = "FACE SHAPE",
+                            text = "ESTIMATED SHAPE",
                             color = FaceFitTextSecondary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -121,7 +124,7 @@ fun ScanResultsScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${result.confidence}% confidence - ${metrics.landmarks.size} landmarks mapped",
+                            text = "${metrics.shapeSampleCount} scan samples - ${metrics.landmarks.size} landmarks mapped",
                             color = FaceFitTextSecondary,
                             fontSize = 14.sp,
                             lineHeight = 19.sp
@@ -188,11 +191,20 @@ fun ScanResultsScreen(
                 }
             }
         }
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onNext,
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = FaceFitTeal)
+        ) {
+            Text("Next", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
 @Composable
-private fun ResultIconButton(
+internal fun ResultIconButton(
     onClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
@@ -248,8 +260,7 @@ private fun ResultChip(text: String) {
     }
 }
 
-private data class RecommendationResult(
-    val confidence: Int,
+internal data class RecommendationResult(
     val symmetryScore: Int,
     val jawlineLabel: String,
     val foreheadLabel: String,
@@ -265,20 +276,20 @@ private data class RecommendationResult(
             val eyeSpacing = metrics.eyeSpacing
             val balance = 1f - kotlin.math.abs(forehead - jawline).coerceAtMost(1f)
             val score = ((balance * 28f) + 68f).toInt().coerceIn(72, 98)
-            val confidence = if (metrics.landmarks.size >= 468) 94 else 88
             val jawLabel = when {
-                jawline < forehead * 0.92f -> "Soft"
-                jawline > forehead * 1.08f -> "Defined"
-                else -> "Balanced"
+                metrics.shapeMeasurements == null -> "Unclear"
+                metrics.shapeMeasurements.jawAngle <= 140f -> "Angular"
+                metrics.shapeMeasurements.jawAngle >= 147f -> "Soft"
+                else -> "Intermediate"
             }
             val foreheadLabel = when {
-                forehead > jawline * 1.08f -> "Broad"
-                forehead < jawline * 0.92f -> "Narrow"
+                forehead > 0.95f -> "Broad"
+                forehead < 0.80f -> "Narrow"
                 else -> "Medium"
             }
             val eyeLabel = when {
-                eyeSpacing < 0.075f -> "Close"
-                eyeSpacing > 0.12f -> "Wide"
+                eyeSpacing < 0.22f -> "Close"
+                eyeSpacing > 0.30f -> "Wide"
                 else -> "Average"
             }
             val frame = when (metrics.faceShape) {
@@ -291,14 +302,20 @@ private data class RecommendationResult(
                 "Round" -> "Soft facial proportions - angular frames can add definition"
                 "Square" -> "Defined structure - rounded frames can soften the jawline"
                 "Long" -> "Longer face profile - taller frames can add balance"
-                else -> "Balanced and symmetrical - a great canvas for frames"
+                "Oval" -> "Tapered facial proportions - balanced frames are a starting point"
+                else -> "Your face shape could not be classified clearly"
             }
-            val explanation = "Your ${metrics.faceShape.lowercase()} face shape, $foreheadLabel forehead width, " +
-                "$jawLabel jawline, and $eyeLabel eye spacing were used to calculate your compatibility score. " +
-                "$frame are recommended because they help balance these facial characteristics while keeping the frame style visually proportional."
+            val explanation = if (metrics.faceShape == "Unclear" || metrics.faceShape.isBlank()) {
+                "Your measurements do not clearly match one of the supported face shapes. " +
+                    "You can scan again facing forward with a neutral expression, or continue to browse frames."
+            } else {
+                "Your estimated ${metrics.faceShape.lowercase()} shape compares face length, forehead and cheek widths, " +
+                    "jaw width, chin taper, and jaw angles across ${metrics.shapeSampleCount} scan samples. " +
+                    "Your forehead is ${foreheadLabel.lowercase()} relative to cheek width, with a ${jawLabel.lowercase()} jawline " +
+                    "and ${eyeLabel.lowercase()} eye spacing. $frame are a starting point for trying styles."
+            }
 
             return RecommendationResult(
-                confidence = confidence,
                 symmetryScore = score,
                 jawlineLabel = jawLabel,
                 foreheadLabel = foreheadLabel,

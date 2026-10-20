@@ -23,14 +23,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CenterFocusStrong
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,11 +52,10 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun FaceScanOverlay(
     isFaceDetected: Boolean,
-    canCapture: Boolean,
     statusText: String,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
-    onCapture: () -> Unit,
+    captureProgress: Float,
     modifier: Modifier = Modifier
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "GlowTransition")
@@ -167,33 +164,12 @@ fun FaceScanOverlay(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-
-            Button(
-                onClick = onCapture,
-                enabled = canCapture,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF128C98),
-                    disabledContainerColor = Color.White.copy(alpha = 0.55f),
-                    disabledContentColor = Color(0xFF128C98).copy(alpha = 0.55f)
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.CenterFocusStrong,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Capture & Analyze",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            LinearProgressIndicator(
+                progress = { captureProgress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                color = Color.White,
+                trackColor = Color.White.copy(alpha = 0.24f)
+            )
         }
     }
 }
