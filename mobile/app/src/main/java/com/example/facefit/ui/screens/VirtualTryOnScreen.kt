@@ -3,7 +3,6 @@ package com.example.facefit.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
-import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -27,16 +26,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.facefit.logic.FaceAnalyzer
+import com.example.facefit.logic.TrackingBackend
 import com.example.facefit.ui.components.TryOnCameraPreview
 import com.example.facefit.ui.components.TryOnOverlay
 import com.example.facefit.ui.components.Glasses3DOverlay
 import com.example.facefit.ui.components.Glasses3DState
 import com.example.facefit.ui.theme.*
-import kotlinx.coroutines.delay
 
 @Composable
 fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
     val context = LocalContext.current
+    var backendNotice by remember { mutableStateOf<String?>(null) }
     var hasPermission by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
@@ -44,7 +44,6 @@ fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
         hasPermission = it
     }
     var metrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
-    var lastResultTime by remember { mutableLongStateOf(0L) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var adjust by rememberSaveable { mutableStateOf(false) }
     var scale by rememberSaveable { mutableFloatStateOf(1f) }
@@ -61,19 +60,13 @@ fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
             runCatching { context.assets.open(path).use { BitmapFactory.decodeStream(it) } }.getOrNull()
         }
     }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(400)
-            if (SystemClock.elapsedRealtime() - lastResultTime > 1000) metrics = null
-        }
-    }
-
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         if (hasPermission && (frame.has3DModel || bitmap != null)) {
             TryOnCameraPreview(onResult = {
                 metrics = it
-                lastResultTime = SystemClock.elapsedRealtime()
-            }, onError = { cameraError = it; metrics = null })
+            }, onError = { cameraError = it; metrics = null },
+                backend = TrackingBackend.GPU,
+                onBackendFallback = { backendNotice = it })
             if (frame.has3DModel) {
                 Glasses3DOverlay(browline = frame.category == "Browline",
                     state = Glasses3DState(if (cameraError == null) metrics else null, scale, heightOffset, headerHeight, footerHeight),
@@ -89,7 +82,9 @@ fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
                 ResultIconButton(onBack) { Icon(Icons.Outlined.ArrowBackIosNew, "Back") }
                 Text(if (frame.has3DModel) "3D Virtual Try-On" else "Virtual Try-On", Modifier.weight(1f).padding(horizontal = 12.dp),
                     color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                IconToggleButton(checked = adjust, onCheckedChange = { adjust = it }) {
+                IconToggleButton(checked = adjust, onCheckedChange = {
+                    adjust = it
+                }) {
                     Icon(Icons.Outlined.Tune, "Adjust fit", tint = Color.White)
                 }
             }
@@ -104,7 +99,7 @@ fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
             .background(Color.White).padding(18.dp)) {
             Text(frame.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FaceFitTextPrimary)
             Text(if (frame.has3DModel || bitmap != null) {
-                cameraError ?: if (!hasPermission) "Camera permission needed"
+                cameraError ?: backendNotice ?: if (!hasPermission) "Camera permission needed"
                 else if (metrics?.isFaceDetected == true) "${frame.category} - ${frame.colorName}"
                 else "Face the camera to try on your frame"
             } else "Frame image unavailable", fontSize = 13.sp, color = FaceFitTextSecondary)

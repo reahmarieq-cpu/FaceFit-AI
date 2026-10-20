@@ -72,7 +72,7 @@ fun FrameMatchesScreen(
                     Column(Modifier.width(90.dp).clip(RoundedCornerShape(12.dp))
                         .background(Color(0xFFF2EFF9)).padding(vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("FACE SHAPE", fontSize = 9.sp, color = FaceFitTextSecondary)
+                        Text("ESTIMATED SHAPE", fontSize = 9.sp, color = FaceFitTextSecondary)
                         Icon(Icons.Outlined.Face, contentDescription = null,
                             modifier = Modifier.size(56.dp), tint = FaceFitTextPrimary)
                         Text(metrics.faceShape, fontSize = 13.sp, fontWeight = FontWeight.Bold,

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.logic.FaceAnalyzer
+import com.example.facefit.logic.FaceScanSamples
 import com.example.facefit.ui.components.CameraPreview
 import com.example.facefit.ui.components.FaceScanOverlay
 import kotlinx.coroutines.delay
@@ -45,6 +46,8 @@ fun ScanScreen(
 ) {
     var metrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
     var capturedMetrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
+    var captureProgress by remember { mutableStateOf(0f) }
+    val scanSamples = remember { FaceScanSamples() }
 
     val scanReadiness = remember(metrics) { metrics.getScanReadiness() }
 
@@ -55,18 +58,27 @@ fun ScanScreen(
         if (analyzingMetrics == null) {
             Box(modifier = Modifier.fillMaxSize()) {
                 CameraPreview { result ->
-                    metrics = result
+                    if (capturedMetrics == null) {
+                        metrics = result
+                        val update = scanSamples.add(
+                            result, result.getScanReadiness().canCapture,
+                            android.os.SystemClock.elapsedRealtime()
+                        )
+                        captureProgress = update.progress
+                        update.captured?.let { capturedMetrics = it }
+                    }
                 }
 
                 FaceScanOverlay(
-                    isFaceDetected = scanReadiness.canCapture,
-                    canCapture = scanReadiness.canCapture,
+                    isFaceDetected = metrics?.isFaceDetected == true,
                     statusText = scanReadiness.message,
                     onBack = onBack,
-                    onRefresh = { metrics = null },
-                    onCapture = {
-                        metrics?.takeIf { scanReadiness.canCapture }?.let { capturedMetrics = it }
-                    }
+                    onRefresh = {
+                        scanSamples.reset()
+                        captureProgress = 0f
+                        metrics = null
+                    },
+                    captureProgress = captureProgress
                 )
             }
         } else {
@@ -210,6 +222,10 @@ private fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
         return ScanReadiness(false, "Include your full face in the frame")
     }
 
+    if (shapeMeasurements == null) {
+        return ScanReadiness(false, "Face forward so we can measure your features")
+    }
+
     val faceOvalIndices = listOf(
         10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
         400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21,
@@ -249,64 +265,25 @@ private fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
         bounds.minY < frameTop ||
         bounds.maxY > frameBottom
     val nose = landmarks[1]
-    val forehead = landmarks[10]
-    val upperLip = landmarks[13]
-    val mouthCenter = landmarks[14]
-    val lowerLip = landmarks[17]
-    val chin = landmarks[152]
-    val leftCheek = landmarks[234]
-    val rightCheek = landmarks[454]
-    val lowerLeftJaw = landmarks[172]
-    val lowerRightJaw = landmarks[397]
     val leftEyeOuter = landmarks[33]
     val leftEyeInner = landmarks[133]
     val rightEyeOuter = landmarks[263]
     val rightEyeInner = landmarks[362]
-    val leftMouth = landmarks[61]
-    val rightMouth = landmarks[291]
-    val leftFaceWidth = kotlin.math.abs(nose.x - leftCheek.x)
-    val rightFaceWidth = kotlin.math.abs(rightCheek.x - nose.x)
-    val cheekBalance = minOf(leftFaceWidth, rightFaceWidth) / maxOf(leftFaceWidth, rightFaceWidth)
-    val leftEyeWidth = kotlin.math.abs(leftEyeOuter.x - leftEyeInner.x)
-    val rightEyeWidth = kotlin.math.abs(rightEyeOuter.x - rightEyeInner.x)
-    val eyeBalance = minOf(leftEyeWidth, rightEyeWidth) / maxOf(leftEyeWidth, rightEyeWidth)
-    val leftMouthWidth = kotlin.math.abs(nose.x - leftMouth.x)
-    val rightMouthWidth = kotlin.math.abs(rightMouth.x - nose.x)
-    val mouthBalance = minOf(leftMouthWidth, rightMouthWidth) / maxOf(leftMouthWidth, rightMouthWidth)
-    val noseCentered = kotlin.math.abs(nose.x - centerX) <= faceWidth * 0.18f
-    val faceBalanced = cheekBalance >= 0.62f &&
-        eyeBalance >= 0.58f &&
-        mouthBalance >= 0.55f &&
-        noseCentered
-    val upperFaceHeight = nose.y - forehead.y
-    val lowerFaceHeight = chin.y - nose.y
-    val lipToChinHeight = chin.y - lowerLip.y
-    val jawBottomY = maxOf(chin.y, lowerLeftJaw.y, lowerRightJaw.y)
-    val lowerFaceComplete = lowerFaceHeight >= upperFaceHeight * 0.72f &&
-        lipToChinHeight >= faceHeight * 0.20f &&
-        jawBottomY >= bounds.maxY - (faceHeight * 0.08f)
     val eyeCenterY = (leftEyeOuter.y + leftEyeInner.y + rightEyeOuter.y + rightEyeInner.y) / 4f
-    val eyeToNoseHeight = nose.y - eyeCenterY
-    val noseToMouthHeight = mouthCenter.y - nose.y
-    val mouthToChinHeight = chin.y - upperLip.y
-    val headLevel = eyeToNoseHeight >= faceHeight * 0.10f &&
-        noseToMouthHeight >= faceHeight * 0.10f &&
-        mouthToChinHeight >= faceHeight * 0.22f &&
-        forehead.y >= frameTop + (faceHeight * 0.04f) &&
-        chin.y <= frameBottom - (faceHeight * 0.04f)
+    val eyesLevel = kotlin.math.abs(leftEyeOuter.y - rightEyeOuter.y) <= faceHeight * 0.12f
+    val noseCentered = kotlin.math.abs(nose.x - centerX) <= faceWidth * 0.24f
 
     return when {
+        faceHeight < 0.30f -> ScanReadiness(false, "Move closer to the camera")
+        faceWidth > 0.62f || faceHeight > 0.74f -> ScanReadiness(false, "Move farther from the camera")
         faceOutsideFrame -> ScanReadiness(false, "Include your full face in the frame")
-        !lowerFaceComplete -> ScanReadiness(false, "Include your full face in the frame")
-        !headLevel -> ScanReadiness(false, "Include your full face in the frame")
-        !faceBalanced -> ScanReadiness(false, "Include your full face in the frame")
+        !noseCentered -> ScanReadiness(false, "Face the camera directly")
+        !eyesLevel -> ScanReadiness(false, "Keep your head level")
         centerX < 0.4f -> ScanReadiness(false, "Move your face slightly right")
         centerX > 0.6f -> ScanReadiness(false, "Move your face slightly left")
         centerY < 0.34f -> ScanReadiness(false, "Move your face slightly down")
         centerY > 0.62f -> ScanReadiness(false, "Move your face slightly up")
-        faceWidth < 0.24f || faceHeight < 0.30f -> ScanReadiness(false, "Move closer to the camera")
-        faceWidth > 0.62f || faceHeight > 0.74f -> ScanReadiness(false, "Move farther from the camera")
-        else -> ScanReadiness(true, "Face aligned - ready to capture")
+        else -> ScanReadiness(true, "Hold still - capturing automatically")
     }
 }
 

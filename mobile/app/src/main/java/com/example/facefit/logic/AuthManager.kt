@@ -64,7 +64,9 @@ class AuthManager {
         foreheadWidth: Float,
         jawline: Float,
         eyeSpacing: Float,
-        faceShape: String
+        faceShape: String,
+        shapeMeasurements: FaceShapeClassifier.Measurements? = null,
+        shapeSampleCount: Int = 1
     ): Result<Unit> {
         return try {
             val userId = auth.currentUser?.uid ?: throw Exception("Not signed in")
@@ -73,6 +75,19 @@ class AuthManager {
                 "jawline" to jawline,
                 "eyeSpacing" to eyeSpacing,
                 "faceShape" to faceShape,
+                "measurementVersion" to 2,
+                "measurementUnit" to "fractionOfCheekWidth",
+                "shapeMethod" to "geometricEstimateV2",
+                "shapeSampleCount" to shapeSampleCount,
+                "shapeMeasurements" to shapeMeasurements?.let {
+                    mapOf(
+                        "lengthToWidth" to it.lengthToWidth,
+                        "foreheadToCheek" to it.foreheadToCheek,
+                        "jawToCheek" to it.jawToCheek,
+                        "chinToJaw" to it.chinToJaw,
+                        "jawAngleDegrees" to it.jawAngle
+                    )
+                },
                 "createdAt" to FieldValue.serverTimestamp()
             )
 

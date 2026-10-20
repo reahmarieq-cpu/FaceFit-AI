@@ -174,7 +174,9 @@ class MainActivity : ComponentActivity() {
                                             foreheadWidth = metrics.foreheadWidth,
                                             jawline = metrics.jawline,
                                             eyeSpacing = metrics.eyeSpacing,
-                                            faceShape = metrics.faceShape
+                                            faceShape = metrics.faceShape,
+                                            shapeMeasurements = metrics.shapeMeasurements,
+                                            shapeSampleCount = metrics.shapeSampleCount
                                         )
 
                                         if (result.isSuccess) {

@@ -71,6 +71,10 @@ class Glasses3DRenderer(browline: Boolean, private val onError: (String) -> Unit
     }
 
     override fun onDrawFrame(gl: GL10?) {
+        drawFrame()
+    }
+
+    private fun drawFrame() {
         GLES20.glDisable(GLES20.GL_SCISSOR_TEST)
         GLES20.glColorMask(true, true, true, true)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)

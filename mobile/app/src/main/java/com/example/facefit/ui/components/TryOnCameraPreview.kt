@@ -21,19 +21,24 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.facefit.logic.FaceAnalyzer
+import com.example.facefit.logic.TrackingBackend
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.hypot
 
 @Composable
 fun TryOnCameraPreview(
     onResult: (FaceAnalyzer.FaceMetrics) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
+    backend: TrackingBackend = TrackingBackend.GPU,
+    onBackendFallback: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val resultCallback by rememberUpdatedState(onResult)
     val errorCallback by rememberUpdatedState(onError)
+    val fallbackCallback by rememberUpdatedState(onBackendFallback)
     val previewView = remember(context) {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
@@ -42,24 +47,25 @@ fun TryOnCameraPreview(
     }
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-    DisposableEffect(previewView, lifecycleOwner) {
+    DisposableEffect(previewView, lifecycleOwner, backend) {
         val executor = Executors.newSingleThreadExecutor()
         val mainExecutor = ContextCompat.getMainExecutor(context)
         val providerFuture = ProcessCameraProvider.getInstance(context)
-        var disposed = false
+        val disposed = AtomicBoolean(false)
         var provider: ProcessCameraProvider? = null
         var analysis: ImageAnalysis? = null
         var preview: Preview? = null
         var analyzer: FaceAnalyzer? = null
         var sourceTransform: OutputTransform? = null
         val latestResult = AtomicLong(0L)
+        var activeBackend = backend
         val transformFactory = ImageProxyTransformFactory().apply {
             isUsingRotationDegrees = true
             isUsingCropRect = false
         }
         val bindCamera = Runnable {
             // Both layout and provider readiness can trigger this callback on startup.
-            if (!disposed && preview == null && previewView.width > 0 && previewView.height > 0) {
+            if (!disposed.get() && preview == null && previewView.width > 0 && previewView.height > 0) {
                 try {
                     val cameraProvider = providerFuture.get()
                     provider = cameraProvider
@@ -74,13 +80,14 @@ fun TryOnCameraPreview(
                                 ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
                             .build())
                         .setTargetRotation(previewView.display.rotation)
+                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
                     analysis = cameraAnalysis
-                    val faceAnalyzer = FaceAnalyzer(context, videoTracking = true) { result ->
+                    val handleResult: (FaceAnalyzer.FaceMetrics) -> Unit = { result ->
                         val source = sourceTransform
                         val resultId = latestResult.incrementAndGet()
                         mainExecutor.execute {
-                            if (!disposed && resultId == latestResult.get()) {
+                            if (!disposed.get() && resultId == latestResult.get()) {
                                 val target = previewView.outputTransform
                                 if (result.isFaceDetected && source != null && target != null) {
                                     // MediaPipe points are in the rotated bitmap; CameraX supplies crop and mirror mapping.
@@ -109,17 +116,40 @@ fun TryOnCameraPreview(
                             }
                         }
                     }
-                    analyzer = faceAnalyzer
                     cameraAnalysis.setAnalyzer(executor) { image ->
+                        if (disposed.get()) {
+                            image.close()
+                            return@setAnalyzer
+                        }
+                        var handedToAnalyzer = false
                         try {
                             sourceTransform = transformFactory.getOutputTransform(image)
+                            // GPU creation, inference and close must share this executor thread.
+                            val faceAnalyzer = analyzer ?: FaceAnalyzer(context, videoTracking = true,
+                                backend = activeBackend,
+                                reuseRgbaBuffers = true,
+                                onResult = handleResult).also { analyzer = it }
+                            handedToAnalyzer = true
                             faceAnalyzer.analyze(image)
                         } catch (error: Exception) {
+                            if (!handedToAnalyzer) image.close()
                             Log.e("TryOnCamera", "Face tracking failed", error)
-                            mainExecutor.execute { if (!disposed) errorCallback("Face tracking failed. Reopen try-on to retry.") }
+                            if (activeBackend == TrackingBackend.GPU) {
+                                runCatching { analyzer?.close() }
+                                analyzer = null
+                                activeBackend = TrackingBackend.CPU
+                                mainExecutor.execute {
+                                    if (!disposed.get()) {
+                                        fallbackCallback("GPU unavailable; using CPU")
+                                    }
+                                }
+                            } else {
+                                mainExecutor.execute { if (!disposed.get()) errorCallback("Face tracking failed. Reopen try-on to retry.") }
+                            }
                         }
                     }
-                    val useCases = UseCaseGroup.Builder().addUseCase(cameraPreview).addUseCase(cameraAnalysis)
+                    val useCases = UseCaseGroup.Builder().addUseCase(cameraPreview)
+                    useCases.addUseCase(cameraAnalysis)
                     previewView.viewPort?.let { useCases.setViewPort(it) }
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_FRONT_CAMERA, useCases.build())
@@ -135,7 +165,7 @@ fun TryOnCameraPreview(
         previewView.addOnLayoutChangeListener(layoutListener)
         providerFuture.addListener(bindCamera, mainExecutor)
         onDispose {
-            disposed = true
+            disposed.set(true)
             previewView.removeOnLayoutChangeListener(layoutListener)
             analysis?.clearAnalyzer()
             preview?.let { provider?.unbind(it) }
