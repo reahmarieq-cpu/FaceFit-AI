@@ -135,4 +135,8 @@
     <string name="processing_failed_body">Please retake the photo with the customer facing the kiosk camera.</string>
     <string name="processing_retake_button">Retake</string>
     <string name="processing_continue_button">Continue</string>
+    <string name="scan_end_session">End scan</string>
+    <string name="scan_end_session_title">End this scan?</string>
+    <string name="scan_end_session_body">Your temporary photo and scan results will be deleted. The kiosk will return to the welcome screen.</string>
+    <string name="scan_keep_scanning">Keep scanning</string>
 </resources>

@@ -9,7 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.facefit.kiosk.R
 import com.facefit.kiosk.data.session.KioskSessionStore
 import com.facefit.kiosk.databinding.ScreenFacePositioningBinding
-import com.facefit.kiosk.databinding.ViewScanGuidanceRowBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.facefit.kiosk.facefit.camera.CameraCaptureGateway
 import com.facefit.kiosk.navigation.KioskDestination
 import com.facefit.kiosk.navigation.KioskNavigator
@@ -31,16 +31,31 @@ class KioskFacePositioningView(
     private var isViewAttached = false
 
     init {
-        bindBaseGuidance()
         applyState(FacePositioningUiState.CameraStarting)
         binding.captureButton.setOnClickListener { handlePrimaryAction() }
         binding.retakeButton.setOnClickListener { retakeCapture() }
+        binding.endScanButton.setOnClickListener {
+            MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.scan_end_session_title)
+                .setMessage(R.string.scan_end_session_body)
+                .setNegativeButton(R.string.scan_keep_scanning, null)
+                .setPositiveButton(R.string.scan_end_session) { _, _ ->
+                    sessionStore.clearCustomerSession()
+                    navigator.navigateTo(KioskDestination.Welcome)
+                }
+                .show()
+        }
     }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         isViewAttached = true
-        startCameraIfAllowed()
+        val capturedImage = sessionStore.capturedFaceImagePath?.let(::File)
+        if (capturedImage != null && capturedImage.isFile) {
+            applyState(FacePositioningUiState.Captured(capturedImage))
+        } else {
+            startCameraIfAllowed()
+        }
     }
 
     override fun onDetachedFromWindow() {
@@ -57,29 +72,6 @@ class KioskFacePositioningView(
         ) {
             startLivePreview()
         }
-    }
-
-    private fun bindBaseGuidance() {
-        bindRow(
-            binding.faceCenteredRow,
-            title = context.getString(R.string.scan_guidance_face_ready_title),
-            body = context.getString(R.string.scan_guidance_face_ready_body)
-        )
-        bindRow(
-            binding.lightingRow,
-            title = context.getString(R.string.scan_guidance_lighting_title),
-            body = context.getString(R.string.scan_guidance_lighting_body)
-        )
-        bindRow(
-            binding.positionRow,
-            title = context.getString(R.string.scan_guidance_position_title),
-            body = context.getString(R.string.scan_guidance_position_body)
-        )
-    }
-
-    private fun bindRow(row: ViewScanGuidanceRowBinding, title: String, body: String) {
-        row.guidanceTitleText.text = title
-        row.guidanceBodyText.text = body
     }
 
     private fun handlePrimaryAction() {
@@ -176,6 +168,7 @@ class KioskFacePositioningView(
 
     private fun applyState(state: FacePositioningUiState) {
         currentState = state
+        binding.endScanButton.isEnabled = state != FacePositioningUiState.CaptureInProgress
         when (state) {
             FacePositioningUiState.CameraStarting -> showCameraStartingState()
             FacePositioningUiState.PermissionRequired -> showPermissionRequiredState()
@@ -261,7 +254,6 @@ class KioskFacePositioningView(
         binding.tipText.text = tip
         binding.captureButton.text = buttonText
         binding.captureButton.isEnabled = isButtonEnabled
-        bindBaseGuidance()
     }
 
     private fun showPermissionRequiredState() {
@@ -325,7 +317,6 @@ class KioskFacePositioningView(
         binding.tipText.text = context.getString(R.string.scan_tip_captured)
         binding.captureButton.text = context.getString(R.string.scan_capture_continue_button)
         binding.captureButton.isEnabled = true
-        bindBaseGuidance()
     }
 
     private fun discardStoredCapture() {

@@ -7,12 +7,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.ViewModelProvider
 import com.facefit.kiosk.data.auth.MockShopAuthRepository
-import com.facefit.kiosk.data.session.InMemoryKioskSessionStore
 import com.facefit.kiosk.databinding.ActivityMainBinding
 import com.facefit.kiosk.facefit.analysis.MediaPipeFaceAnalysisGateway
 import com.facefit.kiosk.facefit.camera.CameraXCameraCaptureGateway
@@ -28,7 +32,8 @@ import com.facefit.kiosk.ui.welcome.KioskWelcomeView
 class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionController {
 
     private lateinit var binding: ActivityMainBinding
-    private val sessionStore = InMemoryKioskSessionStore()
+    private val kioskState by lazy { ViewModelProvider(this)[KioskStateViewModel::class.java] }
+    private val sessionStore get() = kioskState.sessionStore
     private val authRepository = MockShopAuthRepository()
     private val cameraGateway by lazy { CameraXCameraCaptureGateway(applicationContext) }
     private var faceAnalysisGateway: MediaPipeFaceAnalysisGateway? = null
@@ -44,13 +49,26 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        if (savedInstanceState == null) {
-            navigateTo(KioskDestination.ShopLogin)
-        }
+        navigateTo(kioskState.destination)
     }
 
     override fun navigateTo(destination: KioskDestination) {
+        val bars = WindowCompat.getInsetsController(window, window.decorView)
+        if (destination == KioskDestination.FacePositioning) {
+            bars.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            bars.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            bars.show(WindowInsetsCompat.Type.systemBars())
+        }
+        if (destination in listOf(
+                KioskDestination.ShopLogin, KioskDestination.Welcome, KioskDestination.Consent,
+                KioskDestination.FacePositioning, KioskDestination.Processing
+            )
+        ) {
+            kioskState.destination = destination
+        }
         when (destination) {
             KioskDestination.ShopLogin -> showShopLogin()
             KioskDestination.Welcome -> showWelcome()

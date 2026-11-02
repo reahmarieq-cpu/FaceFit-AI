@@ -28,6 +28,11 @@
         <item name="textAllCaps">false</item>
     </style>
 
+    <style name="Widget.FaceFit.Button.ScanSecondary" parent="Widget.FaceFit.Button.Secondary">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="strokeColor">@android:color/white</item>
+    </style>
+
     <style name="Widget.FaceFit.TextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
         <item name="boxCornerRadiusBottomEnd">@dimen/field_radius</item>
         <item name="boxCornerRadiusBottomStart">@dimen/field_radius</item>

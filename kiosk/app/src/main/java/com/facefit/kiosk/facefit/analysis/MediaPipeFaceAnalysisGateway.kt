@@ -22,6 +22,7 @@ class MediaPipeFaceAnalysisGateway(
     private val appContext = context.applicationContext
     private var faceLandmarker: FaceLandmarker? = null
 
+    @Synchronized
     override fun analyze(capturedImagePath: String): FaceAnalysisResult {
         val imageFile = File(capturedImagePath)
         if (!imageFile.exists() || !imageFile.canRead()) {
@@ -73,6 +74,7 @@ class MediaPipeFaceAnalysisGateway(
         }
     }
 
+    @Synchronized
     override fun close() {
         faceLandmarker?.close()
         faceLandmarker = null
