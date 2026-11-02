@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Phase 1 does not upload or read any files yet (frame images
+    // arrive in a later phase). Deny everything by default so the
+    // bucket is never left open by accident.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
