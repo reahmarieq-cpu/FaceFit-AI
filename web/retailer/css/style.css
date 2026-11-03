@@ -618,3 +618,125 @@ textarea.field-soft { resize: vertical; min-height: 96px; }
   .frame-table thead th:nth-child(2),
   .frame-table tbody td:nth-child(2) { display: none; }
 }
+
+/* Firestore-backed retailer notification dropdown */
+.notification-menu { width: min(370px, 92vw); max-height: 430px; overflow-y: auto; }
+.notification-heading { display:flex; justify-content:space-between; align-items:center; padding: .65rem .85rem; font-weight:700; font-size:.82rem; }
+.notification-entry { display:flex; flex-direction:column; gap:.3rem; text-align:left; border-radius:10px; margin:.15rem 0; }
+.notification-entry strong { font-size:.82rem; }
+.notification-entry span { font-size:.76rem; line-height:1.45; }
+.notification-entry small { color:#64748b; font-size:.68rem; }
+.notification-entry--unread { background:#e9f8f6; border-left:3px solid #159f92; }
+.notification-empty { padding:1rem; color:#64748b; text-align:center; font-size:.8rem; }
+
+/* FaceFit AI 2026: consistent responsive retailer portal layouts */
+.app-main, .app-content, .surface-card { min-width: 0; }
+.app-content { width: 100%; max-width: none; }
+.app-content > .surface-card,
+.app-content > .container,
+.app-content > .container-fluid { max-width: 100%; }
+.surface-card { overflow-wrap: anywhere; }
+.shop-profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  gap: 22px;
+  align-items: start;
+  width: 100%;
+}
+.shop-profile-layout > .surface-card { width: 100%; max-width: none; min-width: 0; }
+.shop-profile-location .shop-location-panel { padding: 0; border: 0; background: transparent; }
+.shop-profile-location .shop-location-map { height: clamp(360px, 40vw, 520px); }
+.shop-profile-layout .form-control { min-width: 0; }
+.app-content .table-responsive { max-width: 100%; overflow-x: auto; }
+@media (max-width: 1199.98px) {
+  .shop-profile-layout { grid-template-columns: minmax(0, 1fr); }
+  .shop-profile-location .shop-location-map { height: 390px; }
+}
+@media (max-width: 575.98px) {
+  .shop-profile-layout { gap: 14px; }
+  .shop-profile-location .shop-location-map { height: 300px; }
+  .shop-profile-layout > .surface-card { padding: 18px; }
+}
+
+/* Equal-height alignment: shop profile and frame creation */
+@media (min-width: 1200px) {
+  .shop-profile-layout { align-items: stretch; }
+  .shop-profile-layout > .surface-card { height: 100%; }
+  .shop-profile-details { display: flex; flex-direction: column; }
+  .shop-profile-details #shopProfileForm {
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .shop-profile-details #shopProfileForm > .d-flex.justify-content-end {
+    margin-top: auto;
+  }
+  .shop-profile-location { display: flex; flex-direction: column; }
+  body[data-page="add-frame"] #addFrameForm > .row > [class*="col-"] {
+    display: flex; flex-direction: column;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > [class*="col-"] > .surface-card {
+    width: 100%;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-8 > .surface-card {
+    flex: 1;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 > .surface-card:nth-of-type(2) {
+    flex: 1;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 > .form-actions {
+    margin-top: auto;
+  }
+}
+
+/* Registration-inspired editable address fields in the retailer profile */
+.shop-profile-layout { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr); align-items: stretch; }
+.shop-profile-layout > .surface-card { padding: clamp(20px, 2vw, 32px); }
+.profile-address-section { margin-top: 8px; }
+.profile-address-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.profile-address-number { display: grid; place-items: center; flex: 0 0 32px; height: 32px; background: #e0f4f7; color: #07859c; border-radius: 10px; font-weight: 800; font-size: .75rem; }
+.profile-address-heading h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #102e48; }
+.profile-address-heading p { margin: 3px 0 0; color: #71869a; font-size: .78rem; }
+.shop-profile-details .registration-address-card { padding: 20px; border-radius: 18px; background: #f7fbfd; }
+.profile-address-help { font-size: .75rem; color: #6d8192; margin: 10px 0 0; }
+.shop-profile-location .shop-location-map { height: clamp(460px, 42vw, 650px); }
+@media (max-width: 1199.98px) {
+  .shop-profile-layout { grid-template-columns: minmax(0, 1fr); }
+  .shop-profile-location .shop-location-map { height: 420px; }
+}
+@media (max-width: 575.98px) {
+  .shop-profile-details .registration-address-card { padding: 14px; }
+  .shop-profile-location .shop-location-map { height: 310px; }
+}
+
+/* Shop profile address: strict two-column field grid, responsive on phones */
+.shop-profile-details .registration-address-card > .row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+  margin: 0 !important;
+}
+.shop-profile-details .registration-address-card > .row > [class*="col-"] {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.shop-profile-details .registration-address-card .form-control { width: 100%; }
+@media (max-width: 650px) {
+  .shop-profile-details .registration-address-card > .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Shop Profile: one definitive desktop alignment rule (no conflicting overrides). */
+@media (min-width: 1200px) {
+  .shop-profile-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+  .shop-profile-layout > .surface-card { height:auto; align-self:stretch; min-width:0; box-sizing:border-box; }
+  .shop-profile-details { display:flex; flex-direction:column; }
+  .shop-profile-details #shopProfileForm { display:flex; flex-direction:column; flex:1; }
+  .shop-profile-details #shopProfileForm > .d-flex.justify-content-end { margin-top:auto !important; padding-top:16px; }
+  .shop-profile-location { display:flex; flex-direction:column; }
+  .shop-profile-location .shop-location-panel { display:flex; flex-direction:column; flex:1; min-height:0; }
+  .shop-profile-location .shop-location-map { height:485px !important; min-height:485px !important; max-height:none !important; flex:1 1 auto; width:100%; }
+}

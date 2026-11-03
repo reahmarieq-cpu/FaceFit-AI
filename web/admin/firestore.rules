@@ -53,7 +53,17 @@ service cloud.firestore {
         && resource.data.status == "pending"
         && request.resource.data.status in ["approved", "rejected"]
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
-      allow create, delete: if false;
+      allow create: if request.auth != null
+        && retailerId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.emailAddress == request.auth.token.email
+        && request.resource.data.status == "pending"
+        && request.resource.data.subscriptionStatus == "inactive"
+        && request.resource.data.subscriptionPlan == "unselected"
+        && request.resource.data.keys().hasOnly(["userId","retailName","contactPerson","ownerFirstName","ownerLastName","emailAddress","contactNumber","retailAddress","addressParts","businessPermitNumber","permit","subscriptionPlan","subscriptionStatus","status","createdAt"])
+        && request.resource.data.retailName is string
+        && request.resource.data.permit is string;
+      allow delete: if false;
     }
 
     // ------------------------------------------------------------
@@ -106,6 +116,25 @@ service cloud.firestore {
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
       allow write: if false;
     }
+
+    // Web-only pilot: retailer chooses a DEMO plan; admin has read-only visibility.
+    // This does not grant paid or kiosk access.
+    match /subscriptions/{retailerId} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(["retailerId", "userId", "planType", "status", "updatedAt"])
+        && request.resource.data.retailerId == retailerId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.planType in ["retailer", "bundle"]
+        && request.resource.data.status == "demo"
+        && exists(/databases/$(database)/documents/retailers/$(retailerId))
+        && get(/databases/$(database)/documents/retailers/$(retailerId)).data.userId == request.auth.uid
+        && get(/databases/$(database)/documents/retailers/$(retailerId)).data.status == "approved"
+        && (!exists(/databases/$(database)/documents/subscriptions/$(retailerId)) || resource.data.userId == request.auth.uid);
+      allow delete: if false;
+    }
+    match /subscriptionRequests/{requestId} { allow read, write: if false; }
+    match /kioskDevices/{deviceId} { allow read, write: if false; }
 
     // ------------------------------------------------------------
     // Everything else is denied by default until we design and

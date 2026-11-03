@@ -54,22 +54,9 @@ const FaceFitShop = (() => {
   }
 
   function initNotifications() {
-    const notificationList = document.getElementById("notificationList");
-    const notificationDot = document.getElementById("notificationDot");
-    const pendingFrames = getFrames().filter((frame) => frame.status === "pending");
-
-    const messages = [`${currentAccount.shop.name} is approved and live on FaceFit AI.`];
-    pendingFrames.forEach((frame) => messages.push(`${frame.name} is waiting for administrator review.`));
-
-    notificationList.innerHTML =
-      `<li><h6 class="dropdown-header">Notifications</h6></li>` +
-      messages.map((message) => `<li><span class="dropdown-item">${FaceFitUi.escapeHtml(message)}</span></li>`).join("");
-
-    notificationDot.classList.toggle("d-none", FaceFitStorage.areNotificationsRead());
-    document.getElementById("notificationButton").addEventListener("show.bs.dropdown", () => {
-      FaceFitStorage.markNotificationsRead();
-      notificationDot.classList.add("d-none");
-    });
+    import("./notifications.js")
+      .then(({ initRetailerNotifications }) => initRetailerNotifications())
+      .catch(error => console.error("Notifications initialization failed", error));
   }
 
   function initTopbarSearch() {
@@ -281,8 +268,8 @@ const FaceFitShop = (() => {
       descriptionInput.value = editedFrame.description || "";
       document.title = "Edit Frame · FaceFit AI Shop";
       document.querySelector(".topbar-heading__title").textContent = "Edit Frame";
-      document.querySelector(".topbar-heading__subtitle").textContent = "Update your listing. It will be re-reviewed.";
-      form.querySelector("button[type='submit']").textContent = "Save & resubmit";
+      document.querySelector(".topbar-heading__subtitle").textContent = "Update your frame details.";
+      form.querySelector("button[type='submit']").textContent = "Save Changes";
       form.querySelector(".surface-card__title").textContent = "Edit frame details";
       form.querySelector(".eyebrow").textContent = "Existing listing";
     }
@@ -320,7 +307,7 @@ const FaceFitShop = (() => {
         color: colorInput.value.trim(),
         description: descriptionInput.value.trim(),
         imageDataUrl: selectedImageDataUrl,
-        status: "pending",
+        status: "live",
         createdAt: editedFrame ? editedFrame.createdAt : Date.now(),
       };
 
@@ -332,7 +319,7 @@ const FaceFitShop = (() => {
         FaceFitUi.showToast("Couldn't save. Try a smaller image.", "danger");
         return;
       }
-      FaceFitUi.showToast(`${submittedFrame.name} was submitted for review.`);
+      FaceFitUi.showToast(`${submittedFrame.name} added to catalog successfully.`);
       setTimeout(() => { window.location.href = "catalog.html"; }, 800);
     });
 
@@ -347,8 +334,12 @@ const FaceFitShop = (() => {
       contactPerson: document.getElementById("profileContactPerson"),
       phone: document.getElementById("profilePhone"),
       businessPermitNumber: document.getElementById("profilePermit"),
-      address: document.getElementById("profileAddress"),
     };
+    const addressKeys = ["unit", "street", "barangay", "city", "province", "postalCode", "country"];
+    const addressInputs = Object.fromEntries(addressKeys.map(key => [key, document.getElementById(`profileAddress_${key}`)]));
+    const addressParts = currentAccount.shop.addressParts || {};
+    addressKeys.forEach(key => { addressInputs[key].value = addressParts[key] || ""; });
+    const saveButton = form.querySelector('button[type="submit"]');
     const emailInput = document.getElementById("profileEmail");
 
     function renderProfileHeader() {
@@ -360,31 +351,49 @@ const FaceFitShop = (() => {
     emailInput.value = currentAccount.email;
     renderProfileHeader();
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!FaceFitUi.validateForm(form)) {
-        return;
+      if (!FaceFitUi.validateForm(form)) return;
+
+      const newParts = Object.fromEntries(addressKeys.map(key => [key, addressInputs[key].value.trim()]));
+      const newAddress = addressKeys.map(key => newParts[key]).filter(Boolean).join(", ");
+      const updates = {
+        retailName: fields.name.value.trim(),
+        contactPerson: fields.contactPerson.value.trim(),
+        contactNumber: fields.phone.value.trim(),
+        retailAddress: newAddress,
+        addressParts: newParts
+      };
+      saveButton.disabled = true;
+      saveButton.textContent = "Saving…";
+      try {
+        await window.FaceFitFirebase.updateRetailerProfile(updates);
+        currentAccount.shop = {
+          ...currentAccount.shop,
+          name: updates.retailName,
+          contactPerson: updates.contactPerson,
+          phone: updates.contactNumber,
+          address: updates.retailAddress,
+          addressParts: newParts
+        };
+        document.getElementById("shopName").textContent = currentAccount.shop.name;
+        document.getElementById("shopInitials").textContent = FaceFitUi.getInitials(currentAccount.shop.name);
+        renderProfileHeader();
+        form.classList.remove("was-validated");
+        FaceFitUi.showToast("Shop profile saved.");
+      } catch (error) {
+        console.error("Failed to save retailer profile:", error);
+        FaceFitUi.showToast("Could not save changes. Check Firestore permissions and try again.", "danger");
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save changes";
       }
-
-      const accounts = FaceFitStorage.getAccounts();
-      const storedAccount = accounts.find((account) => account.email === currentAccount.email);
-      ["name", "contactPerson", "phone", "address"].forEach((key) => {
-        storedAccount.shop[key] = fields[key].value.trim();
-      });
-      FaceFitStorage.saveAccounts(accounts);
-
-      currentAccount = storedAccount;
-      document.getElementById("shopName").textContent = currentAccount.shop.name;
-      document.getElementById("shopInitials").textContent = FaceFitUi.getInitials(currentAccount.shop.name);
-      renderProfileHeader();
-      form.classList.remove("was-validated");
-      FaceFitUi.showToast("Shop profile saved.");
     });
   }
 
   /* Entry point --------------------------------------------------------- */
-  function initPage(pageName) {
-    currentAccount = FaceFitAuth.requireApprovedSession();
+  async function initPage(pageName) {
+    currentAccount = await FaceFitAuth.requireApprovedSession();
     if (!currentAccount) {
       return;
     }

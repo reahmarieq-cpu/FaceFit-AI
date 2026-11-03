@@ -4,7 +4,7 @@
 export const APPROVAL_MODE = "firestore"; // "firestore" or "functions"
 
 import { db, functions } from "./firebase-config.js";
-import { doc, runTransaction } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+import { doc, collection, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-functions.js";
 
 const actions = {
@@ -35,6 +35,23 @@ export async function executeApproval(action, id) {
       throw new Error("This application has already been reviewed. Refresh the page.");
     }
     transaction.update(ref, { status: spec.status });
+    if (action === "approveRetailer" || action === "rejectRetailer") {
+      const recipient = snapshot.data().userId;
+      if (!recipient || typeof recipient !== "string") throw new Error("Retailer account has no recipient UID.");
+      const notificationRef = doc(collection(db, "notifications"));
+      const approved = action === "approveRetailer";
+      transaction.set(notificationRef, {
+        userId: recipient,
+        retailerId: id,
+        type: approved ? "retailer_approved" : "retailer_rejected",
+        title: approved ? "Retailer application approved" : "Retailer application rejected",
+        message: approved
+          ? "Your retailer application was approved. You can now access the retailer portal."
+          : "Your retailer application was not approved. Please contact FaceFit AI support for details.",
+        createdAt: serverTimestamp(),
+        readAt: null
+      });
+    }
   });
   return spec.status;
 }

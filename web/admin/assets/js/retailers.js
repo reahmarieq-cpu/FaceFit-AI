@@ -66,7 +66,7 @@ function renderRows(retailers) {
         </div>
       </td>
       <td data-label="Contact">${escapeHtml(r.contactPerson)}</td>
-      <td data-label="Permit No." class="fw-bold" style="font-size:0.82rem;">${escapeHtml(r.permit)}</td>
+      <td data-label="Permit" class="fw-bold" style="font-size:0.82rem;">${escapeHtml(r.permit ? "Provided" : "Not provided")}</td>
       <td data-label="Submitted" class="text-muted-ff">${formatDate(r.createdAt)}</td>
       <td data-label="Status">${statusBadge(r.status)}</td>
       <td data-label="Decision" class="td-end">${decision}</td>
@@ -75,16 +75,28 @@ function renderRows(retailers) {
   });
 }
 
+
 function updateCounts() {
-  const count = (s) => allRetailers.filter((r) => r.status === s).length;
-  document.getElementById("count-all").textContent = allRetailers.length;
-  document.getElementById("count-pending").textContent = count("pending");
-  document.getElementById("count-approved").textContent = count("approved");
-  document.getElementById("count-rejected").textContent = count("rejected");
+  const count = (status) =>
+    allRetailers.filter((r) => r.status === status).length;
+
+  const setCount = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+
+  setCount(
+    "count-all",
+    allRetailers.filter((r) => r.status !== "approved").length
+  );
+  setCount("count-pending", count("pending"));
+  setCount("count-rejected", count("rejected"));
 }
+
 
 function applyFilterAndRender() {
   const filtered = allRetailers
+    .filter((r) => r.status !== "approved")
     .filter((r) => activeFilter === "all" || r.status === activeFilter)
     .filter(matchesSearch);
 

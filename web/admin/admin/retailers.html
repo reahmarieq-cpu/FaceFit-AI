@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop Applications · FaceFit AI Admin</title>
+  <title>Retailer Applications · FaceFit AI Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,12 +15,12 @@
 </head>
 <body>
 
-<div id="app-shell" data-active="shops" data-title="Shop Applications" data-subtitle="Review and decide on shop registrations" data-search="on">
+<div id="app-shell" data-active="shops" data-title="Retailer Applications" data-subtitle="Review and decide on retailer registrations" data-search="on">
 <div id="page-content">
   <div class="pill-bar" id="filter-bar">
     <button class="filter-pill active" data-filter="all">All <span class="pill-count" id="count-all">0</span></button>
     <button class="filter-pill" data-filter="pending">Pending <span class="pill-count" id="count-pending">0</span></button>
-    <button class="filter-pill" data-filter="approved">Approved <span class="pill-count" id="count-approved">0</span></button>
+
     <button class="filter-pill" data-filter="rejected">Rejected <span class="pill-count" id="count-rejected">0</span></button>
   </div>
 
@@ -29,7 +29,7 @@
       <table class="ff-table">
         <thead>
           <tr>
-            <th>Shop</th><th>Contact</th><th>Permit No.</th><th>Submitted</th><th>Status</th><th class="th-end">Decision</th>
+            <th>Shop</th><th>Contact</th><th>Permit</th><th>Submitted</th><th>Status</th><th class="th-end">Decision</th>
           </tr>
         </thead>
         <tbody id="retailers-tbody"></tbody>

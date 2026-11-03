@@ -200,12 +200,7 @@ const FaceFitRegistration = (() => {
       form.setAttribute("aria-busy", "true");
       try {
         const file = permit.files[0];
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reader.onabort = () => reject(new Error("Could not read your permit. Please select the file again."));
-          reader.readAsDataURL(file);
-        });
+
         const addressParts = {
           unit: document.getElementById("addressUnit").value.trim(),
           street: document.getElementById("addressStreet").value.trim(),
@@ -215,7 +210,7 @@ const FaceFitRegistration = (() => {
           postalCode: document.getElementById("addressPostalCode").value.trim(),
           country: document.getElementById("addressCountry").value.trim(),
         };
-        const result = registerShop({
+        const result = await registerShop({
           shopName: document.getElementById("shopName").value,
           ownerFirstName: document.getElementById("ownerFirstName").value,
           ownerLastName: document.getElementById("ownerLastName").value,
@@ -225,7 +220,7 @@ const FaceFitRegistration = (() => {
           addressParts,
           email: document.getElementById("shopEmail").value,
           password: password.value,
-          permit: { name: file.name, type: file.type, size: file.size, dataUrl },
+          permitFile: file,
         });
         if (result.ok) window.location.assign("pending.html");
         else FaceFitUi.showAlert(alert, result.message);

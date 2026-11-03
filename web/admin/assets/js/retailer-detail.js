@@ -7,12 +7,14 @@
 // Functions, which are the only trusted write path.
 // ============================================================
 
-import "./admin-layout.js"; // renders sidebar/topbar before the ids below are looked up
+import "./admin-layout.js";
+import { renderPermit } from "./permit-preview.js"; // renders sidebar/topbar before the ids below are looked up
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { APPROVAL_MODE, executeApproval } from "./approval-service.js";
+import { executeApproval } from "./approval-service.js";
+import { sendRetailerDecisionEmail, isRetailerEmailConfigured } from "./retailer-decision-email.js";
 
 const nameEl = document.getElementById("admin-name");
 const emailEl = document.getElementById("admin-email");
@@ -28,6 +30,8 @@ const approveBtn = document.getElementById("approve-btn");
 const rejectBtn = document.getElementById("reject-btn");
 const actionFeedback = document.getElementById("action-feedback");
 const alreadyReviewedNote = document.getElementById("already-reviewed-note");
+let retailerForEmail = null;
+let lastEmailFailure = null;
 
 
 function initials(email) {
@@ -73,7 +77,7 @@ function renderRetailer(retailer) {
   setText("field-contactNumber", retailer.contactNumber);
   setText("field-emailAddress", retailer.emailAddress);
   setText("field-retailAddress", retailer.retailAddress);
-  setText("field-permit", retailer.permit);
+  renderPermit(retailer.permit, document.getElementById("field-permit"));
   setText("field-createdAt", formatDate(retailer.createdAt));
   setText("field-subscriptionPlan", retailer.subscriptionPlan);
   setText("field-subscriptionStatus", retailer.subscriptionStatus);
@@ -129,7 +133,19 @@ async function loadRetailer() {
     }
 
     const retailer = snap.data();
+    retailerForEmail = retailer;
     renderRetailer(retailer);
+    // Admin can view retailer-selected demo subscriptions, but cannot manage them.
+    try {
+      const subSnap = await getDoc(doc(db, "subscriptions", retailerId));
+      if (subSnap.exists()) {
+        const sub = subSnap.data();
+        setText("field-subscriptionPlan", sub.planType === "bundle" ? "Retailer + Kiosk (demo)" : "Retailer (demo)");
+        setText("field-subscriptionStatus", sub.status === "demo" ? "Demo selection — not paid or activated" : (sub.status || "—"));
+      }
+    } catch (subscriptionError) {
+      console.warn("Could not load subscription summary:", subscriptionError);
+    }
 
     loadingState.classList.add("d-none");
     detailContent.classList.remove("d-none");
@@ -148,6 +164,7 @@ async function handleDecision(decision) {
   const isApprove = decision === "approve";
   const triggeringBtn = isApprove ? approveBtn : rejectBtn;
 
+  if (!window.confirm(`Are you sure you want to ${decision} this retailer application?`)) return;
   triggeringBtn.dataset.pending = "true";
   setButtonsLoading(true);
   actionFeedback.classList.add("d-none");
@@ -161,11 +178,18 @@ async function handleDecision(decision) {
     statusBadge.textContent = statusLabel(newStatus);
     updateReviewControls(newStatus);
 
-    showActionFeedback(
-      `Retailer application ${isApprove ? "approved" : "rejected"}.` +
-        (APPROVAL_MODE === "firestore" ? " (Temporary mode: no notification sent.)" : ""),
-      "success"
-    );
+    // Approval is committed before email is attempted. An email failure must not undo it.
+    const decisionStatus = isApprove ? "approved" : "rejected";
+    try {
+      await sendRetailerDecisionEmail(retailerForEmail, decisionStatus);
+      lastEmailFailure = null;
+      showActionFeedback(`Retailer application ${decisionStatus}. Notification email submitted successfully.`, "success");
+    } catch (emailError) {
+      console.error("Retailer email failed after successful review:", emailError);
+      lastEmailFailure = { retailer: retailerForEmail, status: decisionStatus };
+      showActionFeedback(`Retailer application ${decisionStatus} in Firestore, but the email could not be sent: ${emailError.message}. Use Retry Email below after fixing the issue.`, "warning");
+      showRetryEmailButton();
+    }
   } catch (error) {
     console.error(`${decision} failed:`, error);
     showActionFeedback(
@@ -176,6 +200,31 @@ async function handleDecision(decision) {
     delete triggeringBtn.dataset.pending;
     setButtonsLoading(false);
   }
+}
+
+function showRetryEmailButton() {
+  if (!lastEmailFailure || document.getElementById("retry-retailer-email")) return;
+  const retry = document.createElement("button");
+  retry.id = "retry-retailer-email";
+  retry.type = "button";
+  retry.className = "btn btn-outline-primary mt-2";
+  retry.textContent = "Retry Email";
+  actionFeedback.insertAdjacentElement("afterend", retry);
+  retry.addEventListener("click", async () => {
+    if (!lastEmailFailure) return;
+    retry.disabled = true;
+    retry.textContent = "Sending…";
+    try {
+      await sendRetailerDecisionEmail(lastEmailFailure.retailer, lastEmailFailure.status);
+      lastEmailFailure = null;
+      showActionFeedback("Notification email submitted successfully.", "success");
+      retry.remove();
+    } catch (error) {
+      showActionFeedback(`Email still failed: ${error.message}`, "warning");
+      retry.disabled = false;
+      retry.textContent = "Retry Email";
+    }
+  });
 }
 
 approveBtn.addEventListener("click", () => handleDecision("approve"));

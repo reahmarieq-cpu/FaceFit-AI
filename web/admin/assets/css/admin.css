@@ -452,3 +452,41 @@
 .review-frame-image { display: block; width: min(100%, 420px); max-height: 280px; object-fit: contain; background: #f4f8fa; padding: 16px; border: 1px solid #e4edf0; }
 .review-frame-image.d-none { display: none; }
 @media (max-width: 767px) { .review-detail-card { padding: 20px 18px; } .review-decision-bar { padding: 20px 18px; } .review-decision-bar #review-actions { width: 100%; } .review-decision-bar #review-actions button { flex: 1; } }
+
+/* Retailer permit photo and dashboard adjustments */
+.permit-photo {display:block;width:100%;max-width:440px;max-height:360px;object-fit:contain;background:#f4f7fa;border:1px solid #dbe5eb;border-radius:12px;padding:12px;}
+.permit-preview {overflow-wrap:anywhere;}
+.stat-grid {grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+
+/* FaceFit AI 2026: consistent full-width admin dashboard and detail layouts */
+.app-main, .page-content, #page-content { min-width: 0; }
+.page-content { width: 100%; max-width: none; }
+.page-content > .container,
+.page-content > .container-fluid { max-width: 100%; }
+.page-content .panel, .page-content .card-ff { min-width: 0; }
+.page-content .table-responsive { max-width: 100%; overflow-x: auto; }
+.page-content table { width: 100%; }
+.review-detail-page { width: 100%; max-width: 1440px; margin-inline: auto; }
+.dash-grid > *, .stat-grid > * { min-width: 0; }
+@media (min-width: 992px) {
+  .page-content { padding: 28px clamp(22px, 2.5vw, 44px) 52px; }
+}
+@media (max-width: 767.98px) {
+  .page-content { padding: 18px 14px 30px; }
+  .dash-grid { grid-template-columns: minmax(0, 1fr); }
+  .review-detail-card { padding: 18px 16px; }
+  .review-decision-bar { padding: 18px 16px; }
+}
+@media (max-width: 420px) {
+  .stat-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Match dashboard column heights and align card edges */
+@media (min-width: 992px) {
+  #metrics-content .dash-grid { align-items: stretch; }
+  #metrics-content .dash-grid > .panel { height: 100%; }
+  #metrics-content .dash-grid > aside.panel {
+    display: flex; flex-direction: column;
+  }
+  #metrics-content .dash-grid > aside.panel > .btn-teal { margin-top: auto !important; }
+}
