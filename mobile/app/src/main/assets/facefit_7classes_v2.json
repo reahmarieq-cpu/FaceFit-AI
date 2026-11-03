@@ -1,0 +1,145 @@
+{
+  "model_file": "facefit_7classes_v2.onnx",
+  "model_sha256": "93d97a69c896c31f143df8017e39b0e5862bb67dbcdc2bbc6109b886a321d3f7",
+  "source_file": "facefit_7classes_v2.joblib",
+  "source_sha256": "744d02ff747a0ff010ec1a20a3ec120699368add9df9d18a77c9033bb72e4059",
+  "classifier": "RandomForestClassifier",
+  "tree_count": 200,
+  "input": {
+    "name": "features",
+    "dtype": "float32",
+    "shape": [
+      null,
+      10
+    ]
+  },
+  "feature_order": [
+    "face_length_ratio",
+    "upper_face_ratio",
+    "jaw_ratio",
+    "lower_jaw_width_ratio",
+    "chin_width_ratio",
+    "lower_face_taper_ratio",
+    "cheek_prominence_ratio",
+    "jaw_to_upper_ratio",
+    "jaw_corner_angle_ratio",
+    "jaw_contour_bend_ratio"
+  ],
+  "outputs": {
+    "label": {
+      "name": "label",
+      "type": "tensor(string)"
+    },
+    "probabilities": {
+      "name": "probabilities",
+      "type": "tensor(float)",
+      "class_order": [
+        "Diamond",
+        "Heart",
+        "Oblong",
+        "Oval",
+        "Round",
+        "Square",
+        "Triangle"
+      ]
+    }
+  },
+  "feature_extractor": "train_facefit_7classes_v2.py:extract_ratios",
+  "feature_note": "experimental 2D MediaPipe landmark ratios; yaw, occlusion and stretched input may bias values",
+  "opsets": {
+    "ai.onnx.ml": 1,
+    "ai.onnx": 17
+  },
+  "ir_version": 8,
+  "versions": {
+    "scikit-learn": "1.9.1",
+    "skl2onnx": "1.20.0",
+    "onnx": "1.23.2",
+    "onnxruntime": "1.25.1",
+    "numpy": "2.4.6"
+  },
+  "verification": {
+    "split": "valid",
+    "sample_count": 853,
+    "label_mismatches": 0,
+    "max_absolute_probability_difference": 7.653236389071338e-07,
+    "single_sample_checked": true,
+    "original_validation_accuracy": 0.6213364595545134,
+    "onnx_validation_accuracy": 0.6213364595545134,
+    "note": "Conversion parity, not independent test accuracy or phone runtime validation"
+  },
+  "smoke_tests": [
+    {
+      "features": [
+        1.2207120656967163,
+        0.7126004099845886,
+        0.7755646705627441,
+        0.5360273122787476,
+        0.3081851601600647,
+        0.5749430060386658,
+        1.2893831729888916,
+        1.0883584022521973,
+        0.9082574248313904,
+        1.0382944345474243
+      ],
+      "label": "Heart",
+      "probabilities": [
+        0.0,
+        0.36499980092048645,
+        0.1300000101327896,
+        0.36499980092048645,
+        0.14000000059604645,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "features": [
+        1.2658531665802002,
+        0.7411505579948425,
+        0.7822985053062439,
+        0.532386839389801,
+        0.30669504404067993,
+        0.576075553894043,
+        1.2782844305038452,
+        1.0555189847946167,
+        0.9195092916488647,
+        1.041343092918396
+      ],
+      "label": "Oblong",
+      "probabilities": [
+        0.0,
+        0.1250000149011612,
+        0.689999520778656,
+        0.1799999624490738,
+        0.004999999888241291,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "features": [
+        0.828000009059906,
+        0.7492875456809998,
+        0.8012633919715881,
+        0.5691643953323364,
+        0.33310285210609436,
+        0.5852488875389099,
+        1.248029112815857,
+        1.0693670511245728,
+        0.9174352884292603,
+        1.0349806547164917
+      ],
+      "label": "Triangle",
+      "probabilities": [
+        0.4099997580051422,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.5899996161460876
+      ]
+    }
+  ]
+}
