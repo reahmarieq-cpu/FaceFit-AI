@@ -135,13 +135,29 @@ const FaceFitRegistration = (() => {
 
     function validatePermit() {
       const file = permit.files[0];
-      const valid = file && ["application/pdf", "image/jpeg", "image/png"].includes(file.type) && file.size > 0 && file.size <= 2 * 1024 * 1024;
-      permit.setCustomValidity(valid ? "" : "Upload a PDF, JPG, or PNG, up to 2 MB.");
+      const valid = file && ["application/pdf", "image/jpeg", "image/png"].includes(file.type) && file.size > 0 && file.size <= 5 * 1024 * 1024;
+      permit.setCustomValidity(valid ? "" : "Upload a PDF, JPG, or PNG, up to 5 MB.");
       return valid;
+    }
+    let permitPreviewUrl = null;
+    function renderPermitPreview() {
+      const host = document.getElementById("permitVisualPreview");
+      if (!host) return;
+      host.replaceChildren();
+      if (permitPreviewUrl) URL.revokeObjectURL(permitPreviewUrl);
+      permitPreviewUrl = null;
+      if (!validatePermit()) return;
+      const file = permit.files[0];
+      permitPreviewUrl = URL.createObjectURL(file);
+      const note = document.createElement("small");
+      note.className = "text-muted";
+      note.textContent = `Ready to upload: ${file.name}`;
+      host.append(note);
     }
     permit.addEventListener("change", () => {
       const valid = validatePermit();
-      document.getElementById("permitStatus").textContent = valid ? `Selected: ${permit.files[0].name}` : "Choose a PDF, JPG, or PNG file, up to 2 MB.";
+      renderPermitPreview();
+      document.getElementById("permitStatus").textContent = valid ? `Selected: ${permit.files[0].name}` : "Choose a PDF, JPG, or PNG file, up to 5 MB.";
     });
     function validateBusiness() {
       business.querySelectorAll("input[type=text], textarea").forEach(input => { input.value = input.value.trim(); });
@@ -200,7 +216,6 @@ const FaceFitRegistration = (() => {
       form.setAttribute("aria-busy", "true");
       try {
         const file = permit.files[0];
-
         const addressParts = {
           unit: document.getElementById("addressUnit").value.trim(),
           street: document.getElementById("addressStreet").value.trim(),

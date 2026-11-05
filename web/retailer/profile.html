@@ -61,14 +61,27 @@
       <main class="app-content">
         <div class="shop-profile-layout"><section class="surface-card shop-profile-details">
           <div class="profile-header">
-            <span class="profile-header__avatar" id="profileAvatar">CV</span>
+            <div class="ff-avatar-wrap"><span class="profile-header__avatar ff-avatar" id="profileAvatar">CV</span><label class="ff-avatar-camera" id="profileCameraControl" for="profileImageInput" hidden title="Change shop image"><i class="bi bi-camera-fill"></i></label><input id="profileImageInput" type="file" accept="image/png,image/jpeg" hidden></div>
             <div>
               <h2 class="profile-header__name" id="profileHeading">ClearView Optical</h2>
               <span class="status-badge status-badge--live" id="profileStatusBadge">Approved</span>
             </div>
           </div>
 
-          <form id="shopProfileForm" novalidate>
+          <div id="profileView" class="ff-profile-view"><div class="ff-profile-summary" id="profileSummary"></div><div class="ff-profile-actions"><button type="button" id="openShopMapButton" class="btn btn-outline-secondary"><i class="bi bi-geo-alt me-2"></i>View / edit map pin</button><button type="button" id="editProfileButton" class="btn btn-brand"><i class="bi bi-pencil-square me-2"></i>Edit Profile</button></div></div>
+        </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+
+  <div class="modal fade ff-profile-modal" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl"><div class="modal-content">
+      <div class="modal-header"><div><h2 class="modal-title fs-5" id="editProfileModalTitle">Edit shop profile</h2><p class="small text-muted mb-0">Update business information and address</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">          <form id="shopProfileForm" novalidate>
+            <div class="ff-modal-photo"><span id="profileModalAvatar" class="ff-avatar">FF</span><div><label class="btn btn-outline-secondary btn-sm" for="profileImageInput"><i class="bi bi-camera me-2"></i>Change shop logo</label><p class="small text-muted mb-0 mt-1">PNG or JPG · max 2 MB</p></div></div>
             <div class="row g-3">
               <div class="col-sm-6">
                 <label class="form-label" for="profileShopName">Shop name</label>
@@ -87,35 +100,33 @@
               </div>
               <div class="col-sm-6">
                 <label class="form-label" for="profilePermit">Business permit no.</label>
-                <input id="profilePermit" name="businessPermitNumber" type="text" class="form-control field-soft" readonly>
+                <div id="profilePermit" class="ff-readonly-value" aria-label="Business permit number"></div>
               </div>
               <div class="col-12">
-                <div class="profile-address-section">
-                  <div class="profile-address-heading"><span class="profile-address-number">02</span><div><h3>Shop Address</h3><p>Use the shop's physical location customers can visit.</p></div></div>
-                  <div class="registration-address-card"><div class="row g-3">
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_unit">Unit / Building (optional)</label><input id="profileAddress_unit" class="form-control field-soft" type="text" maxlength="200" placeholder="Unit, floor, or building name" ><div class="invalid-feedback">Please enter unit / building (optional).</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_street">House / Lot Number and Street *</label><input id="profileAddress_street" class="form-control field-soft" type="text" maxlength="200" placeholder="e.g. 123 Mabini Street" required><div class="invalid-feedback">Please enter house / lot number and street.</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_barangay">Barangay / District *</label><input id="profileAddress_barangay" class="form-control field-soft" type="text" maxlength="200" placeholder="Enter barangay or district" required><div class="invalid-feedback">Please enter barangay / district.</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_city">City / Municipality *</label><input id="profileAddress_city" class="form-control field-soft" type="text" maxlength="200" placeholder="Enter city or municipality" required><div class="invalid-feedback">Please enter city / municipality.</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_province">Province / State / Region *</label><input id="profileAddress_province" class="form-control field-soft" type="text" maxlength="200" placeholder="Enter province, state, or region" required><div class="invalid-feedback">Please enter province / state / region.</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_postalCode">Postal / ZIP Code *</label><input id="profileAddress_postalCode" class="form-control field-soft" type="text" maxlength="200" placeholder="e.g. 6000" required><div class="invalid-feedback">Please enter postal / zip code.</div></div>
-                    <div class="col-sm-6"><label class="form-label" for="profileAddress_country">Country *</label><input id="profileAddress_country" class="form-control field-soft" type="text" maxlength="200" placeholder="e.g. Philippines" required><div class="invalid-feedback">Please enter country.</div></div>
-              <div class="col-sm-6">
-                <label class="form-label" for="profileEmail">Email address</label>
-                <input id="profileEmail" name="email" type="email" class="form-control field-soft" readonly>
+                <div class="profile-address-heading"><span class="profile-address-number">02</span><div><h3>Shop Address</h3><p>Where customers can visit your shop.</p></div></div>
+                <div class="registration-address-card"><div class="row g-3">
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_unit">Unit / Building (optional)</label><input id="profileAddress_unit" class="form-control field-soft" type="text" maxlength="200"></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_street">House / Lot and Street *</label><input id="profileAddress_street" class="form-control field-soft" type="text" maxlength="200" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_barangay">Barangay / District *</label><input id="profileAddress_barangay" class="form-control field-soft" type="text" maxlength="200" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_city">City / Municipality *</label><input id="profileAddress_city" class="form-control field-soft" type="text" maxlength="200" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_province">Province / Region *</label><input id="profileAddress_province" class="form-control field-soft" type="text" maxlength="200" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_postalCode">Postal / ZIP Code *</label><input id="profileAddress_postalCode" class="form-control field-soft" type="text" maxlength="200" required></div>
+                  <div class="col-sm-6"><label class="form-label" for="profileAddress_country">Country *</label><input id="profileAddress_country" class="form-control field-soft" type="text" maxlength="200" required></div>
+                </div></div>
               </div>
-                  </div></div>
-
-                </div>
-              </div>
-
+              <div class="col-12"><label class="form-label" for="profileEmail">Email address (read only)</label><input id="profileEmail" name="email" type="email" class="form-control field-soft" readonly></div>
             </div>
-            <div class="d-flex justify-content-end mt-4">
-              <button type="submit" class="btn btn-brand">Save changes</button>
+            <div class="ff-modal-footer">
+              <button type="button" id="cancelProfileButton" class="btn btn-outline-secondary me-2">Cancel</button><button type="submit" class="btn btn-brand">Save Changes</button>
             </div>
           </form>
-        </section>
-        <section class="surface-card shop-profile-location" aria-label="Shop location">
+</div>
+    </div></div>
+  </div>
+  <div class="modal fade ff-profile-modal" id="shopMapModal" tabindex="-1" aria-labelledby="shopMapModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl"><div class="modal-content">
+      <div class="modal-header"><div><h2 class="modal-title fs-5" id="shopMapModalTitle">Shop location</h2><p class="small text-muted mb-0">Search or drag the pin to your storefront</p></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">        <section class="shop-profile-location" id="profileLocationSection" aria-label="Shop location">
                 <div class="shop-location-panel">
                   <h3 class="shop-location-title"><i class="bi bi-geo-alt-fill"></i> Choose your shop location</h3>
                   <p class="small text-muted">Search for a street, landmark or neighborhood, then click the map or drag the pin to your actual storefront. The pin is provided by the retailer, not independently verified.</p>
@@ -126,13 +137,11 @@
                   <div id="shopSearchResults" class="list-group mb-2" aria-live="polite"></div>
                   <div class="d-flex gap-2 flex-wrap mb-2"><button type="button" class="btn btn-outline-secondary btn-sm" id="useShopCurrentLocation">Use my location</button><span id="shopSelectedLocation" class="small text-muted align-self-center">Select a pin on the map</span></div>
                   <div id="shopInteractiveMap" class="shop-location-map" aria-label="Interactive shop location map"></div>
-                  <div class="d-flex gap-2 flex-wrap mt-3"><button type="button" class="btn btn-primary" id="saveShopPin">Confirm &amp; save location</button><a id="openShopPin" class="btn btn-outline-secondary" href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>
+                  <div class="d-flex gap-2 flex-wrap mt-3"><button type="button" class="btn btn-primary" id="saveShopPin">Confirm &amp; save location</button></div>
                   <div id="shopPinFeedback" class="small mt-2" role="status" aria-live="polite"></div>
                 </div>
-        </section>
-        </div>
-      </main>
-    </div>
+        </section></div>
+    </div></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

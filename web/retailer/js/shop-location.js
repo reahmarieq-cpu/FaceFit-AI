@@ -29,7 +29,7 @@ function selectPin(lat, lng, zoom = null) {
   } else marker.setLatLng([lat, lng]);
   map.setView([lat, lng], zoom ?? Math.max(map.getZoom(), 16));
   $('shopSelectedLocation').textContent = `Selected: ${lat.toFixed(6)}, ${lng.toFixed(6)} — drag pin to adjust`;
-  $('openShopPin').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+
 }
 
 const map = L.map('shopInteractiveMap', { scrollWheelZoom: false }).setView(DEFAULT_CENTER, 13);

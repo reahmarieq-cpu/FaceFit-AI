@@ -34,63 +34,42 @@
       <!-- Error state (e.g. not found, no permission) -->
       <div id="error-state" class="alert alert-danger d-none" role="alert"></div>
 
-      <!-- Detail content -->
-      <div id="detail-content" class="d-none">
-
-        <div class="panel panel-pad mb-3 review-detail-card">
-          <div class="review-card-heading"><span class="review-card-icon"><i class="bi bi-shop"></i></span><div><div class="review-card-eyebrow">APPLICATION PROFILE</div><h2 class="h5 fw-bold mb-0">Retailer Information</h2></div></div>
-          <div class="row gy-3">
-            <div class="col-md-6">
-              <div class="field-label">Retail Name</div>
-              <div class="field-value" id="field-retailName">—</div>
+      <!-- Compact, responsive retailer overview -->
+      <div id="detail-content" class="d-none retailer-overview">
+        <div class="retailer-overview-grid">
+          <section class="panel retailer-overview-panel" aria-labelledby="retailer-info-title">
+            <div class="overview-section-heading"><i class="bi bi-shop"></i><h2 id="retailer-info-title">Retailer information</h2></div>
+            <div class="overview-fields">
+              <div><div class="field-label">Retail name</div><div class="field-value" id="field-retailName">—</div></div>
+              <div><div class="field-label">Contact person</div><div class="field-value" id="field-contactPerson">—</div></div>
+              <div><div class="field-label">Phone</div><div class="field-value" id="field-contactNumber">—</div></div>
+              <div><div class="field-label">Email</div><div class="field-value" id="field-emailAddress">—</div></div>
+              <div class="overview-wide"><div class="field-label">Shop address</div><div class="field-value" id="field-retailAddress">—</div></div>
+              <div><div class="field-label">Registered</div><div class="field-value" id="field-createdAt">—</div></div>
             </div>
-            <div class="col-md-6">
-              <div class="field-label">Contact Person</div>
-              <div class="field-value" id="field-contactPerson">—</div>
-            </div>
-            <div class="col-md-6">
-              <div class="field-label">Contact Number</div>
-              <div class="field-value" id="field-contactNumber">—</div>
-            </div>
-            <div class="col-md-6">
-              <div class="field-label">Email Address</div>
-              <div class="field-value" id="field-emailAddress">—</div>
-            </div>
-            <div class="col-12">
-              <div class="field-label">Retail Address</div>
-              <div class="field-value" id="field-retailAddress">—</div>
-            </div>
-            <div class="col-md-6">
-              <div class="field-label">Permit</div>
-              <div id="field-permit" class="permit-preview">—</div>
-            </div>
-            <div class="col-md-6">
-              <div class="field-label">Created At</div>
-              <div class="field-value" id="field-createdAt">—</div>
-            </div>
+          </section>
+          <div class="retailer-overview-side">
+            <section class="panel retailer-overview-panel">
+              <div class="overview-section-heading"><i class="bi bi-file-earmark-check"></i><h2>Business permit</h2></div>
+              <div id="field-permit" class="permit-preview overview-permit">—</div>
+            </section>
+            <section class="panel retailer-overview-panel">
+              <div class="overview-section-heading"><i class="bi bi-credit-card"></i><h2>Subscription</h2></div>
+              <div class="overview-fields">
+                <div><div class="field-label">Plan</div><div class="field-value" id="field-subscriptionPlan">—</div></div>
+                <div><div class="field-label">Status</div><div class="field-value" id="field-subscriptionStatus">—</div></div>
+              </div>
+            </section>
           </div>
         </div>
-
-        <div class="panel panel-pad mb-3 review-detail-card">
-          <div class="review-card-heading"><span class="review-card-icon"><i class="bi bi-credit-card"></i></span><div><div class="review-card-eyebrow">OPTIONAL DETAILS</div><h2 class="h5 fw-bold mb-0">Subscription</h2></div></div>
-          <div class="row gy-3">
-            <div class="col-md-6">
-              <div class="field-label">Subscription Plan</div>
-              <div class="field-value" id="field-subscriptionPlan">—</div>
-            </div>
-            <div class="col-md-6">
-              <div class="field-label">Subscription Status</div>
-              <div class="field-value" id="field-subscriptionStatus">—</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="alert alert-info">Subscription information is currently read-only. Updates require verified Firestore permissions and an agreed subscription schema.</div>
       </div>
     
 </div>
 </div>
 
 <script type="module" src="../assets/js/retailer-profile.js"></script>
+<style>
+.retailer-overview-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:16px;align-items:start}.retailer-overview-side{display:grid;gap:16px}.retailer-overview-panel{padding:20px 22px;border-radius:16px;border:1px solid #e3ecf0;box-shadow:0 5px 22px rgba(18,54,72,.05)}.overview-section-heading{display:flex;align-items:center;gap:10px;border-bottom:1px solid #e9eff2;padding-bottom:12px;margin-bottom:16px;color:#148ca0}.overview-section-heading h2{font-size:15px;font-weight:800;margin:0;color:#173849}.overview-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px}.overview-wide{grid-column:1/-1}.retailer-overview .field-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#728d9a;margin-bottom:5px}.retailer-overview .field-value{font-size:13px;font-weight:650;line-height:1.5;overflow-wrap:anywhere}.overview-permit .permit-photo{width:100%;max-width:180px;max-height:150px;object-fit:contain;padding:6px;background:#f4f7f9;cursor:zoom-in}.overview-permit p{font-size:12px;margin:0 0 8px}.overview-permit a{font-size:12px}.retailer-overview .panel{margin:0!important}@media(max-width:950px){.retailer-overview-grid{grid-template-columns:1fr}}@media(max-width:540px){.overview-fields{grid-template-columns:1fr}.retailer-overview-panel{padding:16px}}
+</style>
 </body>
 </html>

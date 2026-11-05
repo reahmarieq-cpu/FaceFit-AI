@@ -490,3 +490,6 @@
   }
   #metrics-content .dash-grid > aside.panel > .btn-teal { margin-top: auto !important; }
 }
+
+/* Retailer application detail: prevent oversized permit previews and whitespace */
+body:has([id*="retailerDetail"]) .permit-preview img {max-height:230px;max-width:100%;object-fit:contain;}

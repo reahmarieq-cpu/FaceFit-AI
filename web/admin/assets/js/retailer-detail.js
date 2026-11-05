@@ -14,7 +14,6 @@ import { logoutAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 import { executeApproval } from "./approval-service.js";
-import { sendRetailerDecisionEmail, isRetailerEmailConfigured } from "./retailer-decision-email.js";
 
 const nameEl = document.getElementById("admin-name");
 const emailEl = document.getElementById("admin-email");
@@ -30,8 +29,6 @@ const approveBtn = document.getElementById("approve-btn");
 const rejectBtn = document.getElementById("reject-btn");
 const actionFeedback = document.getElementById("action-feedback");
 const alreadyReviewedNote = document.getElementById("already-reviewed-note");
-let retailerForEmail = null;
-let lastEmailFailure = null;
 
 
 function initials(email) {
@@ -133,7 +130,6 @@ async function loadRetailer() {
     }
 
     const retailer = snap.data();
-    retailerForEmail = retailer;
     renderRetailer(retailer);
     // Admin can view retailer-selected demo subscriptions, but cannot manage them.
     try {
@@ -178,18 +174,7 @@ async function handleDecision(decision) {
     statusBadge.textContent = statusLabel(newStatus);
     updateReviewControls(newStatus);
 
-    // Approval is committed before email is attempted. An email failure must not undo it.
-    const decisionStatus = isApprove ? "approved" : "rejected";
-    try {
-      await sendRetailerDecisionEmail(retailerForEmail, decisionStatus);
-      lastEmailFailure = null;
-      showActionFeedback(`Retailer application ${decisionStatus}. Notification email submitted successfully.`, "success");
-    } catch (emailError) {
-      console.error("Retailer email failed after successful review:", emailError);
-      lastEmailFailure = { retailer: retailerForEmail, status: decisionStatus };
-      showActionFeedback(`Retailer application ${decisionStatus} in Firestore, but the email could not be sent: ${emailError.message}. Use Retry Email below after fixing the issue.`, "warning");
-      showRetryEmailButton();
-    }
+    showActionFeedback(`Retailer application ${newStatus}.`, "success");
   } catch (error) {
     console.error(`${decision} failed:`, error);
     showActionFeedback(
@@ -200,31 +185,6 @@ async function handleDecision(decision) {
     delete triggeringBtn.dataset.pending;
     setButtonsLoading(false);
   }
-}
-
-function showRetryEmailButton() {
-  if (!lastEmailFailure || document.getElementById("retry-retailer-email")) return;
-  const retry = document.createElement("button");
-  retry.id = "retry-retailer-email";
-  retry.type = "button";
-  retry.className = "btn btn-outline-primary mt-2";
-  retry.textContent = "Retry Email";
-  actionFeedback.insertAdjacentElement("afterend", retry);
-  retry.addEventListener("click", async () => {
-    if (!lastEmailFailure) return;
-    retry.disabled = true;
-    retry.textContent = "Sending…";
-    try {
-      await sendRetailerDecisionEmail(lastEmailFailure.retailer, lastEmailFailure.status);
-      lastEmailFailure = null;
-      showActionFeedback("Notification email submitted successfully.", "success");
-      retry.remove();
-    } catch (error) {
-      showActionFeedback(`Email still failed: ${error.message}`, "warning");
-      retry.disabled = false;
-      retry.textContent = "Retry Email";
-    }
-  });
 }
 
 approveBtn.addEventListener("click", () => handleDecision("approve"));
