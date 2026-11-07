@@ -858,6 +858,10 @@ body[data-page="subscription"] #activeSubscriptionSection .mt-4 {margin-top:12px
 body[data-page="subscription"] #activeSubscriptionSection h3 {font-size:1rem !important;margin-bottom:0;}
 .subscription-details {border:1px solid #ccdfe5;border-radius:14px;padding:12px 16px;background:#fff;}
 .subscription-details > summary {font-size:.85rem;font-weight:700;color:#123452;cursor:pointer;}
+.checkout-summary {padding:18px;border:1px solid #dbe8ee;border-radius:16px;background:#f5f9fb;}
+.checkout-environment {padding:4px 9px;border:1px solid #cddce4;border-radius:999px;background:#fff;color:#405d70;font-size:.72rem;font-weight:700;}
+.checkout-total {border-top:1px solid #dbe8ee;margin-top:16px;padding-top:14px;font-size:.86rem;}
+.checkout-total strong {font-size:1.35rem;white-space:nowrap;}
 .ff-profile-modal:has(#shopInteractiveMap) .modal-body {padding:16px;}
 .ff-profile-modal #shopInteractiveMap {width:100%;margin:0;box-sizing:border-box;}
 @media(max-width:575px) {

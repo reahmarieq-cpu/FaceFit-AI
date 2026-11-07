@@ -21,3 +21,9 @@ The upload API runs on **your own computer**, not as a hosted service. Do not ex
 - Permits and GLBs use private `firebase://` references. The backend checks ownership or admin access before issuing a five-minute download link. Any separate kiosk build must support the same private-file endpoint.
 - Admin approval Cloud Functions / Firestore rules must already be configured separately.
 - `node --test tests/frame-delete.test.mjs` checks deletion without using cloud data. The live disposable test is `node tests/cloud-delete.mjs --disposable-approved` and requires an approved test run.
+
+## Maya Sandbox checkout
+
+From the retailer Subscription page, select a plan and choose **Continue to Maya**. Use Maya's [sandbox test card details](https://developers.maya.ph/reference/sandbox-credentials-and-cards), never a real card. The server uses Maya's sandbox API only and verifies the payment, amount, and reference before activating the plan. Checkout does not create recurring billing.
+
+For a fresh local setup, set `MAYA_SANDBOX_PUBLIC_KEY` and `MAYA_SANDBOX_SECRET_KEY` in `backend/.env.maya-sandbox` using Maya's published sandbox credentials. The file is ignored by Git. Run `node --test tests/maya-sandbox.test.mjs` from `backend` to test the checkout and activation logic without using cloud services.

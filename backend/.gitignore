@@ -1,4 +1,5 @@
 .env
+.env.maya-sandbox
 node_modules/
 serviceAccountKey.json
 *.log

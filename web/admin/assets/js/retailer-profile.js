@@ -36,9 +36,9 @@ if (subscriptionSnap.exists()) {
 
   const statusName =
     subscription.status === "demo_active"
-      ? "Active (Demo)"
+      ? "Active"
       : subscription.status === "demo_cancelled"
-        ? "Cancelled (Demo)"
+        ? "Cancelled"
         : "Inactive";
 
   set("field-subscriptionPlan", planName);

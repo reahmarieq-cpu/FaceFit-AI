@@ -231,7 +231,7 @@ const FaceFitShop = (() => {
         kioskEligible = await FaceFitFirebase.kioskEntitlement();
         vtoSection.style.display = kioskEligible ? "" : "none";
         lockedSection.style.display = kioskEligible ? "none" : "";
-        if (kioskEligible) document.getElementById("vtoEntitlementMessage").textContent = "Active Retailer + Kiosk demo subscription. Upload a VTO asset if available.";
+        if (kioskEligible) document.getElementById("vtoEntitlementMessage").textContent = "Your Retailer + Kiosk plan includes virtual try-on. Add a model if available.";
       } catch (error) {
         lockedSection.style.display = "";
         console.error("Subscription check failed:", error);

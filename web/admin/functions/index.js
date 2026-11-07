@@ -19,7 +19,7 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 initializeApp();
 const db = getFirestore();
 
-exports.queueRetailerDecisionEmail = onDocumentUpdated({ document: "retailers/{retailerId}", retry: true }, async (event) => {
+exports.queueRetailerDecisionEmail = onDocumentUpdated({ document: "retailers/{retailerId}", region: "asia-southeast1", retry: true }, async (event) => {
   const before = event.data?.before.data();
   const after = event.data?.after.data();
   if (before?.status !== "pending" || !["approved", "rejected"].includes(after?.status)) return;

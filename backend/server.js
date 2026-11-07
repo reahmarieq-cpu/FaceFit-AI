@@ -4,9 +4,12 @@ import cors from "cors";
 import multer from "multer";
 import { initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import { firebaseFiles, saveFirebaseFile, frameAsset } from "./firebase-files.js";
+import { createMayaSandbox } from "./maya-sandbox.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -33,6 +36,23 @@ async function authenticate(req,res,next) {
   } catch(e) { return res.status(401).json({error:"Invalid or expired Firebase ID token"}); }
 }
 app.get("/auth/check",authenticate,(req,res)=>res.json({authenticated:true,uid:req.identity.uid}));
+config({path:fileURLToPath(new URL("./.env.maya-sandbox", import.meta.url)),quiet:true});
+const maya = createMayaSandbox({
+  db:getFirestore(), publicKey:process.env.MAYA_SANDBOX_PUBLIC_KEY, secretKey:process.env.MAYA_SANDBOX_SECRET_KEY,
+  timestamp:()=>FieldValue.serverTimestamp(),
+});
+app.post("/subscriptions/maya-sandbox/:action",authenticate,async(req,res)=>{
+  try {
+    const uid=req.identity.uid;
+    if (req.params.action==="start") return res.json(await maya.start(uid,req.body?.planType,req.get("origin")));
+    if (req.params.action==="confirm") return res.json(await maya.confirm(uid,req.body?.reference));
+    if (req.params.action==="cancel-plan") return res.json(await maya.cancelPlan(uid));
+    return res.status(404).json({error:"Unknown checkout action"});
+  } catch(error) {
+    if (!error.status) console.error("Maya sandbox checkout failed",error.name,error.code);
+    return res.status(error.status||502).json({error:error.status?error.message:"Maya sandbox is unavailable. Try again."});
+  }
+});
 const options = {
   permit:{bucket:"business-permits",max:5*1024*1024,mimes:{"application/pdf":"pdf","image/jpeg":"jpg","image/png":"png"}},
   profile:{bucket:"shop-logos",max:2*1024*1024,mimes:{"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}},

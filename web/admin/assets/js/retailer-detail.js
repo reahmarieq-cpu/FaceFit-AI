@@ -136,8 +136,9 @@ async function loadRetailer() {
       const subSnap = await getDoc(doc(db, "subscriptions", retailerId));
       if (subSnap.exists()) {
         const sub = subSnap.data();
-        setText("field-subscriptionPlan", sub.planType === "bundle" ? "Retailer + Kiosk (demo)" : "Retailer (demo)");
-        setText("field-subscriptionStatus", sub.status === "demo" ? "Demo selection — not paid or activated" : (sub.status || "—"));
+        setText("field-subscriptionPlan", sub.planType === "bundle" ? "Retailer + Kiosk" : "Retailer Plan");
+        const status = { demo_active: "Active", demo_cancelled: "Cancelled", demo: "Checkout incomplete" };
+        setText("field-subscriptionStatus", status[sub.status] || "Inactive");
       }
     } catch (subscriptionError) {
       console.warn("Could not load subscription summary:", subscriptionError);
