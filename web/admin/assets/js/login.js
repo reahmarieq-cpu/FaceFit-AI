@@ -4,7 +4,9 @@
 // DOM wiring only. All real auth logic lives in auth.js.
 // ============================================================
 
-import { loginAdmin } from "./auth.js";
+import { auth } from "./firebase-config.js";
+import { resolveRole, roleUrl } from "../../../shared/roles.js";
+import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
 
 const form = document.getElementById("login-form");
 const emailInput = document.getElementById("email");
@@ -63,8 +65,11 @@ form.addEventListener("submit", async (event) => {
 
   setLoading(true);
   try {
-    await loginAdmin(email, password);
-    window.location.href = new URLSearchParams(window.location.search).get("useEmulators") === "true" ? "dashboard.html?useEmulators=true" : "dashboard.html";
+    const credential = await signInWithEmailAndPassword(auth,email,password);
+    const role = await resolveRole(credential.user);
+    const target = roleUrl(role);
+    if (!target) { await signOut(auth); throw new Error("No administrator or retailer profile is linked to this account."); }
+    window.location.href = target;
   } catch (error) {
     console.error("Login failed:", error);
     showError(friendlyErrorMessage(error));

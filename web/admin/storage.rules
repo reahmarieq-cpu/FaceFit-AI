@@ -1,13 +1,27 @@
 rules_version = '2';
-
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Phase 1 does not upload or read any files yet (frame images
-    // arrive in a later phase). Deny everything by default so the
-    // bucket is never left open by accident.
-    match /{allPaths=**} {
-      allow read, write: if false;
+    match /retailer-permits/{uid}/{fileName} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/jpeg|image/png|application/pdf');
+      allow read: if request.auth != null && (
+        request.auth.uid == uid ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/admins/$(request.auth.uid)).data.role == 'admin'
+      );
+      allow update, delete: if false;
     }
+    match /retailer-profiles/{uid}/{fileName} {
+      allow read: if request.auth != null && (
+        request.auth.uid == uid ||
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid))
+      );
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 3 * 1024 * 1024
+        && request.resource.contentType.matches('image/jpeg|image/png');
+      allow delete: if false;
+    }
+    match /{allPaths=**} {allow read, write: if false;}
   }
 }

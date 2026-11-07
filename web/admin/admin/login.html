@@ -20,14 +20,13 @@
   <section class="login-hero">
     <div class="login-brand">
       <img src="../assets/images/logo.png" alt="FaceFit AI logo">
-      <span>FaceFit AI · Shop</span>
+      <span>FaceFit AI</span>
     </div>
 
     <div class="login-hero-body">
-      <h1>Platform administration &amp; moderation</h1>
+      <h1>One account for FaceFit AI</h1>
       <p class="lead-text">
-        Review shop applications, moderate frame listings, and maintain the
-        integrity of the FaceFit AI recommendation platform.
+        Sign in securely to access your administrator or retailer workspace.
       </p>
       <div class="login-features">
         <div class="login-feature"><i class="bi bi-shop"></i> Approve or reject eyewear retailer registrations</div>
@@ -40,8 +39,8 @@
   <section class="login-panel">
     <div class="login-card">
       <div class="eyebrow">Restricted</div>
-      <h2>Administrator sign in</h2>
-      <p class="subtitle">Authorized personnel only.</p>
+      <h2>FaceFit AI sign in</h2>
+      <p class="subtitle">For administrators and registered eyewear retailers.</p>
 
       <form id="login-form" novalidate>
         <label class="login-label" for="email">Email address</label>
@@ -56,12 +55,14 @@
           <input type="password" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required />
         </div>
 
+        <p class="text-end mt-2"><a href="../../retailer/forgot-password.html">Retailer forgot password?</a></p>
+
         <div id="login-error" class="alert alert-danger d-none" role="alert"></div>
 
         <button type="submit" id="login-btn" class="btn-teal">Sign In</button>
       </form>
 
-      <p class="login-note">Access is restricted to verified administrator accounts.</p>
+      <p class="login-note">New retailer? <a href="../../retailer/register.html">Register your shop</a>.</p>
     </div>
   </section>
 

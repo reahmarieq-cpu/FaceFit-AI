@@ -8,21 +8,25 @@ const FaceFitShop = (() => {
   const MAX_IMAGE_SIZE_IN_BYTES = 1.5 * 1024 * 1024;
   const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg"];
   const RECENT_FRAME_COUNT = 4;
-  const STATUS_LABELS = { live: "Live", pending: "Pending", draft: "Draft" };
+  const STATUS_LABELS = { live: "Live", draft: "Draft" };
+  const visibleStatus = status => status === "draft" ? "draft" : "live";
 
   let currentAccount = null;
+  let currentFrames = null;
 
   /* Helpers ------------------------------------------------------------- */
   function getFrames() {
-    return FaceFitStorage.loadFrames(currentAccount.email);
+    return currentFrames ?? FaceFitStorage.loadFrames(currentAccount.email);
   }
 
   function persistFrames(frames) {
+    currentFrames = frames;
     return FaceFitStorage.saveFrames(currentAccount.email, frames);
   }
 
   function buildStatusBadge(status) {
-    const label = STATUS_LABELS[status] || "Draft";
+    status = visibleStatus(status);
+    const label = STATUS_LABELS[status];
     return `<span class="status-badge status-badge--${FaceFitUi.escapeHtml(status)}">${label}</span>`;
   }
 
@@ -54,22 +58,9 @@ const FaceFitShop = (() => {
   }
 
   function initNotifications() {
-    const notificationList = document.getElementById("notificationList");
-    const notificationDot = document.getElementById("notificationDot");
-    const pendingFrames = getFrames().filter((frame) => frame.status === "pending");
-
-    const messages = [`${currentAccount.shop.name} is approved and live on FaceFit AI.`];
-    pendingFrames.forEach((frame) => messages.push(`${frame.name} is waiting for administrator review.`));
-
-    notificationList.innerHTML =
-      `<li><h6 class="dropdown-header">Notifications</h6></li>` +
-      messages.map((message) => `<li><span class="dropdown-item">${FaceFitUi.escapeHtml(message)}</span></li>`).join("");
-
-    notificationDot.classList.toggle("d-none", FaceFitStorage.areNotificationsRead());
-    document.getElementById("notificationButton").addEventListener("show.bs.dropdown", () => {
-      FaceFitStorage.markNotificationsRead();
-      notificationDot.classList.add("d-none");
-    });
+    import("./notifications.js")
+      .then(({ initRetailerNotifications }) => initRetailerNotifications())
+      .catch(error => console.error("Notifications initialization failed", error));
   }
 
   function initTopbarSearch() {
@@ -88,11 +79,11 @@ const FaceFitShop = (() => {
   /* Page: dashboard ----------------------------------------------------- */
   function initDashboardPage() {
     const frames = getFrames();
-    const countByStatus = (status) => frames.filter((frame) => frame.status === status).length;
+    const countByStatus = (status) => frames.filter((frame) => visibleStatus(frame.status) === status).length;
 
     document.getElementById("statTotalFrames").textContent = frames.length;
     document.getElementById("statLiveFrames").textContent = countByStatus("live");
-    document.getElementById("statPendingFrames").textContent = countByStatus("pending");
+    document.getElementById("statPendingFrames").textContent = frames.filter(frame => Boolean(frame.vtoAssetPath)).length;
     document.getElementById("statProfileViews").textContent = (currentAccount.shop.profileViews || 0).toLocaleString();
     document.getElementById("bannerShopName").textContent = currentAccount.shop.name;
 
@@ -108,7 +99,7 @@ const FaceFitShop = (() => {
       <tr>
         <td>
           <div class="frame-cell">
-            <span class="frame-thumb" style="background:${FaceFitFrameIcons.tintFromName(frame.color)}">${FaceFitFrameIcons.renderVisual(frame)}</span>
+            <span class="frame-thumb" >${FaceFitFrameIcons.renderVisual(frame)}</span>
             <div>
               <p class="frame-cell__name">${FaceFitUi.escapeHtml(frame.name)}</p>
               <p class="frame-cell__color">${FaceFitUi.escapeHtml(frame.color)}</p>
@@ -126,12 +117,10 @@ const FaceFitShop = (() => {
     const frameGrid = document.getElementById("frameGrid");
     const emptyState = document.getElementById("catalogEmptyState");
     const searchInput = document.getElementById("topbarSearchInput");
-    const filterPills = document.querySelectorAll("[data-status-filter]");
     const deleteModalElement = document.getElementById("deleteFrameModal");
     const deleteModal = new bootstrap.Modal(deleteModalElement);
 
     const filters = {
-      status: "all",
       searchText: new URLSearchParams(window.location.search).get("q") || "",
     };
     let frameIdPendingDelete = null;
@@ -140,7 +129,6 @@ const FaceFitShop = (() => {
     function getVisibleFrames() {
       const searchText = filters.searchText.trim().toLowerCase();
       return getFrames()
-        .filter((frame) => filters.status === "all" || frame.status === filters.status)
         .filter((frame) => {
           const searchableText = `${frame.name} ${frame.shape} ${frame.material} ${frame.color}`.toLowerCase();
           return searchableText.includes(searchText);
@@ -150,12 +138,16 @@ const FaceFitShop = (() => {
 
     function renderFrames() {
       const visibleFrames = getVisibleFrames();
+      const totalFrames = getFrames().length;
+      document.getElementById("catalogFrameCount").textContent = filters.searchText.trim()
+        ? `${visibleFrames.length} of ${totalFrames} frames match your search`
+        : `${totalFrames} ${totalFrames === 1 ? "frame" : "frames"} in your catalog`;
       emptyState.classList.toggle("d-none", visibleFrames.length > 0);
 
       frameGrid.innerHTML = visibleFrames.map((frame) => `
         <div class="col-12 col-sm-6 col-xl-4">
           <article class="frame-card">
-            <div class="frame-card__visual" style="background:${FaceFitFrameIcons.tintFromName(frame.color)}">${FaceFitFrameIcons.renderVisual(frame)}</div>
+            <div class="frame-card__visual" >${FaceFitFrameIcons.renderVisual(frame)}</div>
             <div class="frame-card__head">
               <h3 class="frame-card__name">${FaceFitUi.escapeHtml(frame.name)}</h3>
               ${buildStatusBadge(frame.status)}
@@ -166,21 +158,14 @@ const FaceFitShop = (() => {
               <span class="frame-tag">${FaceFitUi.escapeHtml(frame.material)}</span>
             </div>
             <p class="frame-card__description">${FaceFitUi.escapeHtml(frame.description || "No description yet.")}</p>
+            <div class="frame-vto-state">${frame.vtoAssetPath ? '<span class="vto-chip vto-chip--ready"><i class="bi bi-badge-3d"></i> VTO available</span>' : '<span class="vto-chip">Photo only</span>'}</div>
             <div class="frame-card__actions">
-              <a class="btn-card-action text-center text-decoration-none" href="add-frame.html?id=${encodeURIComponent(frame.id)}">Edit</a>
+              <a class="btn-card-action text-center text-decoration-none" href="add-frame.html?id=${encodeURIComponent(frame.id)}">Edit frame</a>
               <button type="button" class="btn-card-action btn-card-action--danger" data-delete-frame-id="${FaceFitUi.escapeHtml(frame.id)}">Delete</button>
             </div>
           </article>
         </div>`).join("");
     }
-
-    filterPills.forEach((pill) => {
-      pill.addEventListener("click", () => {
-        filters.status = pill.dataset.statusFilter;
-        filterPills.forEach((otherPill) => otherPill.classList.toggle("is-active", otherPill === pill));
-        renderFrames();
-      });
-    });
 
     searchInput.addEventListener("input", () => {
       filters.searchText = searchInput.value;
@@ -198,11 +183,17 @@ const FaceFitShop = (() => {
       deleteModal.show();
     });
 
-    document.getElementById("confirmDeleteButton").addEventListener("click", () => {
-      persistFrames(getFrames().filter((frame) => frame.id !== frameIdPendingDelete));
-      deleteModal.hide();
-      renderFrames();
-      FaceFitUi.showToast("Frame deleted.");
+    document.getElementById("confirmDeleteButton").addEventListener("click", async () => {
+      const button=document.getElementById("confirmDeleteButton");
+      if(!frameIdPendingDelete || button.disabled) return;
+      button.disabled=true;button.textContent="Deleting…";
+      try {
+        await FaceFitFirebase.deleteFrameRecord(frameIdPendingDelete);
+        persistFrames(getFrames().filter(frame=>frame.id!==frameIdPendingDelete));
+        deleteModal.hide();renderFrames();
+        FaceFitUi.showToast("Frame and cloud files deleted.");
+      }catch(error){console.error("Cloud deletion failed",error);FaceFitUi.showToast(`Delete failed: ${error.message}`,"danger");}
+      finally{button.disabled=false;button.textContent="Delete";}
     });
 
     renderFrames();
@@ -228,11 +219,37 @@ const FaceFitShop = (() => {
 
     const editedFrameId = new URLSearchParams(window.location.search).get("id");
     const editedFrame = editedFrameId ? getFrames().find((frame) => frame.id === editedFrameId) : null;
-    let selectedImageDataUrl = editedFrame ? editedFrame.imageDataUrl : null;
+    let selectedImageDataUrl = editedFrame ? (editedFrame.imageDataUrl || editedFrame.productImageUrl) : null;
+    let selectedImageFile = null;
+    const vtoInput = document.getElementById("vtoAssetInput");
+    const vtoSection = document.getElementById("vtoUploadSection");
+    const lockedSection = document.getElementById("vtoLockedSection");
+    const vtoFeedback = document.getElementById("vtoAssetFeedback");
+    let kioskEligible = false;
+    (async () => {
+      try {
+        kioskEligible = await FaceFitFirebase.kioskEntitlement();
+        vtoSection.style.display = kioskEligible ? "" : "none";
+        lockedSection.style.display = kioskEligible ? "none" : "";
+        if (kioskEligible) document.getElementById("vtoEntitlementMessage").textContent = "Your Retailer + Kiosk plan includes virtual try-on. Add a model if available.";
+      } catch (error) {
+        lockedSection.style.display = "";
+        console.error("Subscription check failed:", error);
+      }
+    })();
+    if (editedFrame?.vtoAssetPath) vtoFeedback.textContent = `Existing VTO: ${editedFrame.vtoType || "asset"} (upload a new file to replace)`;
+    vtoInput.addEventListener("change", () => {
+      const file = vtoInput.files[0];
+      if (!file) return;
+      const ext = file.name.toLowerCase().split(".").pop();
+      vtoFeedback.textContent = !["glb"].includes(ext) || file.size > 10 * 1024 * 1024
+        ? "Invalid VTO file. Choose a GLB under 10 MB." : `Selected: ${file.name}`;
+    });
 
     function updatePreview() {
       const shape = shapeSelect.value;
       const colorName = colorInput.value.trim();
+      if (!previewStage) return;
       previewName.textContent = nameInput.value.trim() || "Frame name";
       previewMeta.textContent = `${shape} · ${colorName || "Color"}`;
       previewStage.innerHTML = FaceFitFrameIcons.renderVisual({
@@ -262,6 +279,7 @@ const FaceFitShop = (() => {
         return;
       }
 
+      selectedImageFile = file;
       const reader = new FileReader();
       reader.addEventListener("load", () => {
         selectedImageDataUrl = reader.result;
@@ -281,8 +299,8 @@ const FaceFitShop = (() => {
       descriptionInput.value = editedFrame.description || "";
       document.title = "Edit Frame · FaceFit AI Shop";
       document.querySelector(".topbar-heading__title").textContent = "Edit Frame";
-      document.querySelector(".topbar-heading__subtitle").textContent = "Update your listing. It will be re-reviewed.";
-      form.querySelector("button[type='submit']").textContent = "Save & resubmit";
+      document.querySelector(".topbar-heading__subtitle").textContent = "Update your frame details.";
+      form.querySelector("button[type='submit']").textContent = "Save Changes";
       form.querySelector(".surface-card__title").textContent = "Edit frame details";
       form.querySelector(".eyebrow").textContent = "Existing listing";
     }
@@ -305,35 +323,76 @@ const FaceFitShop = (() => {
     });
     dropzone.addEventListener("drop", (event) => handleImageFile(event.dataTransfer.files[0]));
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!FaceFitUi.validateForm(form)) {
-        return;
+      if (!FaceFitUi.validateForm(form)) return;
+      if (!selectedImageFile && !editedFrame?.productImageUrl) {
+        showImageError("A product photo is required before saving.");
+        dropzone.scrollIntoView({behavior:"smooth",block:"center"}); return;
       }
-
-      const frames = getFrames();
-      const submittedFrame = {
-        id: editedFrame ? editedFrame.id : `frame-${Date.now()}`,
-        name: nameInput.value.trim(),
-        shape: shapeSelect.value,
-        material: materialInput.value.trim(),
-        color: colorInput.value.trim(),
-        description: descriptionInput.value.trim(),
-        imageDataUrl: selectedImageDataUrl,
-        status: "pending",
-        createdAt: editedFrame ? editedFrame.createdAt : Date.now(),
-      };
-
-      const updatedFrames = editedFrame
-        ? frames.map((frame) => (frame.id === editedFrame.id ? submittedFrame : frame))
-        : [submittedFrame, ...frames];
-
-      if (!persistFrames(updatedFrames)) {
-        FaceFitUi.showToast("Couldn't save. Try a smaller image.", "danger");
-        return;
+      const button = form.querySelector('button[type="submit"]');
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "Saving to Firebase…";
+      let saveStage = "Preparing frame";
+      const status = document.getElementById("frameSaveStatus");
+      const report = message => { saveStage = message; if(status) status.textContent = message; };
+      try {
+        const frames = getFrames();
+        const frameId = editedFrame ? editedFrame.id : `frame-${Date.now()}`;
+        const submittedFrame = {
+          id: frameId, name: nameInput.value.trim(), shape: shapeSelect.value,
+          material: materialInput.value.trim(), color: colorInput.value.trim(),
+          description: descriptionInput.value.trim(),
+          imageDataUrl: selectedImageFile ? null : (editedFrame?.imageDataUrl || null),
+          productImageUrl: editedFrame?.productImageUrl || null,
+          productImagePath: editedFrame?.productImagePath || null,
+          vtoAssetUrl: editedFrame?.vtoAssetUrl || null,
+          vtoAssetPath: editedFrame?.vtoAssetPath || null,
+          vtoType: editedFrame?.vtoType || null,
+          vtoStatus: editedFrame?.vtoStatus || "not_provided",
+          status: editedFrame ? visibleStatus(editedFrame.status) : "live",
+          createdAt: editedFrame ? editedFrame.createdAt : Date.now(),
+        };
+        if (selectedImageFile) {
+          report("Uploading product photo…");
+          const result = await FaceFitFirebase.uploadFrameAsset(selectedImageFile, frameId, "product");
+          submittedFrame.productImageUrl = result.url;
+          submittedFrame.productImagePath = result.path;
+        }
+        const vtoFile = vtoInput.files[0];
+        if (vtoFile) {
+          if (!kioskEligible) throw new Error("Active kiosk subscription required for VTO uploads.");
+          report("Uploading GLB model…");
+          const result = await FaceFitFirebase.uploadFrameAsset(vtoFile, frameId, "vto");
+          submittedFrame.vtoAssetUrl = result.url;
+          submittedFrame.vtoAssetPath = result.path;
+          submittedFrame.vtoType = result.type === "glb" ? "3d" : "2d";
+          submittedFrame.vtoStatus = "asset_uploaded";
+        }
+        if (!submittedFrame.productImageUrl && !submittedFrame.imageDataUrl) throw new Error("Upload a product photo before saving.");
+        report("Saving frame details to Firestore…");
+        await FaceFitFirebase.saveFrameRecord(submittedFrame);
+        // Only clean old files after Firestore has the replacement paths.
+        if (editedFrame?.productImagePath && editedFrame.productImagePath !== submittedFrame.productImagePath)
+          await FaceFitFirebase.cleanupReplacedAsset(frameId,"product",editedFrame.productImagePath).catch(console.warn);
+        if (editedFrame?.vtoAssetPath && editedFrame.vtoAssetPath !== submittedFrame.vtoAssetPath)
+          await FaceFitFirebase.cleanupReplacedAsset(frameId,"vto",editedFrame.vtoAssetPath).catch(console.warn);
+        const updatedFrames = editedFrame ? frames.map(frame => frame.id === editedFrame.id ? submittedFrame : frame) : [submittedFrame, ...frames];
+        if (!persistFrames(updatedFrames)) {
+          FaceFitUi.showToast("Saved to Firebase, but local cache failed. Check browser storage.", "warning");
+        } else {
+          FaceFitUi.showToast("Frame saved to Firebase successfully.");
+        }
+        setTimeout(() => { window.location.href = "catalog.html"; }, 900);
+      } catch (error) {
+        console.error("Frame save failed at:", saveStage, error);
+        if(status) status.textContent = `Failed during ${saveStage}: ${error.message || "Unknown error"}`;
+        FaceFitUi.showToast(`Save failed: ${error.message || "Check Firebase permissions."}`, "danger");
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
       }
-      FaceFitUi.showToast(`${submittedFrame.name} was submitted for review.`);
-      setTimeout(() => { window.location.href = "catalog.html"; }, 800);
     });
 
     updatePreview();
@@ -342,53 +401,138 @@ const FaceFitShop = (() => {
   /* Page: shop profile -------------------------------------------------- */
   function initProfilePage() {
     const form = document.getElementById("shopProfileForm");
+    const view = document.getElementById("profileView");
+    const summary = document.getElementById("profileSummary");
+    const location = document.getElementById("profileLocationSection");
+    const editButton = document.getElementById("editProfileButton");
+    const cancelButton = document.getElementById("cancelProfileButton");
+    const avatar = document.getElementById("profileAvatar");
+    const imageInput = document.getElementById("profileImageInput");
+    const camera = document.getElementById("profileCameraControl");
     const fields = {
       name: document.getElementById("profileShopName"),
       contactPerson: document.getElementById("profileContactPerson"),
-      phone: document.getElementById("profilePhone"),
-      businessPermitNumber: document.getElementById("profilePermit"),
-      address: document.getElementById("profileAddress"),
+      phone: document.getElementById("profilePhone")
     };
-    const emailInput = document.getElementById("profileEmail");
-
-    function renderProfileHeader() {
-      document.getElementById("profileAvatar").textContent = FaceFitUi.getInitials(currentAccount.shop.name);
-      document.getElementById("profileHeading").textContent = currentAccount.shop.name;
+    const keys = ["unit", "street", "barangay", "city", "province", "postalCode", "country"];
+    const addressInputs = Object.fromEntries(keys.map(key => [key, document.getElementById(`profileAddress_${key}`)]));
+    const saveButton = form.querySelector('button[type="submit"]');
+    const editModalElement = document.getElementById("editProfileModal");
+    const mapModalElement = document.getElementById("shopMapModal");
+    const editModal = bootstrap.Modal.getOrCreateInstance(editModalElement);
+    const mapModal = bootstrap.Modal.getOrCreateInstance(mapModalElement);
+    document.getElementById("openShopMapButton").addEventListener("click", () => mapModal.show());
+    mapModalElement.addEventListener("shown.bs.modal", () => window.dispatchEvent(new Event("resize")));
+    editModalElement.addEventListener("hidden.bs.modal", () => { if (!saveButton.disabled) discard(); });
+    let pendingImage = null;
+    let previewUrl = null;
+    function escape(value) { return FaceFitUi.escapeHtml(String(value || "—")); }
+    function renderAvatar(url) {
+      avatar.replaceChildren();
+      avatar.style.backgroundImage = url ? `url("${url.replace(/\"/g, '%22')}")` : "none";
+      avatar.textContent = url ? "" : FaceFitUi.getInitials(currentAccount.shop.name);
+      const modalAvatar = document.getElementById("profileModalAvatar");
+      modalAvatar.style.backgroundImage = avatar.style.backgroundImage;
+      modalAvatar.textContent = avatar.textContent;
     }
-
-    Object.entries(fields).forEach(([key, input]) => { input.value = currentAccount.shop[key] || ""; });
-    emailInput.value = currentAccount.email;
-    renderProfileHeader();
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (!FaceFitUi.validateForm(form)) {
-        return;
+    function populate() {
+      const shop = currentAccount.shop;
+      Object.entries(fields).forEach(([key, input]) => input.value = shop[key] || "");
+      keys.forEach(key => addressInputs[key].value = shop.addressParts?.[key] || "");
+      document.getElementById("profilePermit").textContent = shop.businessPermitNumber || "Not provided";
+      document.getElementById("profileEmail").value = currentAccount.email;
+      document.getElementById("profileHeading").textContent = shop.name;
+      renderAvatar(shop.profileImageUrl);
+      summary.innerHTML = [
+        ["Shop name", shop.name], ["Contact person", shop.contactPerson],
+        ["Phone", shop.phone], ["Business permit no.", shop.businessPermitNumber],
+        ["Shop address", shop.address], ["Email address", currentAccount.email]
+      ].map(([label,value]) => `<div class="ff-summary-item"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("");
+    }
+    function setEditing(editing) {
+      view.hidden = false;
+      form.hidden = false;
+      location.hidden = false;
+      camera.hidden = true;
+      if (editing) editModal.show();
+      else {
+        editModal.hide();
+        form.classList.remove("was-validated");
       }
-
-      const accounts = FaceFitStorage.getAccounts();
-      const storedAccount = accounts.find((account) => account.email === currentAccount.email);
-      ["name", "contactPerson", "phone", "address"].forEach((key) => {
-        storedAccount.shop[key] = fields[key].value.trim();
-      });
-      FaceFitStorage.saveAccounts(accounts);
-
-      currentAccount = storedAccount;
-      document.getElementById("shopName").textContent = currentAccount.shop.name;
-      document.getElementById("shopInitials").textContent = FaceFitUi.getInitials(currentAccount.shop.name);
-      renderProfileHeader();
-      form.classList.remove("was-validated");
-      FaceFitUi.showToast("Shop profile saved.");
+    }
+    function discard() {
+      pendingImage = null;
+      imageInput.value = "";
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = null;
+      populate();
+      setEditing(false);
+    }
+    editButton.addEventListener("click", () => { populate(); setEditing(true); });
+    cancelButton.addEventListener("click", discard);
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      if (!["image/png", "image/jpeg"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+        FaceFitUi.showToast("Choose a PNG or JPG image smaller than 2 MB.", "danger");
+        imageInput.value = ""; return;
+      }
+      pendingImage = file;
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+      renderAvatar(previewUrl);
     });
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!FaceFitUi.validateForm(form)) return;
+      const parts = Object.fromEntries(keys.map(key => [key, addressInputs[key].value.trim()]));
+      const updates = {
+        retailName: fields.name.value.trim(),
+        contactPerson: fields.contactPerson.value.trim(),
+        contactNumber: fields.phone.value.trim(),
+        retailAddress: keys.map(key => parts[key]).filter(Boolean).join(", "),
+        addressParts: parts
+      };
+      saveButton.disabled = true; cancelButton.disabled = true;
+      saveButton.textContent = "Saving…";
+      try {
+        if (pendingImage) updates.profileImageUrl = await window.FaceFitFirebase.uploadRetailerImage(pendingImage, "profile");
+        await window.FaceFitFirebase.updateRetailerProfile(updates);
+        currentAccount.shop = { ...currentAccount.shop, name: updates.retailName, contactPerson: updates.contactPerson,
+          phone: updates.contactNumber, address: updates.retailAddress, addressParts: parts,
+          profileImageUrl: updates.profileImageUrl || currentAccount.shop.profileImageUrl };
+        document.getElementById("shopName").textContent = currentAccount.shop.name;
+        document.getElementById("shopInitials").textContent = FaceFitUi.getInitials(currentAccount.shop.name);
+        discard();
+        FaceFitUi.showToast("Shop profile saved successfully.");
+      } catch (error) {
+        console.error("Shop profile save failed", error);
+        FaceFitUi.showToast(`Save failed: ${error.message || "Check Firebase permissions."}`, "danger");
+      } finally {
+        saveButton.disabled = false; cancelButton.disabled = false; saveButton.textContent = "Save Changes";
+      }
+    });
+    populate(); setEditing(false);
   }
 
   /* Entry point --------------------------------------------------------- */
-  function initPage(pageName) {
-    currentAccount = FaceFitAuth.requireApprovedSession();
+  async function initPage(pageName) {
+    currentAccount = await FaceFitAuth.requireApprovedSession();
     if (!currentAccount) {
       return;
     }
     initShell();
+    if (["dashboard", "catalog", "add-frame"].includes(pageName)) {
+      try {
+        const cloudFrames = await window.FaceFitFirebase.loadFrameRecords();
+        const cloudIds = new Set(cloudFrames.map(frame => frame.id));
+        const localDrafts = getFrames().filter(frame => !cloudIds.has(frame.id) && !frame.productImagePath && !frame.vtoAssetPath);
+        persistFrames([...cloudFrames, ...localDrafts]);
+      } catch (error) {
+        console.error("Cloud frames could not be loaded", error);
+        FaceFitUi.showToast("Could not refresh frames from Firebase. Showing cached frames.", "warning");
+      }
+    }
 
     const pageInitializers = {
       "dashboard": initDashboardPage,

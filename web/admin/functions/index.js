@@ -11,11 +11,45 @@
 // ============================================================
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentUpdated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 initializeApp();
 const db = getFirestore();
+
+exports.queueRetailerDecisionEmail = onDocumentUpdated({ document: "retailers/{retailerId}", region: "asia-southeast1", retry: true }, async (event) => {
+  const before = event.data?.before.data();
+  const after = event.data?.after.data();
+  if (before?.status !== "pending" || !["approved", "rejected"].includes(after?.status)) return;
+  const uid = event.params.retailerId;
+  if (before.userId !== uid || after.userId !== uid) return;
+
+  let recipient;
+  try {
+    recipient = await getAuth().getUser(uid);
+  } catch (error) {
+    if (error.code === "auth/user-not-found") return;
+    throw error;
+  }
+  if (!recipient.email || recipient.disabled) return;
+
+  const approved = after.status === "approved";
+  try {
+    await db.collection("mail").doc(event.id).create({
+      to: [recipient.email],
+      message: {
+        subject: approved ? "Your FaceFit AI retailer application was approved" : "FaceFit AI retailer application update",
+        text: approved
+          ? "Your application to join FaceFit AI was approved. You can now sign in to the retailer portal."
+          : "Thank you for applying to FaceFit AI. Your retailer application was not approved.",
+      },
+    });
+  } catch (error) {
+    if (error.code !== 6) throw error;
+  }
+});
 
 /**
  * Throws if the caller is not signed in, or is not a verified

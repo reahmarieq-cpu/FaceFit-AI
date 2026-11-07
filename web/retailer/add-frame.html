@@ -24,6 +24,7 @@
         <a class="sidebar-link" href="dashboard.html"><i class="bi bi-grid"></i>Dashboard</a>
         <a class="sidebar-link" href="catalog.html"><i class="bi bi-eyeglasses"></i>Frame Catalog</a>
         <a class="sidebar-link is-active" href="add-frame.html"><i class="bi bi-plus-lg"></i>Add Frame</a>
+        <a class="sidebar-link" href="subscription.html"><i class="bi bi-credit-card"></i>Subscription</a>
         <a class="sidebar-link" href="profile.html"><i class="bi bi-shop"></i>Shop Profile</a>
       </nav>
       <div class="shop-chip">
@@ -101,27 +102,34 @@
 
             <div class="col-xl-4">
               <section class="surface-card mb-3">
-                <p class="surface-card__label">Frame image</p>
+                <p class="surface-card__label">Product photo <span class="text-danger">*</span></p>
                 <label class="dropzone" id="imageDropzone" for="frameImageInput">
                   <i class="bi bi-upload"></i>
                   <p class="dropzone__title">Drop image or click to upload</p>
-                  <p class="dropzone__hint">PNG or JPG, transparent background preferred</p>
+                  <p class="dropzone__hint">PNG or JPG · Required for mobile and kiosk browsing</p>
                   <p class="dropzone__file d-none" id="imageFileName"></p>
                   <p class="dropzone__error d-none" id="imageError"></p>
                 </label>
                 <input id="frameImageInput" type="file" accept="image/png,image/jpeg" class="visually-hidden">
               </section>
 
-              <section class="surface-card">
-                <p class="surface-card__label">Live preview</p>
-                <div class="preview-stage" id="previewStage"></div>
-                <p class="preview-name" id="previewName">Frame name</p>
-                <p class="preview-meta" id="previewMeta">Round · Color</p>
+              <section class="surface-card" id="vtoUploadSection" style="display:none">
+                <p class="surface-card__label">Kiosk Virtual Try-On</p>
+                <p class="text-muted small mb-2" id="vtoEntitlementMessage">Checking kiosk subscription…</p>
+                <label class="form-label" for="vtoAssetInput">3D VTO model (.glb)</label>
+                <input class="form-control field-soft" type="file" id="vtoAssetInput" accept=".glb,model/gltf-binary">
+                <div class="form-text">Optional GLB for kiosk subscribers. Android 3D renderer and admin approval required. Max 10 MB.</div>
+                <p class="small mt-2" id="vtoAssetFeedback" role="status"></p>
+              </section>
+              <section class="surface-card" id="vtoLockedSection" style="display:none">
+                <p class="surface-card__label">Kiosk Virtual Try-On</p>
+                <p class="text-muted small mb-0">Available with an active Retailer + Kiosk subscription. Product photos and details are available on both plans. <a href="subscription.html">View subscription</a>.</p>
               </section>
 
+              <p id="frameSaveStatus" class="small text-muted" role="status" aria-live="polite"></p>
               <div class="form-actions">
                 <a class="btn-light-pill" href="dashboard.html">Cancel</a>
-                <button type="submit" class="btn btn-brand">Submit for review</button>
+                <button type="submit" class="btn btn-brand">Add Frame</button>
               </div>
             </div>
           </div>
@@ -134,6 +142,7 @@
   <script src="js/storage.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/frame-icons.js"></script>
+  <script type="module" src="js/firebase-bridge.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/main.js"></script>

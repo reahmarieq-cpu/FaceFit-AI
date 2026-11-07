@@ -618,3 +618,252 @@ textarea.field-soft { resize: vertical; min-height: 96px; }
   .frame-table thead th:nth-child(2),
   .frame-table tbody td:nth-child(2) { display: none; }
 }
+
+/* Firestore-backed retailer notification dropdown */
+.notification-menu { width: min(370px, 92vw); max-height: 430px; overflow-y: auto; }
+.notification-heading { display:flex; justify-content:space-between; align-items:center; padding: .65rem .85rem; font-weight:700; font-size:.82rem; }
+.notification-entry { display:flex; flex-direction:column; gap:.3rem; text-align:left; border-radius:10px; margin:.15rem 0; }
+.notification-entry strong { font-size:.82rem; }
+.notification-entry span { font-size:.76rem; line-height:1.45; }
+.notification-entry small { color:#64748b; font-size:.68rem; }
+.notification-entry--unread { background:#e9f8f6; border-left:3px solid #159f92; }
+.notification-empty { padding:1rem; color:#64748b; text-align:center; font-size:.8rem; }
+
+/* FaceFit AI 2026: consistent responsive retailer portal layouts */
+.app-main, .app-content, .surface-card { min-width: 0; }
+.app-content { width: 100%; max-width: none; }
+.app-content > .surface-card,
+.app-content > .container,
+.app-content > .container-fluid { max-width: 100%; }
+.surface-card { overflow-wrap: anywhere; }
+.shop-profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr);
+  gap: 22px;
+  align-items: start;
+  width: 100%;
+}
+.shop-profile-layout > .surface-card { width: 100%; max-width: none; min-width: 0; }
+.shop-profile-location .shop-location-panel { padding: 0; border: 0; background: transparent; }
+.shop-profile-location .shop-location-map { height: clamp(360px, 40vw, 520px); }
+.shop-profile-layout .form-control { min-width: 0; }
+.app-content .table-responsive { max-width: 100%; overflow-x: auto; }
+@media (max-width: 1199.98px) {
+  .shop-profile-layout { grid-template-columns: minmax(0, 1fr); }
+  .shop-profile-location .shop-location-map { height: 390px; }
+}
+@media (max-width: 575.98px) {
+  .shop-profile-layout { gap: 14px; }
+  .shop-profile-location .shop-location-map { height: 300px; }
+  .shop-profile-layout > .surface-card { padding: 18px; }
+}
+
+/* Equal-height alignment: shop profile and frame creation */
+@media (min-width: 1200px) {
+  .shop-profile-layout { align-items: stretch; }
+  .shop-profile-layout > .surface-card { height: 100%; }
+  .shop-profile-details { display: flex; flex-direction: column; }
+  .shop-profile-details #shopProfileForm {
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .shop-profile-details #shopProfileForm > .d-flex.justify-content-end {
+    margin-top: auto;
+  }
+  .shop-profile-location { display: flex; flex-direction: column; }
+  body[data-page="add-frame"] #addFrameForm > .row > [class*="col-"] {
+    display: flex; flex-direction: column;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > [class*="col-"] > .surface-card {
+    width: 100%;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-8 > .surface-card {
+    flex: 1;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 > .surface-card:nth-of-type(2) {
+    flex: 1;
+  }
+  body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 > .form-actions {
+    margin-top: auto;
+  }
+}
+
+/* Registration-inspired editable address fields in the retailer profile */
+.shop-profile-layout { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr); align-items: stretch; }
+.shop-profile-layout > .surface-card { padding: clamp(20px, 2vw, 32px); }
+.profile-address-section { margin-top: 8px; }
+.profile-address-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.profile-address-number { display: grid; place-items: center; flex: 0 0 32px; height: 32px; background: #e0f4f7; color: #07859c; border-radius: 10px; font-weight: 800; font-size: .75rem; }
+.profile-address-heading h3 { margin: 0; font-size: 1rem; font-weight: 800; color: #102e48; }
+.profile-address-heading p { margin: 3px 0 0; color: #71869a; font-size: .78rem; }
+.shop-profile-details .registration-address-card { padding: 20px; border-radius: 18px; background: #f7fbfd; }
+.profile-address-help { font-size: .75rem; color: #6d8192; margin: 10px 0 0; }
+.shop-profile-location .shop-location-map { height: clamp(460px, 42vw, 650px); }
+@media (max-width: 1199.98px) {
+  .shop-profile-layout { grid-template-columns: minmax(0, 1fr); }
+  .shop-profile-location .shop-location-map { height: 420px; }
+}
+@media (max-width: 575.98px) {
+  .shop-profile-details .registration-address-card { padding: 14px; }
+  .shop-profile-location .shop-location-map { height: 310px; }
+}
+
+/* Shop profile address: strict two-column field grid, responsive on phones */
+.shop-profile-details .registration-address-card > .row {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 14px;
+  margin: 0 !important;
+}
+.shop-profile-details .registration-address-card > .row > [class*="col-"] {
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.shop-profile-details .registration-address-card .form-control { width: 100%; }
+@media (max-width: 650px) {
+  .shop-profile-details .registration-address-card > .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* Shop Profile: one definitive desktop alignment rule (no conflicting overrides). */
+@media (min-width: 1200px) {
+  .shop-profile-layout { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+  .shop-profile-layout > .surface-card { height:auto; align-self:stretch; min-width:0; box-sizing:border-box; }
+  .shop-profile-details { display:flex; flex-direction:column; }
+  .shop-profile-details #shopProfileForm { display:flex; flex-direction:column; flex:1; }
+  .shop-profile-details #shopProfileForm > .d-flex.justify-content-end { margin-top:auto !important; padding-top:16px; }
+  .shop-profile-location { display:flex; flex-direction:column; }
+  .shop-profile-location .shop-location-panel { display:flex; flex-direction:column; flex:1; min-height:0; }
+  .shop-profile-location .shop-location-map { height:485px !important; min-height:485px !important; max-height:none !important; flex:1 1 auto; width:100%; }
+}
+
+/* Profile view / edit experience */
+[hidden] { display: none !important; }
+.ff-avatar-wrap { position:relative; width:76px; height:76px; flex-shrink:0; }
+.ff-avatar { display:flex; align-items:center; justify-content:center; width:76px; height:76px; border-radius:50%; background-color:#2c3c5d; color:#fff; font-weight:800; font-size:1.4rem; background-size:cover; background-position:center; }
+.ff-avatar-camera { position:absolute; right:-3px; bottom:-2px; width:31px; height:31px; border-radius:50%; background:#f5a77e; color:#fff; border:3px solid #fff; display:grid; place-items:center; cursor:pointer; box-shadow:0 2px 7px #0002; }
+.ff-profile-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 22px; margin-top:22px; }
+.ff-summary-item { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.ff-summary-item span { color:#64748b; font-size:.78rem; font-weight:700; }
+.ff-summary-item strong { color:#18344c; font-size:.92rem; font-weight:600; padding:13px 15px; border:1px solid #dce8ed; background:#f8fbfc; border-radius:13px; overflow-wrap:anywhere; }
+.ff-readonly-value { padding:13px 15px; border:1px solid #e0e9ed; border-radius:12px; background:#f2f6f8; color:#506678; }
+body[data-page="add-frame"] .form-actions { margin-top:28px !important; padding-top:8px; }
+body[data-page="subscription"] .shop-banner { border-radius:18px; padding:18px 20px; color:#123452; background:linear-gradient(120deg,#e7f6f8,#f6fbfc); border:1px solid #d7ebee; box-shadow:none; }
+body[data-page="subscription"] .shop-banner__text { color:#405d70; max-width:none; font-size:.8rem; }
+body[data-page="subscription"] .shop-banner__icon { color:#087888; background:#d2edf0; }
+body[data-page="subscription"] main > .row .surface-card { border:1px solid #dcecef; border-radius:18px; padding:18px 20px; box-shadow:0 8px 24px #153d4c0b; transition:box-shadow .2s,transform .2s; }
+body[data-page="subscription"] main > .row .surface-card:hover { box-shadow:0 14px 35px #153d4c15; transform:translateY(-2px); }
+body[data-page="subscription"] .surface-card .btn-brand { min-height:45px; }
+@media(max-width:575px) { .ff-profile-summary { grid-template-columns:1fr; } body[data-page="subscription"] main > .row .surface-card { padding:20px; } }
+
+/* Local QA layout fixes — keep profile sections within the content column */
+.shop-profile-layout { grid-template-columns: minmax(0,1fr) !important; align-items:start !important; }
+.shop-profile-layout > .surface-card { height:auto !important; align-self:auto !important; }
+.shop-profile-details #shopProfileForm { display:block !important; flex:none !important; width:100%; min-width:0; }
+.shop-profile-details #shopProfileForm[hidden], .shop-profile-location[hidden], .ff-avatar-camera[hidden] { display:none !important; }
+.shop-profile-details #shopProfileForm > .d-flex.justify-content-end { margin-top:20px !important; }
+.shop-profile-details .registration-address-card { max-width:100%; }
+body[data-page="add-frame"] #addFrameForm > .row > [class*="col-"] { display:block !important; }
+body[data-page="add-frame"] #addFrameForm > .row > .col-xl-8 > .surface-card { flex:none !important; height:auto !important; min-height:0 !important; }
+body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 > .surface-card { flex:none !important; margin-bottom:16px !important; }
+body[data-page="add-frame"] .form-actions { margin-top:16px !important; padding-top:0 !important; }
+body[data-page="add-frame"] .dropzone { min-height:145px; }
+body[data-page="add-frame"] .surface-card { padding:22px; }
+@media(min-width:1200px){body[data-page="add-frame"] #addFrameForm > .row > .col-xl-8 {flex:0 0 60%;max-width:60%}body[data-page="add-frame"] #addFrameForm > .row > .col-xl-4 {flex:0 0 40%;max-width:40%}}
+
+/* Final local layout guardrails: prevent profile editor and frame actions overflow */
+body[data-page="profile"] .app-content, body[data-page="add-frame"] .app-content {min-width:0; overflow-x:clip;}
+body[data-page="profile"] .shop-profile-layout, body[data-page="profile"] .shop-profile-details, body[data-page="profile"] .shop-profile-location {min-width:0; max-width:100%;}
+body[data-page="profile"] #shopProfileForm .row > *, body[data-page="add-frame"] #addFrameForm .row > * {min-width:0;}
+body[data-page="add-frame"] .form-actions {display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;}
+body[data-page="add-frame"] .dropzone {max-width:100%;}
+body[data-page="profile"] .ff-avatar, body[data-page="profile"] .profile-header__avatar {border-radius:50%;object-fit:cover;}
+
+/* FaceFit catalog refresh — balanced desktop sizing and readable photos */
+body[data-page="catalog"] .app-content {max-width: 1580px; margin:0 auto; width:100%;}
+body[data-page="catalog"] #frameGrid > div {min-width:0;}
+body[data-page="catalog"] .frame-card {padding:18px; border:1px solid #e1ebef; border-radius:22px; box-shadow:0 8px 26px rgba(20,52,72,.065);}
+body[data-page="catalog"] .frame-card__visual {height:clamp(170px,16vw,225px); padding:16px; background:#f4f8fa !important; border:1px solid #e6eef2; border-radius:17px;}
+body[data-page="catalog"] .frame-card__visual img {width:100%;height:100%;object-fit:contain;object-position:center;filter:drop-shadow(0 7px 10px rgba(25,50,70,.10));}
+body[data-page="catalog"] .frame-card__visual svg {width:55%;height:50%;}
+body[data-page="catalog"] .frame-card__actions {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:auto;gap:7px;}
+body[data-page="catalog"] .btn-card-action {min-width:0;display:flex;align-items:center;justify-content:center;min-height:38px;padding:7px 4px;font-size:.72rem;}
+.frame-vto-state {margin:0 0 13px;}
+.vto-chip {display:inline-flex;padding:6px 10px;border-radius:10px;background:#f0f4f7;color:#607789;font-size:.72rem;font-weight:700;}
+.vto-chip--ready {background:#e1f6ee;color:#177657;}
+body[data-page="catalog"] .frame-card__name {font-size:1.02rem;line-height:1.4;}
+body[data-page="catalog"] .frame-card__description {min-height:34px;}
+body[data-page="add-frame"] .app-content,body[data-page="profile"] .app-content {max-width:1600px;margin:0 auto;width:100%;}
+body[data-page="add-frame"] #addFrameForm .surface-card {border-radius:20px;box-shadow:0 8px 25px rgba(20,52,72,.05);}
+body[data-page="profile"] .shop-profile-location .shop-location-map {height:clamp(310px,38vh,450px) !important;min-height:310px !important;max-height:450px !important;flex:none !important;}
+@media(min-width:1400px){body[data-page="catalog"] #frameGrid > div {flex:0 0 33.333%;max-width:33.333%;}}
+@media(max-width:767px){body[data-page="catalog"] .frame-card__visual {height:190px;}body[data-page="catalog"] .frame-card__actions {grid-template-columns:repeat(3,minmax(0,1fr));}}
+
+/* Compact profile overview and accessible pop-up editors */
+body[data-page="profile"] .app-content { padding:clamp(16px,2vw,28px); }
+body[data-page="profile"] .shop-profile-layout {display:block!important;max-width:1180px;margin:0 auto;}
+body[data-page="profile"] .shop-profile-details {padding:clamp(18px,2.2vw,28px)!important;border-radius:20px;}
+body[data-page="profile"] .profile-header {margin-bottom:12px;}
+body[data-page="profile"] .ff-profile-summary {gap:12px 16px;margin-top:16px;}
+body[data-page="profile"] .ff-summary-item {gap:5px;}
+body[data-page="profile"] .ff-summary-item strong {padding:10px 12px;min-height:40px;}
+body[data-page="profile"] .ff-profile-actions {display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:22px;}
+.ff-profile-modal .modal-dialog {max-width:min(920px,calc(100vw - 32px));}
+.ff-profile-modal .modal-content {border:0;border-radius:20px;overflow:hidden;box-shadow:0 22px 70px #071f3550;max-height:90dvh;}
+.ff-profile-modal .modal-header {padding:18px 24px;border-bottom:1px solid #e4edf0;}
+.ff-profile-modal .modal-body {padding:20px 24px;overflow-y:auto;}
+.ff-profile-modal .form-label {font-size:.78rem;font-weight:700;margin-bottom:5px;}
+.ff-profile-modal .field-soft {min-height:41px;}
+.ff-profile-modal .registration-address-card {padding:14px!important;border-radius:13px;}
+.ff-profile-modal .profile-address-heading {margin:8px 0 12px;}
+.ff-profile-modal .ff-modal-photo {display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:12px;border:1px solid #e1edf0;border-radius:14px;background:#f7fbfc;}
+.ff-profile-modal .ff-modal-photo .ff-avatar {width:54px;height:54px;font-size:1rem;}
+.ff-profile-modal .ff-modal-footer {display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:-20px;background:#fff;padding:14px 0 0;margin-top:14px;border-top:1px solid #e4edf0;z-index:2;}
+.ff-profile-modal .shop-location-panel {padding:0;border:0;background:none;}
+.ff-profile-modal .shop-location-map {height:min(45vh,400px)!important;min-height:250px!important;max-height:400px!important;}
+@media(max-width:650px){body[data-page="profile"] .ff-profile-summary{grid-template-columns:1fr;}.ff-profile-modal .modal-body{padding:14px}.ff-profile-modal .modal-header{padding:14px}.ff-profile-modal .modal-dialog{max-width:calc(100vw - 16px);margin:8px}.ff-profile-modal .shop-location-map{height:300px!important;}}
+
+/* 2026-11-04: polished compact catalog; overrides legacy large cards */
+body[data-page="catalog"] .app-content {max-width:none;margin:0;padding:20px 24px 28px;}
+body[data-page="catalog"] .catalog-toolbar {margin-bottom:20px;}
+body[data-page="catalog"] #frameGrid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:18px;margin:0;align-items:stretch;}
+body[data-page="catalog"] #frameGrid > div {width:auto;max-width:none;min-width:0;padding:0;}
+body[data-page="catalog"] .frame-card {padding:14px !important;border-radius:17px !important;gap:0;box-shadow:0 5px 22px rgba(18,54,72,.065) !important;}
+body[data-page="catalog"] .frame-card__visual {display:flex;align-items:center;justify-content:center;flex:0 0 160px;height:160px !important;min-height:0;margin-bottom:12px !important;padding:10px !important;background:#f5f8f9 !important;border:1px solid #e7edef !important;border-radius:12px !important;}
+body[data-page="catalog"] .frame-card__visual img {display:block;width:100%;height:100%;max-width:100%;max-height:100%;min-height:0;object-fit:contain;object-position:center;filter:none !important;}
+body[data-page="catalog"] .frame-card__head {align-items:center;}
+body[data-page="catalog"] .frame-card__name {font-size:1rem;}
+body[data-page="catalog"] .frame-card__color {margin:3px 0 9px;}
+body[data-page="catalog"] .frame-card__description {min-height:0 !important;line-height:1.4;margin:7px 0 12px;max-height:2.8em;overflow:hidden;}
+body[data-page="catalog"] .frame-vto-state {margin:0 0 12px;}
+body[data-page="catalog"] .frame-card__actions {display:grid !important;grid-template-columns:1fr 1fr !important;gap:9px !important;}
+body[data-page="catalog"] .frame-card__actions .btn-card-action {min-height:38px;display:flex;align-items:center;justify-content:center;}
+
+body[data-page="add-frame"] .app-content {max-width:none;margin:0;padding:20px 24px 28px;}
+body[data-page="subscription"] .app-content {padding:16px 24px 20px;}
+body[data-page="subscription"] #feedback {padding:10px 14px;margin:10px 0;font-size:.85rem;}
+body[data-page="subscription"] main > .row {margin-top:0 !important;}
+body[data-page="subscription"] main > .row .surface-card__title {margin-bottom:8px;}
+body[data-page="subscription"] main > .row .text-secondary {font-size:.85rem;}
+body[data-page="subscription"] main > .row .pt-3 {padding-top:4px !important;}
+body[data-page="subscription"] .btn-brand:disabled {opacity:1;background:#e2edf0;border-color:#c6dce2;color:#405d70;box-shadow:none;}
+body[data-page="subscription"] #activeSubscriptionSection .surface-card {padding:18px 20px;}
+body[data-page="subscription"] #activeSubscriptionSection .surface-card__title {margin-bottom:4px;}
+body[data-page="subscription"] #activeSubscriptionSection hr {margin:12px 0 !important;}
+body[data-page="subscription"] #activeSubscriptionSection .mt-4 {margin-top:12px !important;}
+body[data-page="subscription"] #activeSubscriptionSection h3 {font-size:1rem !important;margin-bottom:0;}
+.subscription-details {border:1px solid #ccdfe5;border-radius:14px;padding:12px 16px;background:#fff;}
+.subscription-details > summary {font-size:.85rem;font-weight:700;color:#123452;cursor:pointer;}
+.checkout-summary {padding:18px;border:1px solid #dbe8ee;border-radius:16px;background:#f5f9fb;}
+.checkout-environment {padding:4px 9px;border:1px solid #cddce4;border-radius:999px;background:#fff;color:#405d70;font-size:.72rem;font-weight:700;}
+.checkout-total {border-top:1px solid #dbe8ee;margin-top:16px;padding-top:14px;font-size:.86rem;}
+.checkout-total strong {font-size:1.35rem;white-space:nowrap;}
+.ff-profile-modal:has(#shopInteractiveMap) .modal-body {padding:16px;}
+.ff-profile-modal #shopInteractiveMap {width:100%;margin:0;box-sizing:border-box;}
+@media(max-width:575px) {
+  body[data-page="catalog"] .app-content, body[data-page="add-frame"] .app-content, body[data-page="subscription"] .app-content {padding:16px;}
+}

@@ -15,58 +15,21 @@
 </head>
 <body>
 
-<div id="app-shell" data-active="dashboard" data-title="Dashboard" data-subtitle="Platform overview and moderation queue" data-search="on">
+<div id="app-shell" data-active="dashboard" data-title="Dashboard" data-subtitle="Retailer applications and subscription overview" data-search="on">
 <div id="page-content">
   <div id="metrics-loading" class="state-msg">Loading dashboard…</div>
   <div id="metrics-error" class="alert alert-danger d-none" role="alert"></div>
 
   <div id="metrics-content" class="d-none">
     <div class="stat-grid">
-      <div class="stat-card">
-        <div class="stat-top">
-          <span class="stat-ico ico-amber"><i class="bi bi-shop"></i></span>
-          <span class="chip chip-amber d-none" id="chip-pending-apps">Action</span>
-        </div>
-        <div class="stat-value" id="stat-pending-apps">0</div>
-        <div class="stat-label">Pending applications</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top">
-          <span class="stat-ico ico-coral"><i class="bi bi-infinity"></i></span>
-          <span class="chip chip-red d-none" id="chip-frames-review">Review</span>
-        </div>
-        <div class="stat-value" id="stat-frames-review">0</div>
-        <div class="stat-label">Frames to review</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-top"><span class="stat-ico ico-teal"><i class="bi bi-shop"></i></span></div>
-        <div class="stat-value" id="stat-approved-shops">0</div>
-        <div class="stat-label">Approved shops</div>
-      </div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-ico ico-amber"><i class="bi bi-hourglass-split"></i></span></div><div class="stat-value" id="stat-pending-apps">0</div><div class="stat-label">Pending applications</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-ico ico-teal"><i class="bi bi-shop"></i></span></div><div class="stat-value" id="stat-approved-shops">0</div><div class="stat-label">Approved retailers</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-ico ico-teal"><i class="bi bi-check-circle"></i></span></div><div class="stat-value" id="stat-active-subs">0</div><div class="stat-label">Active subscriptions</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-ico ico-coral"><i class="bi bi-exclamation-circle"></i></span></div><div class="stat-value" id="stat-inactive-subs">0</div><div class="stat-label">Inactive / expired subscriptions</div></div>
     </div>
-
     <div class="dash-grid">
-      <section class="panel">
-        <div class="panel-head">
-          <h2>Applications awaiting review</h2>
-          <a href="retailers.html" class="pill-link">Review all</a>
-        </div>
-        <div id="pending-list"></div>
-        <div id="pending-empty" class="state-msg d-none">No pending shop applications right now.</div>
-      </section>
-
-      <aside class="panel panel-pad">
-        <h2 class="h6 fw-bold mb-2">Platform health</h2>
-        <div class="health-item">
-          <span class="health-ico health-green"><i class="bi bi-check2"></i></span>
-          <div><div class="health-title"><span id="health-validated">0</span> frames validated</div><div class="health-sub">Live in the catalog</div></div>
-        </div>
-        <div class="health-item">
-          <span class="health-ico health-amber"><i class="bi bi-clock"></i></span>
-          <div><div class="health-title"><span id="health-awaiting">0</span> awaiting review</div><div class="health-sub">Submitted by shops</div></div>
-        </div>
-        <a href="frame-listings.html" class="btn-teal w-100 mt-3">Review pending frames</a>
-      </aside>
+      <section class="panel"><div class="panel-head"><h2>Applications awaiting review</h2><a href="retailers.html" class="pill-link">Review all</a></div><div id="pending-list"></div><div id="pending-empty" class="state-msg d-none">No pending retailer applications.</div></section>
+      <aside class="panel panel-pad"><h2 class="h6 fw-bold mb-3">Retailer management</h2><p class="text-muted-ff">Manage approved retailers and check their subscription records.</p><a href="retailer-list.html" class="btn-teal w-100 mt-3">View retailer list</a></aside>
     </div>
   </div>
 </div>

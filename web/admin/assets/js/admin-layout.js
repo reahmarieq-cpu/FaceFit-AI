@@ -98,23 +98,11 @@ export function onSearch(callback) {
 // Routes/filenames are unchanged from earlier phases; only labels changed.
 
 const NAV = [
-  {
-    label: "OVERVIEW",
-    items: [{ key: "dashboard", text: "Dashboard", href: "dashboard.html", icon: "bi-grid" }]
-  },
-  {
-    label: "MODERATION",
-    items: [
-      { key: "shops", text: "Shop Applications", href: "retailers.html", icon: "bi-shop", badge: "badge-shops" },
-      { key: "frames", text: "Frame Review", href: "frame-listings.html", icon: "bi-infinity", badge: "badge-frames" }
-    ]
-  },
-  {
-    label: "RECORDS",
-    items: [
-      { key: "catalog", text: "Frame Catalog", href: "frame-catalog.html", icon: "bi-list" }
-    ]
-  }
+  { label: "OVERVIEW", items: [{ key: "dashboard", text: "Dashboard", href: "dashboard.html", icon: "bi-grid" }] },
+  { label: "RETAILER MANAGEMENT", items: [
+    { key: "shops", text: "Retailer Applications", href: "retailers.html", icon: "bi-clipboard-check", badge: "badge-shops" },
+    { key: "retailer-list", text: "Retailer List", href: "retailer-list.html", icon: "bi-shop" }
+  ] }
 ];
 
 function renderSidebar(activeKey) {
@@ -271,7 +259,6 @@ function loadBadges() {
   onAuthStateChanged(auth, (user) => {
     if (!user) return;
     countPending("retailers", "badge-shops");
-    countPending("frames", "badge-frames");
   });
 }
 

@@ -24,6 +24,7 @@
         <a class="sidebar-link" href="dashboard.html"><i class="bi bi-grid"></i>Dashboard</a>
         <a class="sidebar-link is-active" href="catalog.html"><i class="bi bi-eyeglasses"></i>Frame Catalog</a>
         <a class="sidebar-link" href="add-frame.html"><i class="bi bi-plus-lg"></i>Add Frame</a>
+        <a class="sidebar-link" href="subscription.html"><i class="bi bi-credit-card"></i>Subscription</a>
         <a class="sidebar-link" href="profile.html"><i class="bi bi-shop"></i>Shop Profile</a>
       </nav>
       <div class="shop-chip">
@@ -58,11 +59,9 @@
 
       <main class="app-content">
         <div class="catalog-toolbar">
-          <div class="filter-pills" id="statusFilterPills" role="group" aria-label="Filter by status">
-            <button type="button" class="filter-pill is-active" data-status-filter="all">All</button>
-            <button type="button" class="filter-pill" data-status-filter="live">Live</button>
-            <button type="button" class="filter-pill" data-status-filter="pending">Pending</button>
-            <button type="button" class="filter-pill" data-status-filter="draft">Draft</button>
+          <div>
+            <h2 class="fs-5 fw-bold mb-1">Your frames</h2>
+            <p class="small text-secondary mb-0" id="catalogFrameCount" role="status" aria-live="polite">Loading frames…</p>
           </div>
           <a class="btn btn-brand" href="add-frame.html"><i class="bi bi-plus-lg"></i>Add Frame</a>
         </div>
@@ -71,7 +70,7 @@
 
         <div class="empty-state d-none" id="catalogEmptyState">
           <i class="bi bi-eyeglasses"></i>
-          <p class="mt-2 mb-0">No frames match your filters.</p>
+          <p class="mt-2 mb-0">No frames to display. Add a frame or try another search.</p>
         </div>
       </main>
     </div>
@@ -83,7 +82,7 @@
       <div class="modal-content border-0" style="border-radius: 20px;">
         <div class="modal-body text-center p-4">
           <h5 class="fw-bold" id="deleteFrameTitle">Delete this frame?</h5>
-          <p class="small text-secondary mb-4">"<span id="deleteFrameName"></span>" will be removed from your catalog.</p>
+          <p class="small text-secondary mb-4">"<span id="deleteFrameName"></span>" and its uploaded product photo and VTO model will be removed from the catalog and its active storage.</p>
           <div class="d-flex gap-2">
             <button type="button" class="btn-light-pill flex-fill" data-bs-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-danger rounded-pill flex-fill fw-bold" id="confirmDeleteButton">Delete</button>
@@ -97,6 +96,7 @@
   <script src="js/storage.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/frame-icons.js"></script>
+  <script type="module" src="js/firebase-bridge.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/shop.js"></script>
   <script src="js/main.js"></script>

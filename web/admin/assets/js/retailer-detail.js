@@ -7,12 +7,13 @@
 // Functions, which are the only trusted write path.
 // ============================================================
 
-import "./admin-layout.js"; // renders sidebar/topbar before the ids below are looked up
+import "./admin-layout.js";
+import { renderPermit } from "./permit-preview.js"; // renders sidebar/topbar before the ids below are looked up
 import { guardAdminPage } from "./admin-guard.js";
 import { logoutAdmin } from "./auth.js";
 import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { APPROVAL_MODE, executeApproval } from "./approval-service.js";
+import { executeApproval } from "./approval-service.js";
 
 const nameEl = document.getElementById("admin-name");
 const emailEl = document.getElementById("admin-email");
@@ -73,7 +74,7 @@ function renderRetailer(retailer) {
   setText("field-contactNumber", retailer.contactNumber);
   setText("field-emailAddress", retailer.emailAddress);
   setText("field-retailAddress", retailer.retailAddress);
-  setText("field-permit", retailer.permit);
+  renderPermit(retailer.permit, document.getElementById("field-permit"));
   setText("field-createdAt", formatDate(retailer.createdAt));
   setText("field-subscriptionPlan", retailer.subscriptionPlan);
   setText("field-subscriptionStatus", retailer.subscriptionStatus);
@@ -130,6 +131,18 @@ async function loadRetailer() {
 
     const retailer = snap.data();
     renderRetailer(retailer);
+    // Admin can view retailer-selected demo subscriptions, but cannot manage them.
+    try {
+      const subSnap = await getDoc(doc(db, "subscriptions", retailerId));
+      if (subSnap.exists()) {
+        const sub = subSnap.data();
+        setText("field-subscriptionPlan", sub.planType === "bundle" ? "Retailer + Kiosk" : "Retailer Plan");
+        const status = { demo_active: "Active", demo_cancelled: "Cancelled", demo: "Checkout incomplete" };
+        setText("field-subscriptionStatus", status[sub.status] || "Inactive");
+      }
+    } catch (subscriptionError) {
+      console.warn("Could not load subscription summary:", subscriptionError);
+    }
 
     loadingState.classList.add("d-none");
     detailContent.classList.remove("d-none");
@@ -148,6 +161,7 @@ async function handleDecision(decision) {
   const isApprove = decision === "approve";
   const triggeringBtn = isApprove ? approveBtn : rejectBtn;
 
+  if (!window.confirm(`Are you sure you want to ${decision} this retailer application?`)) return;
   triggeringBtn.dataset.pending = "true";
   setButtonsLoading(true);
   actionFeedback.classList.add("d-none");
@@ -161,11 +175,7 @@ async function handleDecision(decision) {
     statusBadge.textContent = statusLabel(newStatus);
     updateReviewControls(newStatus);
 
-    showActionFeedback(
-      `Retailer application ${isApprove ? "approved" : "rejected"}.` +
-        (APPROVAL_MODE === "firestore" ? " (Temporary mode: no notification sent.)" : ""),
-      "success"
-    );
+    showActionFeedback(`Retailer application ${newStatus}.`, "success");
   } catch (error) {
     console.error(`${decision} failed:`, error);
     showActionFeedback(

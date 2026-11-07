@@ -1,0 +1,10 @@
+.env
+.env.maya-sandbox
+node_modules/
+serviceAccountKey.json
+*.log
+
+.env
+node_modules/
+serviceAccountKey.json
+test-supabase.mjs

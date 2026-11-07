@@ -1,118 +1,374 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------
-    // admins/{uid}
-    // Purpose: the single source of truth for "is this account an
-    // Administrator?" Document ID = the user's Firebase Auth UID.
-    //
-    // - A signed-in user may READ ONLY their own admin document.
-    //   This is what admin-guard.js and auth.js rely on.
-    // - NO client-side writes are allowed, ever. Admin documents
-    //   are created manually via the Firebase Console. This is
-    //   what stops anyone from granting themselves admin access
-    //   from the browser.
-    // ------------------------------------------------------------
+    // ==================================================
+    // HELPERS
+    // ==================================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        )
+        && get(
+          /databases/$(database)/documents/admins/$(request.auth.uid)
+        ).data.role == "admin";
+    }
+
+    function approvedRetailer(retailerId) {
+      return signedIn()
+        && request.auth.uid == retailerId
+        && exists(
+          /databases/$(database)/documents/retailers/$(retailerId)
+        )
+        && get(
+          /databases/$(database)/documents/retailers/$(retailerId)
+        ).data.status == "approved";
+    }
+
+    // ==================================================
+    // ADMIN ACCOUNTS
+    // ==================================================
+
     match /admins/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if signedIn()
+        && request.auth.uid == uid;
+
       allow write: if false;
     }
 
-    // ------------------------------------------------------------
-    // Shared helper: is the signed-in caller a verified Administrator?
-    // Reused by every collection below that needs an admin check.
-    // ------------------------------------------------------------
-    function isAdmin() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "admin";
+    // ==================================================
+    // EYEWEAR USERS
+    // ==================================================
+
+    match /users/{userId} {
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == userId);
+
+      allow create, update: if signedIn()
+        && request.auth.uid == userId;
+
+      allow delete: if false;
+
+      match /faceScans/{scanId} {
+        allow read, write: if signedIn()
+          && request.auth.uid == userId;
+      }
     }
 
-    // ------------------------------------------------------------
-    // retailers/{retailerId}
-    // Purpose: retailer applications reviewed by Administrators.
-    //
-    // - Read: a verified admin can read any retailer application.
-    //   A retailer can read their own (userId == caller's uid) —
-    //   forward-looking; there's no retailer portal yet, but this
-    //   is already correct for when one exists.
-    // - Write: NONE from the client, ever — not even for admins.
-    //   Approval/rejection happens exclusively through the
-    //   approveRetailer / rejectRetailer Cloud Functions, which use
-    //   the Admin SDK and bypass these rules entirely. Retailer
-    //   creation is deferred to the future Retailer Portal phase.
-    // ------------------------------------------------------------
+    // ==================================================
+    // RETAILERS
+    // ==================================================
+
     match /retailers/{retailerId} {
-      allow read: if isAdmin() ||
-        (request.auth != null && resource.data.userId == request.auth.uid);
-      // TEMPORARY: verified admin can only change pending -> approved/rejected.
-      // No other retailer fields may be edited through the client.
+
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == retailerId);
+
+      // New retailer registration
+      allow create: if signedIn()
+        && request.auth.uid == retailerId
+        && request.resource.data.userId == retailerId
+        && request.resource.data.emailAddress == request.auth.token.email
+        && request.resource.data.status == "pending"
+        && request.resource.data.subscriptionPlan == "unselected"
+        && request.resource.data.subscriptionStatus == "inactive"
+        && request.resource.data.keys().hasOnly([
+          "userId",
+          "retailName",
+          "contactPerson",
+          "ownerFirstName",
+          "ownerLastName",
+          "emailAddress",
+          "contactNumber",
+          "retailAddress",
+          "addressParts",
+          "businessPermitNumber",
+          "permit",
+          "permitVerificationStatus",
+          "subscriptionPlan",
+          "subscriptionStatus",
+          "status",
+          "createdAt"
+        ])
+        && request.resource.data.createdAt == request.time;
+
+      // Admin approval or rejection
       allow update: if isAdmin()
         && resource.data.status == "pending"
-        && request.resource.data.status in ["approved", "rejected"]
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
-      allow create, delete: if false;
+        && request.resource.data.status in [
+          "approved", "rejected"
+        ]
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(["status"]);
+
+      // Approved retailer edits shop information
+      allow update: if approvedRetailer(retailerId)
+        && resource.data.userId == retailerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly([
+            "retailName",
+            "contactPerson",
+            "ownerFirstName",
+            "ownerLastName",
+            "contactNumber",
+            "retailAddress",
+            "addressParts",
+            "logo",
+            "logoUrl",
+            "profileImage",
+            "profileImageUrl"
+          ]);
+
+      // Approved retailer saves shop map location
+      allow update: if approvedRetailer(retailerId)
+        && resource.data.userId == retailerId
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly([
+            "shopLocation",
+            "shopLocationUpdatedAt"
+          ])
+        && request.resource.data.shopLocation is map
+        && request.resource.data.shopLocation.keys()
+          .hasAll(["lat", "lng"])
+        && request.resource.data.shopLocation.keys()
+          .hasOnly(["lat", "lng"])
+        && request.resource.data.shopLocation.lat is number
+        && request.resource.data.shopLocation.lng is number
+        && request.resource.data.shopLocation.lat >= -90
+        && request.resource.data.shopLocation.lat <= 90
+        && request.resource.data.shopLocation.lng >= -180
+        && request.resource.data.shopLocation.lng <= 180
+        && request.resource.data.shopLocationUpdatedAt == request.time;
+
+      allow delete: if false;
+
+      // ==================================================
+      // RETAILER FRAME CATALOG
+      // Path: retailers/{retailerId}/frames/{frameId}
+      // ==================================================
+
+      match /frames/{frameId} {
+
+        allow read: if isAdmin()
+          || approvedRetailer(retailerId);
+
+        allow create: if approvedRetailer(retailerId)
+          && request.resource.data.retailerId == retailerId
+          && request.resource.data.id == frameId;
+
+        allow update: if approvedRetailer(retailerId)
+          && resource.data.retailerId == retailerId
+          && request.resource.data.retailerId == retailerId
+          && request.resource.data.id == frameId
+          && !request.resource.data.diff(resource.data)
+            .affectedKeys().hasAny([
+              "retailerId",
+              "status",
+              "approvalStatus",
+              "moderationStatus",
+              "approvedAt",
+              "approvedBy"
+            ]);
+
+        allow delete: if approvedRetailer(retailerId)
+          && resource.data.retailerId == retailerId;
+      }
     }
 
-    // ------------------------------------------------------------
-    // notifications/{notificationId}
-    // Purpose: system notifications for retailers/users.
-    //
-    // - Read: only the notification's own recipient (userId match).
-    // - Write: NONE from the client. Notifications are created only
-    //   by Cloud Functions (approveRetailer / rejectRetailer /
-    //   validateFrame / hideFrame).
-    // ------------------------------------------------------------
-    match /notifications/{notificationId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    // ==================================================
+    // SUBSCRIPTIONS — DEMO SIMULATION
+    // ==================================================
+
+    match /subscriptions/{retailerId} {
+      allow read: if isAdmin() || approvedRetailer(retailerId);
       allow write: if false;
     }
 
-    // ------------------------------------------------------------
-    // frames/{frameId}
-    // Purpose: retailer-submitted frame listings, moderated by
-    // Administrators. Frame Catalog (the "accepted records" admin
-    // view) reads this SAME collection filtered to status ==
-    // "approved" — there is no separate catalog collection, since
-    // the ERD defines only one FRAME entity.
-    //
-    // - Read: verified admins only, for now. (A future Retailer
-    //   Portal would add "own retailId" read access, same pattern
-    //   as retailers — not added yet since that portal doesn't exist.)
-    // - Write: NONE from the client. validateFrame / hideFrame
-    //   Cloud Functions are the only write path, mirroring
-    //   approveRetailer / rejectRetailer exactly.
-    // ------------------------------------------------------------
+    // ==================================================
+    // NOTIFICATIONS
+    // ==================================================
+
+    match /notifications/{notificationId} {
+
+      allow get, list: if signedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && resource.data.readAt == null
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(["readAt"])
+        && request.resource.data.readAt == request.time;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          "userId",
+          "retailerId",
+          "type",
+          "title",
+          "message",
+          "createdAt",
+          "readAt"
+        ])
+        && request.resource.data.keys().hasAll([
+          "userId",
+          "retailerId",
+          "type",
+          "title",
+          "message",
+          "createdAt",
+          "readAt"
+        ])
+        && request.resource.data.userId is string
+        && request.resource.data.retailerId is string
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.message is string
+        && request.resource.data.message.size() <= 500
+        && request.resource.data.readAt == null
+        && request.resource.data.createdAt == request.time
+        && (
+          (
+            isAdmin()
+            && request.resource.data.type in [
+              "retailer_approved",
+              "retailer_rejected"
+            ]
+            && exists(
+              /databases/$(database)/documents/retailers/$(request.resource.data.retailerId)
+            )
+            && get(
+              /databases/$(database)/documents/retailers/$(request.resource.data.retailerId)
+            ).data.status == "pending"
+            && getAfter(
+              /databases/$(database)/documents/retailers/$(request.resource.data.retailerId)
+            ).data.userId == request.resource.data.userId
+            && getAfter(
+              /databases/$(database)/documents/retailers/$(request.resource.data.retailerId)
+            ).data.status ==
+              (
+                request.resource.data.type == "retailer_approved"
+                  ? "approved" : "rejected"
+              )
+            && request.resource.data.title ==
+              (
+                request.resource.data.type == "retailer_approved"
+                  ? "Retailer application approved"
+                  : "Retailer application rejected"
+              )
+          )
+          ||
+          (
+            request.auth.uid == request.resource.data.userId
+            && request.auth.uid == request.resource.data.retailerId
+            && existsAfter(
+              /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+            )
+            && getAfter(
+              /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+            ).data.userId == request.auth.uid
+            && getAfter(
+              /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+            ).data.updatedAt == request.time
+            && (
+              (
+                request.resource.data.type == "subscription_activated"
+                && request.resource.data.title == "Demo subscription activated"
+                && getAfter(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.status == "demo_active"
+                && (
+                  !exists(
+                    /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                  )
+                  || get(
+                    /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                  ).data.status == "demo_cancelled"
+                )
+              )
+              ||
+              (
+                request.resource.data.type == "subscription_changed"
+                && request.resource.data.title == "Subscription plan changed"
+                && exists(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                )
+                && get(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.status == "demo_active"
+                && getAfter(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.status == "demo_active"
+                && get(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.planType != getAfter(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.planType
+              )
+              ||
+              (
+                request.resource.data.type == "subscription_cancelled"
+                && request.resource.data.title == "Demo subscription cancelled"
+                && exists(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                )
+                && get(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.status == "demo_active"
+                && getAfter(
+                  /databases/$(database)/documents/subscriptions/$(request.resource.data.retailerId)
+                ).data.status == "demo_cancelled"
+              )
+            )
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    // ==================================================
+    // ADMIN FRAME MODERATION
+    // Existing top-level frames collection
+    // ==================================================
+
     match /frames/{frameId} {
       allow read: if isAdmin();
-      // TEMPORARY: verified admin can only change pending -> approved/hidden.
+
       allow update: if isAdmin()
         && resource.data.status == "pending"
-        && request.resource.data.status in ["approved", "hidden"]
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
+        && request.resource.data.status in [
+          "approved", "hidden"
+        ]
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(["status"]);
+
       allow create, delete: if false;
     }
 
-    // ------------------------------------------------------------
-    // users/{userId}
-    // Purpose: registered FaceFit AI eyewear user/retailer-owner
-    // accounts (per the USER entity). Administrator system is
-    // READ-ONLY against this collection — no admin write action
-    // was ever requested for user accounts.
-    // ------------------------------------------------------------
-    match /users/{userId} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == userId);
-      allow write: if false;
+    // ==================================================
+    // RESERVED COLLECTIONS
+    // ==================================================
+
+    match /subscriptionRequests/{requestId} {
+      allow read, write: if false;
     }
 
-    // ------------------------------------------------------------
-    // Everything else is denied by default until we design and
-    // approve each collection's rules in a later phase (faceScans,
-    // recommendations, etc.), using your ERD/Data Dictionary
-    // as the source of truth.
-    // ------------------------------------------------------------
+    match /kioskDevices/{deviceId} {
+      allow read, write: if false;
+    }
+
+    // ==================================================
+    // DENY ALL OTHER ACCESS
+    // ==================================================
+
     match /{document=**} {
       allow read, write: if false;
     }

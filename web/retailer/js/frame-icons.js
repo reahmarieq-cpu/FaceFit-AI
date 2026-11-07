@@ -43,9 +43,10 @@ const FaceFitFrameIcons = (() => {
 
   /** Uploaded photo when present, otherwise the drawn glasses. */
   function renderVisual(frame) {
-    const hasPhoto = typeof frame.imageDataUrl === "string" && frame.imageDataUrl.startsWith("data:image/");
+    const photo = frame.productImageUrl || frame.imageDataUrl;
+    const hasPhoto = typeof photo === "string" && (photo.startsWith("data:image/") || photo.startsWith("https://"));
     if (hasPhoto) {
-      return `<img src="${frame.imageDataUrl}" alt="${FaceFitUi.escapeHtml(frame.name)}">`;
+      return `<img src="${FaceFitUi.escapeHtml(photo)}" alt="${FaceFitUi.escapeHtml(frame.name)}">`;
     }
     return renderSvg(frame.shape, frame.color);
   }
