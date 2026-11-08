@@ -18,10 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.ui.theme.*
+import com.example.facefit.logic.FrameCompatibility
+import java.util.Locale
 
 @Composable
 fun FrameDetailsScreen(
@@ -29,8 +32,20 @@ fun FrameDetailsScreen(
     isFavorite: Boolean,
     onBack: () -> Unit,
     onFavoriteChange: (Boolean) -> Unit,
-    onStartTryOn: () -> Unit
+    onStartTryOn: () -> Unit,
+    faceShape: String? = null
 ) {
+    val context = LocalContext.current
+    val compatibility = remember(context) { FrameCompatibility.load(context) }
+    val assessment = remember(faceShape, frame.category, compatibility) {
+        compatibility.lookup(faceShape, frame.category)
+    }
+    val ratingExplanation = when {
+        compatibility.loadError != null -> compatibility.loadError
+        faceShape.isNullOrBlank() -> "Complete a face scan to view compatibility."
+        assessment == null -> "Assessor ratings are needed for $faceShape faces with ${frame.category} frames."
+        else -> "Visual suitability for $faceShape faces with ${frame.category} frames, based on ${assessment.ratingCount} assessor ratings."
+    }
     Column(
         Modifier.fillMaxSize().background(FaceFitBackground)
             .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 18.dp),
@@ -57,21 +72,25 @@ fun FrameDetailsScreen(
             Text(frame.name, color = FaceFitTextPrimary, fontSize = 25.sp, fontWeight = FontWeight.Bold)
             Text("${frame.category} · ${frame.material} · ${frame.colorName}",
                 color = FaceFitTextSecondary, fontSize = 13.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(frame.explanation, color = FaceFitTextSecondary, fontSize = 13.sp, lineHeight = 18.sp)
         }
         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color.White).padding(20.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Text("${frame.score}", color = FaceFitTeal, fontSize = 28.sp, fontWeight = FontWeight.Bold,
+            Text(assessment?.let { String.format(Locale.getDefault(), "%.1f", it.score) } ?: "Not rated",
+                color = FaceFitTeal, fontSize = if (assessment != null) 28.sp else 20.sp, fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(end = 22.dp))
             Column(Modifier.weight(1f)) {
                 Text("COMPATIBILITY", color = FaceFitTeal, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(frame.explanation, color = FaceFitTextSecondary, fontSize = 12.sp, lineHeight = 18.sp)
+                Text(ratingExplanation, color = FaceFitTextSecondary, fontSize = 12.sp, lineHeight = 18.sp)
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Sample scores", color = FaceFitTextSecondary, fontSize = 11.sp)
-            DetailScore("Face shape", (frame.score + 2).coerceAtMost(100))
-            DetailScore("Proportion fit", (frame.score - 1).coerceAtLeast(0))
-            DetailScore("Style & color", (frame.score - 2).coerceAtLeast(0))
+        if (assessment != null) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Average suitability rating · ${String.format(Locale.getDefault(), "%.2f", assessment.meanRating)} / 5",
+                    color = FaceFitTextSecondary, fontSize = 12.sp)
+                DetailScore("Visual suitability", assessment.score)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DetailAttribute("MATERIAL", frame.material, Modifier.weight(1f))
@@ -93,14 +112,14 @@ fun FrameDetailsScreen(
 }
 
 @Composable
-private fun DetailScore(label: String, score: Int) {
+private fun DetailScore(label: String, score: Double) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.fillMaxWidth()) {
             Text(label, Modifier.weight(1f), color = FaceFitTextSecondary, fontSize = 12.sp)
-            Text("$score", color = FaceFitTeal, fontSize = 12.sp)
+            Text(String.format(Locale.getDefault(), "%.1f", score), color = FaceFitTeal, fontSize = 12.sp)
         }
         Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFDDE7EA))) {
-            Box(Modifier.fillMaxWidth(score / 100f).fillMaxHeight()
+            Box(Modifier.fillMaxWidth((score / 100).toFloat()).fillMaxHeight()
                 .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
         }
     }

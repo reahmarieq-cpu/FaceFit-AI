@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,18 +27,33 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.facefit.logic.ScanDiagnostics
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.facefit.BuildConfig
 import com.example.facefit.logic.FaceAnalyzer
+import com.example.facefit.logic.FacialFeatureThresholds
 import com.example.facefit.ui.theme.FaceFitBackground
 import com.example.facefit.ui.theme.FaceFitTeal
 import com.example.facefit.ui.theme.FaceFitTextPrimary
 import com.example.facefit.ui.theme.FaceFitTextSecondary
+import java.text.NumberFormat
 
 @Composable
 fun ScanResultsScreen(
@@ -47,7 +62,9 @@ fun ScanResultsScreen(
     onScanAgain: () -> Unit,
     onNext: () -> Unit
 ) {
-    val result = remember(metrics) { RecommendationResult.from(metrics) }
+    val context = LocalContext.current
+    val thresholds = remember(context) { FacialFeatureThresholds.load(context) }
+    val result = remember(metrics, thresholds) { FacialProfileResult(metrics, thresholds) }
 
     Column(
         modifier = Modifier
@@ -97,7 +114,7 @@ fun ScanResultsScreen(
                         Text(
                             text = metrics.faceShape.ifBlank { "Unknown" },
                             color = FaceFitTeal,
-                            fontSize = 28.sp,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Black
                         )
                         Text(
@@ -135,14 +152,22 @@ fun ScanResultsScreen(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ResultMetricCard(label = result.jawlineLabel, value = "Jawline", modifier = Modifier.weight(1f))
-                    ResultMetricCard(label = result.foreheadLabel, value = "Forehead width", modifier = Modifier.weight(1f))
+                    ResultMetricCard(result.jawline, "Jawline width", Modifier.weight(1f))
+                    ResultMetricCard(result.upperFace, "Upper-face width", Modifier.weight(1f))
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ResultMetricCard(label = result.eyeSpacingLabel, value = "Eye spacing", modifier = Modifier.weight(1f))
-                    ResultMetricCard(label = "${result.symmetryScore}%", value = "Compatibility", modifier = Modifier.weight(1f))
+                    ResultMetricCard(result.eyeSpacing, "Eye spacing", Modifier.weight(1f))
+                    ResultMetricCard(result.faceLength, "Face length", Modifier.weight(1f))
                 }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Percentages are relative to cheek width." +
+                        if (result.hasCategories) " Categories are provisional and relative to a reference photo set." else "",
+                    color = FaceFitTextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp
+                )
             }
         }
 
@@ -179,17 +204,11 @@ fun ScanResultsScreen(
                     fontSize = 14.sp,
                     lineHeight = 21.sp
                 )
-                Spacer(modifier = Modifier.height(18.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ResultChip("Face shape: ${metrics.faceShape}")
-                    ResultChip(result.jawlineLabel)
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ResultChip("${result.symmetryScore}% score")
-                    ResultChip(result.recommendedFrame)
-                }
             }
+        }
+        if (BuildConfig.DEBUG && metrics.shapeDecisionReason != null) {
+            Spacer(modifier = Modifier.height(18.dp))
+            ScanDecisionDetails(metrics)
         }
         Spacer(modifier = Modifier.height(24.dp))
         Button(
@@ -200,6 +219,78 @@ fun ScanResultsScreen(
         ) {
             Text("Next", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
+    }
+}
+
+@Composable
+private fun ScanDecisionDetails(metrics: FaceAnalyzer.FaceMetrics) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exportStatus by remember(metrics) { mutableStateOf<String?>(null) }
+    val saveDiagnostics = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) scope.launch {
+            exportStatus = try {
+                withContext(Dispatchers.IO) {
+                    val stream = context.contentResolver.openOutputStream(uri)
+                        ?: error("The selected location could not be opened")
+                    stream.bufferedWriter().use { it.write(ScanDiagnostics.json(metrics)) }
+                }
+                "Diagnostics saved"
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                "Could not save diagnostics. Choose a different location."
+            }
+        }
+    }
+    val format = NumberFormat.getPercentInstance().apply { maximumFractionDigits = 1 }
+    val reason = when (metrics.shapeDecisionReason) {
+        "highestScore" -> "Highest average model score selected"
+        "accepted" -> "Prediction accepted"
+        "lowScore" -> "The top score was too low"
+        "closeScores" -> "The top two scores were too close"
+        "unstablePredictions" -> "Frame predictions or the median prediction disagreed"
+        "tooFewFrames" -> "Too few scan samples"
+        "invalidScores" -> "The model returned invalid scores"
+        else -> "Unknown decision"
+    }
+    Column(
+        modifier = Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text("Scan diagnostics", color = FaceFitTextPrimary, fontWeight = FontWeight.Bold)
+        Text("Build · ${BuildConfig.VERSION_NAME}", color = FaceFitTextSecondary, fontSize = 13.sp)
+        metrics.shapeModelId?.let {
+            Text("Model · $it", color = FaceFitTextSecondary, fontSize = 13.sp)
+        }
+        Text(
+            "$reason (${metrics.shapeDecisionReason})",
+            color = FaceFitTextPrimary,
+            fontSize = 14.sp
+        )
+        if (metrics.shapeModelScores.isNotEmpty()) {
+            val scores = metrics.shapeModelScores.entries.sortedByDescending { it.value }
+                .joinToString(", ") { "${it.key} ${format.format(it.value)}" }
+            Text("Average frame scores · $scores", color = FaceFitTextSecondary, fontSize = 13.sp)
+            metrics.shapeAgreement?.let {
+                Text(
+                    "Frame agreement · ${format.format(it)}",
+                    color = FaceFitTextSecondary,
+                    fontSize = 13.sp
+                )
+            }
+        }
+        Button(onClick = {
+            saveDiagnostics.launch("facefit-scan-${System.currentTimeMillis()}.json")
+        }) {
+            Text("Save scan diagnostics")
+        }
+        exportStatus?.let { Text(it, color = FaceFitTextSecondary, fontSize = 13.sp) }
     }
 }
 
@@ -221,109 +312,24 @@ internal fun ResultIconButton(
 
 @Composable
 private fun ResultMetricCard(
+    result: FacialFeatureResult,
     label: String,
-    value: String,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
-            .height(76.dp)
+            .heightIn(min = 84.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFEAF5F6)),
+            .background(Color(0xFFEAF5F6))
+            .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = label, color = FaceFitTextSecondary, fontSize = 13.sp)
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(text = value, color = FaceFitTextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun ResultChip(text: String) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
-            .border(1.dp, Color(0xFFD0E7EA), RoundedCornerShape(18.dp))
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(FaceFitTeal)
-        )
-        Spacer(modifier = Modifier.width(7.dp))
-        Text(text = text, color = FaceFitTeal, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-internal data class RecommendationResult(
-    val symmetryScore: Int,
-    val jawlineLabel: String,
-    val foreheadLabel: String,
-    val eyeSpacingLabel: String,
-    val recommendedFrame: String,
-    val headline: String,
-    val explanation: String
-) {
-    companion object {
-        fun from(metrics: FaceAnalyzer.FaceMetrics): RecommendationResult {
-            val forehead = metrics.foreheadWidth
-            val jawline = metrics.jawline
-            val eyeSpacing = metrics.eyeSpacing
-            val balance = 1f - kotlin.math.abs(forehead - jawline).coerceAtMost(1f)
-            val score = ((balance * 28f) + 68f).toInt().coerceIn(72, 98)
-            val jawLabel = when {
-                metrics.shapeMeasurements == null -> "Unclear"
-                metrics.shapeMeasurements.jawAngle <= 140f -> "Angular"
-                metrics.shapeMeasurements.jawAngle >= 147f -> "Soft"
-                else -> "Intermediate"
-            }
-            val foreheadLabel = when {
-                forehead > 0.95f -> "Broad"
-                forehead < 0.80f -> "Narrow"
-                else -> "Medium"
-            }
-            val eyeLabel = when {
-                eyeSpacing < 0.22f -> "Close"
-                eyeSpacing > 0.30f -> "Wide"
-                else -> "Average"
-            }
-            val frame = when (metrics.faceShape) {
-                "Round" -> "Angular frames"
-                "Square" -> "Rounded frames"
-                "Long" -> "Taller frames"
-                else -> "Balanced frames"
-            }
-            val headline = when (metrics.faceShape) {
-                "Round" -> "Soft facial proportions - angular frames can add definition"
-                "Square" -> "Defined structure - rounded frames can soften the jawline"
-                "Long" -> "Longer face profile - taller frames can add balance"
-                "Oval" -> "Tapered facial proportions - balanced frames are a starting point"
-                else -> "Your face shape could not be classified clearly"
-            }
-            val explanation = if (metrics.faceShape == "Unclear" || metrics.faceShape.isBlank()) {
-                "Your measurements do not clearly match one of the supported face shapes. " +
-                    "You can scan again facing forward with a neutral expression, or continue to browse frames."
-            } else {
-                "Your estimated ${metrics.faceShape.lowercase()} shape compares face length, forehead and cheek widths, " +
-                    "jaw width, chin taper, and jaw angles across ${metrics.shapeSampleCount} scan samples. " +
-                    "Your forehead is ${foreheadLabel.lowercase()} relative to cheek width, with a ${jawLabel.lowercase()} jawline " +
-                    "and ${eyeLabel.lowercase()} eye spacing. $frame are a starting point for trying styles."
-            }
-
-            return RecommendationResult(
-                symmetryScore = score,
-                jawlineLabel = jawLabel,
-                foreheadLabel = foreheadLabel,
-                eyeSpacingLabel = eyeLabel,
-                recommendedFrame = frame,
-                headline = headline,
-                explanation = explanation
-            )
+        Text(text = result.displayValue, color = FaceFitTeal, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(text = label, color = FaceFitTextSecondary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        if (result.category != null) {
+            result.percent?.let { Text(it, color = FaceFitTextSecondary, fontSize = 12.sp) }
         }
     }
 }

@@ -65,8 +65,15 @@ class AuthManager {
         jawline: Float,
         eyeSpacing: Float,
         faceShape: String,
-        shapeMeasurements: FaceShapeClassifier.Measurements? = null,
-        shapeSampleCount: Int = 1
+        shapeMeasurements: FacialGeometry.Measurements? = null,
+        shapeSampleCount: Int = 1,
+        shapeModelId: String? = null,
+        shapeModelScores: Map<String, Float> = emptyMap(),
+        stabilityFeatures: List<Float> = emptyList(),
+        shapeDecisionReason: String? = null,
+        shapeAgreement: Float? = null,
+        shapeDecisionPolicy: String? = null,
+        shapeImageSampleCount: Int = 0
     ): Result<Unit> {
         return try {
             val userId = auth.currentUser?.uid ?: throw Exception("Not signed in")
@@ -77,7 +84,14 @@ class AuthManager {
                 "faceShape" to faceShape,
                 "measurementVersion" to 2,
                 "measurementUnit" to "fractionOfCheekWidth",
-                "shapeMethod" to "geometricEstimateV2",
+                "shapeMethod" to shapeModelId,
+                "shapeModelScores" to shapeModelScores,
+                // Retain the historical Firestore key; these ratios only check scan steadiness.
+                "shapeModelFeatures" to stabilityFeatures,
+                "shapeDecisionReason" to shapeDecisionReason,
+                "shapeFrameAgreement" to shapeAgreement,
+                "shapeDecisionPolicy" to shapeDecisionPolicy,
+                "shapeImageSampleCount" to shapeImageSampleCount,
                 "shapeSampleCount" to shapeSampleCount,
                 "shapeMeasurements" to shapeMeasurements?.let {
                     mapOf(

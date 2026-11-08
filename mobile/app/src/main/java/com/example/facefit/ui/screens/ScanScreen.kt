@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,9 +39,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.logic.FaceAnalyzer
 import com.example.facefit.logic.FaceScanSamples
+import com.example.facefit.logic.FaceShapeOnnxModel
+import com.example.facefit.logic.getScanReadiness
+import com.example.facefit.logic.ScanDiagnostics
+import com.example.facefit.BuildConfig
 import com.example.facefit.ui.components.CameraPreview
 import com.example.facefit.ui.components.FaceScanOverlay
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ScanScreen(
@@ -47,9 +58,20 @@ fun ScanScreen(
     var metrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
     var capturedMetrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
     var captureProgress by remember { mutableStateOf(0f) }
+    var waitingForStability by remember { mutableStateOf(false) }
+    var cameraError by remember { mutableStateOf<String?>(null) }
+    var cameraAttempt by remember { mutableStateOf(0) }
+    var waitingForFrames by remember { mutableStateOf(false) }
     val scanSamples = remember { FaceScanSamples() }
 
     val scanReadiness = remember(metrics) { metrics.getScanReadiness() }
+    LaunchedEffect(cameraAttempt, capturedMetrics) {
+        waitingForFrames = false
+        if (capturedMetrics == null) {
+            delay(6000)
+            waitingForFrames = metrics == null
+        }
+    }
 
     AnimatedContent(
         targetState = capturedMetrics,
@@ -57,35 +79,127 @@ fun ScanScreen(
     ) { analyzingMetrics ->
         if (analyzingMetrics == null) {
             Box(modifier = Modifier.fillMaxSize()) {
-                CameraPreview { result ->
-                    if (capturedMetrics == null) {
-                        metrics = result
-                        val update = scanSamples.add(
-                            result, result.getScanReadiness().canCapture,
-                            android.os.SystemClock.elapsedRealtime()
-                        )
-                        captureProgress = update.progress
-                        update.captured?.let { capturedMetrics = it }
+                key(cameraAttempt) {
+                    CameraPreview(onError = { error ->
+                        if (capturedMetrics == null) {
+                            cameraError = error
+                            metrics = null
+                            scanSamples.reset()
+                            captureProgress = 0f
+                            waitingForStability = false
+                        }
+                    }) { result ->
+                        if (capturedMetrics == null) {
+                            cameraError = null
+                            metrics = result
+                            val update = scanSamples.add(
+                                result, result.getScanReadiness().canCapture,
+                                android.os.SystemClock.elapsedRealtime()
+                            )
+                            captureProgress = update.progress
+                            waitingForStability = update.waitingForStability
+                            update.captured?.let {
+                                capturedMetrics = it
+                                scanSamples.reset()
+                            }
+                        }
                     }
                 }
 
                 FaceScanOverlay(
                     isFaceDetected = metrics?.isFaceDetected == true,
-                    statusText = scanReadiness.message,
+                    statusText = cameraError ?: when {
+                        metrics == null && waitingForFrames -> "No camera frames yet. Tap refresh to retry."
+                        metrics == null -> "Starting front camera…"
+                        waitingForStability && scanReadiness.canCapture -> "Hold still for a clearer scan"
+                        else -> scanReadiness.message
+                    },
                     onBack = onBack,
                     onRefresh = {
                         scanSamples.reset()
                         captureProgress = 0f
+                        waitingForStability = false
                         metrics = null
+                        cameraError = null
+                        cameraAttempt++
                     },
                     captureProgress = captureProgress
                 )
             }
         } else {
-            AnalysisProgressScreen(
-                onComplete = { onComplete(analyzingMetrics) }
+            AnalyzeCapturedFace(
+                metrics = analyzingMetrics,
+                onComplete = onComplete,
+                onBack = onBack,
+                onRetry = {
+                    scanSamples.reset()
+                    captureProgress = 0f
+                    waitingForStability = false
+                    metrics = null
+                    capturedMetrics = null
+                }
             )
         }
+    }
+}
+
+@Composable
+private fun AnalyzeCapturedFace(
+    metrics: FaceAnalyzer.FaceMetrics,
+    onComplete: (FaceAnalyzer.FaceMetrics) -> Unit,
+    onBack: () -> Unit,
+    onRetry: () -> Unit
+) {
+    val context = LocalContext.current.applicationContext
+    var analyzed by remember(metrics) { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
+    var failed by remember(metrics) { mutableStateOf(false) }
+    var animationFinished by remember(metrics) { mutableStateOf(false) }
+    LaunchedEffect(metrics) {
+        try {
+            val assessment = withContext(Dispatchers.Default) {
+                FaceShapeOnnxModel.open(context).use {
+                    it.assess(metrics.shapeFeatureSamples, metrics.stabilityFeatures)
+                }
+            }
+            val result = metrics.copy(
+                faceShape = assessment.label,
+                shapeModelId = FaceShapeOnnxModel.MODEL_ID,
+                shapeModelScores = assessment.scores,
+                shapeDecisionReason = assessment.reason,
+                shapeAgreement = assessment.agreement,
+                shapeDecisionPolicy = FaceShapeOnnxModel.POLICY_ID,
+                shapeFeatureSamples = if (BuildConfig.DEBUG) metrics.shapeFeatureSamples else emptyList()
+            )
+            withContext(Dispatchers.IO) {
+                ScanDiagnostics.saveLatest(context, result)
+            }
+            analyzed = result
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            android.util.Log.e("FaceShapeModel", "Face analysis failed", error)
+            failed = true
+        } catch (error: LinkageError) {
+            android.util.Log.e("FaceShapeModel", "Native runtime unavailable", error)
+            failed = true
+        }
+    }
+    LaunchedEffect(animationFinished, analyzed) {
+        if (animationFinished) analyzed?.let { onComplete(it) }
+    }
+    if (failed) {
+        Box(Modifier.fillMaxSize().background(Color(0xFF063D46)).padding(32.dp),
+            contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Face analysis could not finish", color = Color.White, fontSize = 20.sp,
+                    textAlign = TextAlign.Center)
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = onRetry) { Text("Scan again") }
+                OutlinedButton(onClick = onBack) { Text("Back", color = Color.White) }
+            }
+        }
+    } else {
+        AnalysisProgressScreen(onComplete = { animationFinished = true })
     }
 }
 
@@ -164,7 +278,7 @@ private fun AnalysisProgressScreen(
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Our AI is mapping your facial\nlandmarks and matching frame\ngeometry",
+                text = "Measuring facial proportions and\nestimating your face shape",
                 color = Color.White.copy(alpha = 0.78f),
                 fontSize = 14.sp,
                 lineHeight = 21.sp,
@@ -177,7 +291,7 @@ private fun AnalysisProgressScreen(
             Spacer(modifier = Modifier.height(14.dp))
             AnalysisStep("Feature geometry analysis")
             Spacer(modifier = Modifier.height(14.dp))
-            AnalysisStep("Compatibility scoring engine")
+            AnalysisStep("Face shape prediction")
         }
     }
 }
@@ -199,97 +313,3 @@ private fun AnalysisStep(text: String) {
     }
 }
 
-private data class ScanReadiness(
-    val canCapture: Boolean,
-    val message: String
-)
-
-private fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
-    if (this?.isFaceDetected != true || landmarks.isEmpty()) {
-        return ScanReadiness(false, "Position your face in the frame")
-    }
-
-    val requiredLandmarks = listOf(1, 10, 13, 14, 17, 33, 61, 133, 148, 152, 172, 263, 291, 362, 377, 397, 454)
-    if (requiredLandmarks.any { it !in landmarks.indices }) {
-        return ScanReadiness(false, "Include your full face in the frame")
-    }
-
-    val importantPoints = requiredLandmarks.map { landmarks[it] }
-    val clippedAtImageEdge = importantPoints.any { point ->
-        point.x < 0.06f || point.x > 0.94f || point.y < 0.06f || point.y > 0.94f
-    }
-    if (clippedAtImageEdge) {
-        return ScanReadiness(false, "Include your full face in the frame")
-    }
-
-    if (shapeMeasurements == null) {
-        return ScanReadiness(false, "Face forward so we can measure your features")
-    }
-
-    val faceOvalIndices = listOf(
-        10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
-        400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21,
-        54, 103, 67, 109
-    )
-    val faceOvalPoints = faceOvalIndices.mapNotNull { landmarks.getOrNull(it) }
-    if (faceOvalPoints.size < faceOvalIndices.size) {
-        return ScanReadiness(false, "Include your full face in the frame")
-    }
-
-    val bounds = faceOvalPoints.fold(
-        FaceBounds(
-            minX = Float.POSITIVE_INFINITY,
-            maxX = Float.NEGATIVE_INFINITY,
-            minY = Float.POSITIVE_INFINITY,
-            maxY = Float.NEGATIVE_INFINITY
-        )
-    ) { acc, point ->
-        FaceBounds(
-            minX = minOf(acc.minX, point.x),
-            maxX = maxOf(acc.maxX, point.x),
-            minY = minOf(acc.minY, point.y),
-            maxY = maxOf(acc.maxY, point.y)
-        )
-    }
-
-    val faceWidth = bounds.maxX - bounds.minX
-    val faceHeight = bounds.maxY - bounds.minY
-    val centerX = (bounds.minX + bounds.maxX) / 2f
-    val centerY = (bounds.minY + bounds.maxY) / 2f
-    val frameLeft = 0.18f
-    val frameRight = 0.82f
-    val frameTop = 0.18f
-    val frameBottom = 0.88f
-    val faceOutsideFrame = bounds.minX < frameLeft ||
-        bounds.maxX > frameRight ||
-        bounds.minY < frameTop ||
-        bounds.maxY > frameBottom
-    val nose = landmarks[1]
-    val leftEyeOuter = landmarks[33]
-    val leftEyeInner = landmarks[133]
-    val rightEyeOuter = landmarks[263]
-    val rightEyeInner = landmarks[362]
-    val eyeCenterY = (leftEyeOuter.y + leftEyeInner.y + rightEyeOuter.y + rightEyeInner.y) / 4f
-    val eyesLevel = kotlin.math.abs(leftEyeOuter.y - rightEyeOuter.y) <= faceHeight * 0.12f
-    val noseCentered = kotlin.math.abs(nose.x - centerX) <= faceWidth * 0.24f
-
-    return when {
-        faceHeight < 0.30f -> ScanReadiness(false, "Move closer to the camera")
-        faceWidth > 0.62f || faceHeight > 0.74f -> ScanReadiness(false, "Move farther from the camera")
-        faceOutsideFrame -> ScanReadiness(false, "Include your full face in the frame")
-        !noseCentered -> ScanReadiness(false, "Face the camera directly")
-        !eyesLevel -> ScanReadiness(false, "Keep your head level")
-        centerX < 0.4f -> ScanReadiness(false, "Move your face slightly right")
-        centerX > 0.6f -> ScanReadiness(false, "Move your face slightly left")
-        centerY < 0.34f -> ScanReadiness(false, "Move your face slightly down")
-        centerY > 0.62f -> ScanReadiness(false, "Move your face slightly up")
-        else -> ScanReadiness(true, "Hold still - capturing automatically")
-    }
-}
-
-private data class FaceBounds(
-    val minX: Float,
-    val maxX: Float,
-    val minY: Float,
-    val maxY: Float
-)

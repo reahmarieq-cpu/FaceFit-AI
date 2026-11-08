@@ -27,4 +27,20 @@ class FaceScanPoseTest {
         assertFalse(FaceScanPose.isFacingCamera(face(depth = Float.NaN)))
         assertFalse(FaceScanPose.isFacingCamera(face().copy(imageWidth = 0)))
     }
+
+    @Test fun columnMajorPoseMatrixPreservesPitchYawAndRoll() {
+        fun identity() = floatArrayOf(1f, 0f, 0f, 0f, 0f, 1f, 0f, 0f,
+            0f, 0f, 1f, 0f, 3f, 4f, -35f, 1f)
+        val angle = Math.toRadians(12.0)
+        val c = kotlin.math.cos(angle).toFloat()
+        val s = kotlin.math.sin(angle).toFloat()
+        val pitch = identity().apply { this[5] = c; this[6] = s; this[9] = -s; this[10] = c }
+        val yaw = identity().apply { this[0] = c; this[2] = -s; this[8] = s; this[10] = c }
+        val roll = identity().apply { this[0] = c; this[1] = s; this[4] = -s; this[5] = c }
+        assertEquals(12f, FaceScanPose.angles(pitch)!!.pitch, .001f)
+        assertEquals(12f, FaceScanPose.angles(yaw)!!.yaw, .001f)
+        assertEquals(12f, FaceScanPose.angles(roll)!!.roll, .001f)
+        assertNull(FaceScanPose.angles(FloatArray(16)))
+        assertNull(FaceScanPose.angles(FloatArray(2)))
+    }
 }

@@ -14,10 +14,14 @@ android {
         applicationId = "com.example.facefit"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 12
+        versionName = "1.11-experiment18b"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        providers.gradleProperty("facefitTargetAbi").orNull?.let { targetAbi ->
+            require(targetAbi in setOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86"))
+            ndk { abiFilters += targetAbi }
+        }
     }
 
     buildTypes {
@@ -32,6 +36,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -55,6 +60,7 @@ dependencies {
 
     // MediaPipe
     implementation(libs.mediapipe.tasks.vision)
+    implementation(libs.onnxruntime.android)
 
     // Firebase
     implementation(platform(libs.firebase.bom))

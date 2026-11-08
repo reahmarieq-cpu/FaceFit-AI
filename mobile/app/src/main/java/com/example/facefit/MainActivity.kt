@@ -176,7 +176,13 @@ class MainActivity : ComponentActivity() {
                                             eyeSpacing = metrics.eyeSpacing,
                                             faceShape = metrics.faceShape,
                                             shapeMeasurements = metrics.shapeMeasurements,
-                                            shapeSampleCount = metrics.shapeSampleCount
+                                            shapeSampleCount = metrics.shapeSampleCount,
+                                            shapeModelId = metrics.shapeModelId,
+                                            shapeModelScores = metrics.shapeModelScores,
+                                            stabilityFeatures = metrics.stabilityFeatures,
+                                            shapeDecisionReason = metrics.shapeDecisionReason,
+                                            shapeAgreement = metrics.shapeAgreement,
+                                            shapeDecisionPolicy = metrics.shapeDecisionPolicy
                                         )
 
                                         if (result.isSuccess) {
@@ -242,6 +248,7 @@ class MainActivity : ComponentActivity() {
                             sampleFrames.find { it.name == entry.arguments?.getString("frameName") }?.let { frame ->
                                 FrameDetailsScreen(
                                     frame = frame,
+                                    faceShape = latestScanMetrics?.faceShape,
                                     isFavorite = frame.name in savedFrameNames,
                                     onBack = { navController.popBackStack() },
                                     onFavoriteChange = { saved -> updateFrameFavorite(frame.name, saved) },

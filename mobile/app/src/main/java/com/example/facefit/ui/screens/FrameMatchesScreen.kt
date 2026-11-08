@@ -34,6 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.logic.FaceAnalyzer
+import com.example.facefit.logic.FacialFeatureThresholds
+import com.example.facefit.logic.FrameCompatibility
+import java.util.Locale
 import com.example.facefit.ui.theme.*
 
 @Composable
@@ -45,7 +48,14 @@ fun FrameMatchesScreen(
     onFavoriteChange: (String, Boolean) -> Unit,
     onFrameClick: (SampleFrame) -> Unit
 ) {
-    val result = remember(metrics) { RecommendationResult.from(metrics) }
+    val context = LocalContext.current
+    val thresholds = remember(context) { FacialFeatureThresholds.load(context) }
+    val result = remember(metrics, thresholds) { FacialProfileResult(metrics, thresholds) }
+    val compatibility = remember(context) { FrameCompatibility.load(context) }
+    val matches = remember(metrics.faceShape, compatibility) {
+        sampleFrames.map { it to compatibility.lookup(metrics.faceShape, it.category) }
+            .sortedByDescending { it.second?.score ?: -1.0 }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(FaceFitBackground),
@@ -89,31 +99,39 @@ fun FrameMatchesScreen(
                 }
                 Spacer(Modifier.height(22.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MatchMetric(result.foreheadLabel, "Forehead", Modifier.weight(1f))
-                    MatchMetric(result.jawlineLabel, "Jawline", Modifier.weight(1f))
-                    MatchMetric(result.eyeSpacingLabel, "Eye spacing", Modifier.weight(1f))
+                    MatchMetric(result.upperFace.displayValue, "Upper face", Modifier.weight(1f))
+                    MatchMetric(result.jawline.displayValue, "Jawline width", Modifier.weight(1f))
+                    MatchMetric(result.eyeSpacing.displayValue, "Eye spacing", Modifier.weight(1f))
                 }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    if (result.hasCategories) "Provisional categories from the reference photo set."
+                    else "Percentages are relative to cheek width.",
+                    color = FaceFitTextSecondary, fontSize = 11.sp
+                )
             }
         }
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Top matches", Modifier.weight(1f), color = FaceFitTextPrimary,
+                Text(if (matches.any { it.second != null }) "Top matches" else "Available frames",
+                    Modifier.weight(1f), color = FaceFitTextPrimary,
                     fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                Text("${sampleFrames.size} sample frames", color = FaceFitTextSecondary, fontSize = 12.sp)
+                Text("${matches.size} sample frames", color = FaceFitTextSecondary, fontSize = 12.sp)
             }
-            Text("Sample scores", color = FaceFitTextSecondary, fontSize = 11.sp)
+            Text(compatibility.loadError ?: "Compatibility scores use assessor ratings for your face shape and frame category.",
+                color = FaceFitTextSecondary, fontSize = 11.sp)
         }
-        itemsIndexed(sampleFrames, key = { _, frame -> frame.name }) { index, frame ->
+        itemsIndexed(matches, key = { _, match -> match.first.name }) { index, (frame, assessment) ->
             Column {
-                if (index == 0) {
-                    Text("BEST SAMPLE MATCH", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                if (index == 0 && assessment != null) {
+                    Text("TOP RATED MATCH", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(start = 12.dp).clip(RoundedCornerShape(8.dp))
                             .background(Color(0xFFFF7A69)).padding(horizontal = 10.dp, vertical = 4.dp))
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp))
                         .background(Color.White)
-                        .then(if (index == 0) Modifier.border(1.dp, Color(0xFFFF7A69), RoundedCornerShape(20.dp)) else Modifier)
+                        .then(if (index == 0 && assessment != null) Modifier.border(1.dp, Color(0xFFFF7A69), RoundedCornerShape(20.dp)) else Modifier)
                         .clickable(onClickLabel = "View ${frame.name} details") { onFrameClick(frame) }
                         .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -123,10 +141,12 @@ fun FrameMatchesScreen(
                         Text(frame.name, color = FaceFitTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         Text(frame.category, color = FaceFitTextSecondary, fontSize = 12.sp)
                         Spacer(Modifier.height(9.dp))
-                        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp))
-                            .background(Color(0xFFE1EBEE))) {
-                            Box(Modifier.fillMaxWidth(frame.score / 100f).fillMaxHeight()
-                                .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
+                        if (assessment != null) {
+                            Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xFFE1EBEE))) {
+                                Box(Modifier.fillMaxWidth((assessment.score / 100).toFloat()).fillMaxHeight()
+                                    .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
+                            }
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -139,7 +159,8 @@ fun FrameMatchesScreen(
                                 tint = if (saved) Color(0xFFFF7A69) else FaceFitTextSecondary,
                                 modifier = Modifier.size(20.dp))
                         }
-                        Text("${frame.score}", color = FaceFitTeal, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(assessment?.let { String.format(Locale.getDefault(), "%.1f", it.score) } ?: "Not rated",
+                            color = FaceFitTeal, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
