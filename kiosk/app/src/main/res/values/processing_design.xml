@@ -1,0 +1,17 @@
+<resources>
+    <string name="processing_brand">FaceFit AI</string>
+    <string name="processing_status_landmarks">Mapping your facial landmarks…</string>
+    <string name="processing_status_proportions">Preparing your facial profile…</string>
+    <string name="processing_capture_ready">✓  Photo captured</string>
+    <string name="processing_landmarks_active">●  Mapping facial landmarks</string>
+    <string name="processing_landmarks_ready">✓  Facial landmarks mapped</string>
+    <string name="processing_proportions_waiting">○  Facial proportions · up next</string>
+    <string name="processing_proportions_active">●  Calculating facial proportions</string>
+    <string name="processing_hint">This will only take a moment.</string>
+    <string name="processing_complete_eyebrow">ANALYSIS COMPLETE</string>
+    <string name="processing_retry_eyebrow">LET’S TRY ANOTHER PHOTO</string>
+    <string name="processing_reference_eyebrow">ANALYZING FACIAL FEATURES</string>
+    <string name="processing_percent_initial">0%</string>
+    <string name="processing_percent">%1$d%%</string>
+    <string name="processing_estimate_hint">Estimated progress</string>
+</resources>

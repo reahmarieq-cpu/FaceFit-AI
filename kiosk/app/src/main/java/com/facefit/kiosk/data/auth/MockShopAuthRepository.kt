@@ -2,7 +2,7 @@ package com.facefit.kiosk.data.auth
 
 import com.facefit.kiosk.model.ShopAccount
 
-class MockShopAuthRepository : ShopAuthRepository {
+class          MockShopAuthRepository : ShopAuthRepository {
 
     override fun signIn(email: String, password: String): AuthResult {
         val normalizedEmail = email.trim().lowercase()
@@ -10,7 +10,7 @@ class MockShopAuthRepository : ShopAuthRepository {
             AuthResult.Success(
                 ShopAccount(
                     id = "demo-shop",
-                    displayName = "FaceFit Demo Shop",
+                    displayName = "FaceFit Optical",
                     email = DEMO_EMAIL
                 )
             )

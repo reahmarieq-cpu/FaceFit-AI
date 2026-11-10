@@ -22,11 +22,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.facefit.ui.theme.softContainerShadow
 import com.example.facefit.ui.theme.FaceFitBorder
 import com.example.facefit.ui.theme.FaceFitTeal
 import com.example.facefit.ui.theme.FaceFitTealVariant
@@ -35,27 +37,14 @@ import com.example.facefit.ui.theme.FaceFitTextSecondary
 
 @Composable
 fun FaceFitLogo(modifier: Modifier = Modifier, size: Int = 100) {
-    Box(
+    androidx.compose.foundation.Image(
+        painter = androidx.compose.ui.res.painterResource(com.example.facefit.R.drawable.facefit_logo),
+        contentDescription = "FaceFit logo",
         modifier = modifier.size(size.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawArc(
-                color = FaceFitTeal,
-                startAngle = 135f,
-                sweepAngle = 270f,
-                useCenter = false,
-                style = Stroke(width = (size / 8).dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
-        Text(
-            text = "F",
-            fontSize = (size / 2).sp,
-            fontWeight = FontWeight.Bold,
-            color = FaceFitTextPrimary
-        )
-    }
+        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+    )
 }
+
 
 @Composable
 fun FaceFitButton(
@@ -103,7 +92,8 @@ fun FaceFitTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
             leadingIcon = leadingIcon?.let {
                 { Icon(imageVector = it, contentDescription = null, tint = FaceFitTextSecondary) }
@@ -120,7 +110,7 @@ fun FaceFitTextField(
                 }
             } else null,
             visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = FaceFitTeal,
                 unfocusedBorderColor = Color.Transparent,
@@ -143,6 +133,7 @@ fun FaceFitCard(
     Card(
         modifier = modifier
             .padding(8.dp)
+            .softContainerShadow(RoundedCornerShape(16.dp))
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -226,7 +217,8 @@ fun FavoriteFrameCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .softContainerShadow(RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -303,6 +295,7 @@ fun FaceFitBottomNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(90.dp)
+            .softContainerShadow(androidx.compose.ui.graphics.RectangleShape)
             .background(Color.White)
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.BottomCenter
@@ -315,7 +308,7 @@ fun FaceFitBottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavBarItem("dashboard", Icons.Outlined.Home, "Home", currentRoute == "dashboard") { onNavigate("dashboard") }
-            NavBarItem("history", Icons.Outlined.History, "History", currentRoute == "history") { onNavigate("history") }
+            NavBarItem("frameMatches", Icons.Outlined.AutoAwesome, "Catalog", currentRoute == "frameMatches") { onNavigate("frameMatches") }
             Spacer(modifier = Modifier.width(60.dp)) // Space for FAB
             NavBarItem("favorites", Icons.Outlined.FavoriteBorder, "Favorites", currentRoute == "favorites") { onNavigate("favorites") }
             NavBarItem("profile", Icons.Outlined.Person, "Profile", currentRoute == "profile") { onNavigate("profile") }

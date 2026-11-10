@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:padding="14dp" android:orientation="vertical" android:background="@drawable/bg_results_soft" android:elevation="3dp" android:clickable="true" android:focusable="true" android:foreground="?attr/selectableItemBackground">
+  <TextView android:id="@+id/frameTopMatch" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/frame_top_match" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/facefit_teal" android:layout_marginBottom="6dp" android:visibility="gone" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
+    <FrameLayout android:layout_width="82dp" android:layout_height="64dp" android:background="@drawable/bg_frame_photo_tile" android:clipToOutline="true" android:clipChildren="true" android:padding="6dp">
+      <com.facefit.kiosk.ui.results.FrameArtworkView android:id="@+id/frameArtwork" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" />
+    </FrameLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="12dp">
+      <TextView android:id="@+id/frameName" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/facefit_ink" />
+      <TextView android:id="@+id/frameShape" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="14sp" android:textColor="@color/processing_text_secondary" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="end">
+      <TextView android:id="@+id/frameScore" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/facefit_teal" />
+      <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/frame_score_label" android:textSize="11sp" android:textColor="@color/processing_text_secondary" android:id="@+id/frameScoreLabel" />
+    </LinearLayout>
+  </LinearLayout>
+  <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/frameProgress" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:indeterminate="false" android:max="100" android:importantForAccessibility="no" app:indicatorColor="@color/facefit_teal" app:trackColor="@color/processing_track" app:trackThickness="4dp" app:trackCornerRadius="2dp" />
+</LinearLayout>

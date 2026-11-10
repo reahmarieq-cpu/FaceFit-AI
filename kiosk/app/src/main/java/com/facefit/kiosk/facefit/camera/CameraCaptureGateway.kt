@@ -1,12 +1,23 @@
 package com.facefit.kiosk.facefit.camera
 
+import androidx.camera.view.PreviewView
+import androidx.lifecycle.LifecycleOwner
+import java.io.File
+
 interface CameraCaptureGateway {
-    fun requestCameraReadiness(): CameraReadiness
-}
+    fun startPreview(
+        lifecycleOwner: LifecycleOwner,
+        previewView: PreviewView,
+        onReady: () -> Unit,
+        onUnavailable: (Throwable?) -> Unit,
+        onAnalysis: ((com.facefit.kiosk.facefit.mobilescan.FaceAnalyzer.FaceMetrics) -> Unit)? = null
+    )
 
-sealed class CameraReadiness {
-    data object Ready : CameraReadiness()
-    data object PermissionDenied : CameraReadiness()
-    data object Unavailable : CameraReadiness()
-}
+    fun captureImage(
+        outputFile: File,
+        onSuccess: (File) -> Unit,
+        onError: (Throwable) -> Unit
+    )
 
+    fun stopPreview()
+}

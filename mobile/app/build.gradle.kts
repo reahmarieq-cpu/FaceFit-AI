@@ -32,6 +32,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -48,6 +49,11 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // Keep Filament modules on the same release for native binary compatibility.
+    implementation("com.google.android.filament:filament-android:1.65.2")
+    implementation("com.google.android.filament:gltfio-android:1.65.2")
+    implementation("com.google.android.filament:filament-utils-android:1.65.2")
+
     // CameraX
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
@@ -55,6 +61,16 @@ dependencies {
 
     // MediaPipe
     implementation(libs.mediapipe.tasks.vision)
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.1")
+
+    // Google account chooser and secure ID-token exchange with Firebase Auth.
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // Load published retailer/frame images with caching and Compose support.
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
     // Firebase
     implementation(platform(libs.firebase.bom))

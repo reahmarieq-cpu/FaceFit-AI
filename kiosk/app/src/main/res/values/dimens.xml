@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="screen_padding">28dp</dimen>
+    <dimen name="screen_padding">16dp</dimen>
+    <dimen name="compact_panel_padding">24dp</dimen>
+    <dimen name="face_guide_width">190dp</dimen>
+    <dimen name="face_guide_height">280dp</dimen>
     <dimen name="panel_radius">22dp</dimen>
     <dimen name="card_radius">14dp</dimen>
     <dimen name="field_radius">10dp</dimen>

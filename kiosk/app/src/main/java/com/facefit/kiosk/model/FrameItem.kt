@@ -6,6 +6,8 @@ data class FrameItem(
     val shape: String,
     val color: String,
     val material: String,
-    val isAvailable: Boolean
+    val isAvailable: Boolean,
+    val tryOn: com.facefit.kiosk.vto.ui.catalog.VtoFrame? = null,
+    val imageAssetPath: String? = null
 )
 

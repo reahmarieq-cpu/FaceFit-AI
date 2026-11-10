@@ -1,0 +1,16 @@
+<resources>
+    <string name="details_title">Frame Details</string>
+    <string name="details_back">Back to frames</string>
+    <string name="details_subtitle">%1$s Ã‚Â· %2$s</string>
+    <string name="details_artwork">%1$s, %2$s frame preview</string>
+    <string name="details_compatibility">COMPATIBILITY</string>
+    <string name="details_unscored">Compatibility has not been scored for this frame yet.</string>
+    <string name="details_scored">Compatibility with your facial profile.</string>
+    <string name="details_face">Face shape</string>
+    <string name="details_fit">Proportion fit</string>
+    <string name="details_style">Style &amp; color</string>
+    <string name="details_material">MATERIAL</string>
+    <string name="details_color">COLOR</string>
+    <string name="details_try_on">Start Virtual Try-On</string>
+    <string name="details_try_on_unavailable">Try-on assets are not available for this frame yet.</string>
+</resources>

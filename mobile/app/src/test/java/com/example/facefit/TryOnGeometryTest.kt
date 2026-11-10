@@ -1,7 +1,7 @@
 package com.example.facefit
 
-import com.example.facefit.logic.TryOnGeometry
-import com.example.facefit.logic.TryOnPoint
+import com.example.facefit.facefit.tryon.geometry.TryOnGeometry
+import com.example.facefit.facefit.tryon.geometry.TryOnPoint
 import org.junit.Assert.*
 import org.junit.Test
 

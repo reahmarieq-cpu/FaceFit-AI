@@ -1,8 +1,8 @@
 package com.example.facefit
 
-import com.example.facefit.logic.FaceAnalyzer
-import com.example.facefit.logic.FaceShapeClassifier
-import com.example.facefit.logic.FaceScanSamples
+import com.example.facefit.facefit.analysis.FaceAnalyzer
+import com.example.facefit.facefit.analysis.FaceShapeClassifier
+import com.example.facefit.facefit.analysis.FaceScanSamples
 import org.junit.Assert.*
 import org.junit.Test
 import kotlin.math.cos

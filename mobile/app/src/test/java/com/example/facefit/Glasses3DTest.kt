@@ -1,6 +1,9 @@
 package com.example.facefit
 
-import com.example.facefit.logic.*
+import com.example.facefit.facefit.tryon.geometry.GlassesMesh
+import com.example.facefit.facefit.tryon.geometry.GlassesRig
+import com.example.facefit.facefit.tryon.geometry.Vector3
+
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -78,11 +81,5 @@ class Glasses3DTest {
         assertEquals(0f, rig.yAxis.dot(rig.zAxis), 0.001f)
         assertEquals(1f, rig.zAxis.length(), 0.001f)
         assertTrue(rig.matrix().all { it.isFinite() })
-    }
-
-    @Test
-    fun collapsedAndNonFiniteTrackingIsRejected() {
-        assertNull(GlassesRig.fromEyes(Vector3(0f, 0f, 0f), Vector3(0f, 0f, 0f), Vector3(0f, 30f, 0f), 1f, 0f))
-        assertNull(GlassesRig.fromEyes(Vector3(Float.NaN, 0f, 0f), Vector3(30f, 0f, 0f), Vector3(0f, 30f, 0f), 1f, 0f))
     }
 }

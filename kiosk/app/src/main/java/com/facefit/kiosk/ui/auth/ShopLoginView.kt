@@ -1,6 +1,7 @@
 package com.facefit.kiosk.ui.auth
 
 import android.content.Context
+import android.graphics.Color
 import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.inputmethod.EditorInfo
@@ -24,6 +25,9 @@ class ShopLoginView(
     private val binding = ScreenShopLoginBinding.inflate(LayoutInflater.from(context), this, true)
 
     init {
+        binding.emailInput.setTextColor(Color.WHITE)
+        binding.passwordInput.setTextColor(Color.WHITE)
+
         binding.signInButton.setOnClickListener { submitLogin() }
         binding.passwordInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {

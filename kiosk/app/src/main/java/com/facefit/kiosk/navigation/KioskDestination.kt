@@ -7,6 +7,7 @@ sealed class KioskDestination(val routeName: String) {
     data object FacePositioning : KioskDestination("face_positioning")
     data object Processing : KioskDestination("processing")
     data object Results : KioskDestination("results")
+    data object VirtualTryOn : KioskDestination("virtual_try_on")
     data object FrameDetails : KioskDestination("frame_details")
     data object SelectionConfirmation : KioskDestination("selection_confirmation")
     data object SessionComplete : KioskDestination("session_complete")

@@ -3,7 +3,7 @@ package com.example.facefit
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
-import com.example.facefit.logic.TryOnImageBuffer
+import com.example.facefit.facefit.camera.TryOnImageBuffer
 import java.nio.ByteBuffer
 import org.junit.Assert.*
 import org.junit.Test

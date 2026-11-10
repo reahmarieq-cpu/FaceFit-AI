@@ -1,0 +1,6 @@
+<resources>
+    <color name="processing_text">@color/facefit_ink</color>
+    <color name="processing_text_secondary">#607580</color>
+    <color name="processing_accent">@color/facefit_teal</color>
+    <color name="processing_track">#E5EDEE</color>
+</resources>

@@ -1,0 +1,30 @@
+{
+  "model_id": "facefit_18b",
+  "original_model": "C:\\Users\\Kenn\\FaceFit-AI-Training\\results\\experiment_18\\direct_training_18b_v1\\rf_reduced_D1_D5_D7_D8_validation_stage.joblib",
+  "source_sha256": "f9c973c81f546ab65011b7f7fe86908a911f77e5d94b2480a1aa2a67dbf629a8",
+  "onnx_sha256": "46196c21824b7e58f5783121d6595c79fade85829ee519a0ea36155be97e3639",
+  "feature_source_sha256": "c4249c9a9926b97ba15bc1c1d5dfaa7039ef6aa494cc00035157fe8cfa1f3ccf",
+  "classes": [
+    "Heart",
+    "Oblong",
+    "Oval",
+    "Round",
+    "Square"
+  ],
+  "features": [
+    "D1_face_aspect",
+    "D2_upper_width",
+    "D3_jaw_chord",
+    "D4_chin_depth",
+    "D5_jaw_arc_length",
+    "D7_cheek_vertical_span",
+    "D8_cheek_lateral_span"
+  ],
+  "trees": 300,
+  "saved_validation_rows": 797,
+  "active_validation_rows": 791,
+  "conversion_label_mismatches": 0,
+  "maximum_probability_difference": 9.948148871341544e-07,
+  "active_validation_accuracy": 0.6156763590391909,
+  "limitations": "Existing validation rows; not an independent test or real-world accuracy estimate. No retraining."
+}

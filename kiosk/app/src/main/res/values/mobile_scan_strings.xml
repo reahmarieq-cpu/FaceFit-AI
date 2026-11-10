@@ -1,0 +1,10 @@
+<resources>
+    <string name="scan_start_stable">Start Scan</string>
+    <string name="scan_collecting">Hold still…</string>
+    <string name="scan_collecting_percent">Scanning %1$d%%</string>
+    <string name="scan_stable_tip">Face forward in even lighting. We need at least two seconds of steady frames.</string>
+    <string name="scan_hold_still">Hold still for a clearer scan.</string>
+    <string name="scan_quality_check">Position your face</string>
+    <string name="scan_ready_tap">Ready — tap Start Scan and hold still.</string>
+    <string name="scan_model_score">Model score: %1$d%%</string>
+</resources>

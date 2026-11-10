@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "status": "provisional",
+  "method": "P33-P67-linear",
+  "referenceSet": "dataset_7classes/train (facefit_7classes_features_v2.csv, train rows)",
+  "sampleSize": 2456,
+  "skipped": {
+    "face_or_pose_quality": 983,
+    "duplicate_file": 3
+  },
+  "sampleLimitations": "Class-balanced photo dataset. Duplicate files removed; unique people not verified.",
+  "referenceLandmarks": [
+    234,
+    454
+  ],
+  "features": {
+    "upperFaceWidth": {
+      "landmarks": [
+        103,
+        332
+      ],
+      "low": 0.7089036843210432,
+      "high": 0.734192127620605
+    },
+    "jawlineWidth": {
+      "landmarks": [
+        172,
+        397
+      ],
+      "low": 0.7842335050968797,
+      "high": 0.8065135564313693
+    },
+    "eyeSpacing": {
+      "landmarks": [
+        133,
+        362
+      ],
+      "low": 0.23897482198723496,
+      "high": 0.25175024607029295
+    }
+  }
+}

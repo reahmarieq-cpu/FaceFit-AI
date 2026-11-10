@@ -67,6 +67,7 @@ class KioskWelcomeView(
     }
 
     private fun startScanFlow() {
+        sessionStore.clearCustomerSession()
         navigator.navigateTo(KioskDestination.Consent)
     }
 }

@@ -1,0 +1,29 @@
+<resources>
+    <string name="results_eyebrow">SCAN COMPLETE</string>
+    <string name="results_title">Your Results</string>
+    <string name="results_subtitle">A closer look at your facial proportions.</string>
+    <string name="results_shape_label">Estimated face shape</string>
+    <string name="results_shape_unavailable">Not determined yet</string>
+    <string name="results_shape_note">Your facial profile is ready</string>
+    <string name="results_aspect_label">Width</string>
+    <string name="results_jaw_label">Jawline</string>
+    <string name="results_eyes_label">Eye spacing</string>
+    <string name="results_value_unavailable">â€”</string>
+    <string name="results_profile_eyebrow">YOUR FACIAL PROFILE</string>
+    <string name="results_profile_title">Your proportions, at a glance</string>
+    <string name="results_profile_body">These labels describe your upper-face width, jawline width, and inner-eye spacing relative to your cheek width.</string>
+    <string name="results_shape_explanation">Use your facial profile as a guide when exploring frames.</string>
+    <string name="results_rescan">Scan Again</string>
+    <string name="results_store_eyebrow">FRAME RECOMMENDATIONS</string>
+    <string name="results_matches_title">Your frame matches</string>
+    <string name="results_matches_subtitle">Explore compatible eyewear from this store.</string>
+    <string name="results_no_matches_title">No frame matches available yet</string>
+    <string name="results_no_matches_body">Your facial profile is ready. Ask store staff for help exploring frames, or scan again to update your profile.</string>
+    <string name="results_no_matches_note">Compatibility scores will appear when recommendations are available.</string>
+    <string name="results_shape_oval">Oval</string>
+    <string name="results_shape_round">Round</string>
+    <string name="results_shape_square">Square</string>
+    <string name="results_shape_heart">Heart</string>
+    <string name="results_shape_oblong">Oblong</string>
+    <string name="results_shape_diamond">Diamond</string>
+</resources>

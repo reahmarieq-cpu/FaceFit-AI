@@ -1,0 +1,18 @@
+// Merge this match block INSIDE the live /databases/{database}/documents block,
+// replacing only the existing frames block. This is NOT a complete rules file.
+// Uses the existing isAdmin() helper. Review live rules before publishing.
+match /frames/{frameId} {
+  allow read: if isAdmin() || (
+    request.auth != null
+    && resource.data.status == "approved"
+    && resource.data.retailId is string
+    && exists(/databases/$(database)/documents/publicShops/$(resource.data.retailId))
+    && get(/databases/$(database)/documents/publicShops/$(resource.data.retailId)).data.status == "approved"
+  );
+  // Preserve the existing admin-only moderation writes.
+  allow update: if isAdmin()
+    && resource.data.status == "pending"
+    && request.resource.data.status in ["approved", "hidden"]
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
+  allow create, delete: if false;
+}

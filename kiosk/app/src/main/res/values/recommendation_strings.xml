@@ -1,0 +1,20 @@
+<resources>
+    <string name="frame_inventory_label">EYEWEAR COLLECTION</string>
+    <plurals name="frame_inventory_count">
+        <item quantity="one">%1$d frame available · tap to view details</item>
+        <item quantity="other">%1$d frames available · tap to view details</item>
+    </plurals>
+    <string name="frame_inventory_loading">Loading frames…</string>
+    <string name="frame_inventory_error">Frames could not be loaded. Please try again.</string>
+    <string name="frame_inventory_empty">No frames are available for this store.</string>
+    <string name="frame_retry">Retry</string>
+    <string name="frame_top_match">TOP MATCH</string>
+    <string name="frame_score">%1$d</string>
+    <string name="frame_score_label">compatibility</string>
+    <string name="frame_score_pending">Not scored</string>
+    <string name="frame_description">Shape: %1$s\nColor: %2$s\nMaterial: %3$s</string>
+    <string name="frame_back_to_matches">Back to frames</string>
+    <string name="frame_accessibility">%1$s, %2$s. View details.</string>
+    <string name="profile_confidence">%1$d%% confidence</string>
+    <string name="profile_shape_label">Face shape</string>
+</resources>

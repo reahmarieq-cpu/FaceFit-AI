@@ -3,7 +3,7 @@ package com.example.facefit
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.facefit.ui.components.TryOnCameraPreview
+import com.example.facefit.ui.camera.TryOnCameraPreview
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertTrue

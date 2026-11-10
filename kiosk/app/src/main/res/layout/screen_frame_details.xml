@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:fillViewport="true" android:background="@color/facefit_surface_soft" android:clipToPadding="false">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:clipChildren="false" android:clipToPadding="false">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="24dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/details_back" style="@style/Widget.MaterialComponents.Button.TextButton" android:layout_width="52dp" android:layout_height="52dp" android:text="" android:textAllCaps="false" android:contentDescription="@string/details_back" app:icon="@drawable/ic_frame_details_back" app:iconPadding="0dp" app:iconGravity="textStart" android:minWidth="0dp" android:padding="14dp" app:backgroundTint="@color/facefit_surface" app:cornerRadius="16dp" />
+            <TextView android:id="@+id/details_title" android:layout_width="0dp" android:layout_height="wrap_content" android:text="@string/details_title" android:textSize="22sp" android:textColor="@color/facefit_ink" android:textStyle="bold" android:layout_marginBottom="0dp" android:layout_weight="1" android:layout_marginStart="16dp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp" android:layout_margin="6dp" android:background="@drawable/bg_frame_details_image" android:elevation="4dp">
+            <com.facefit.kiosk.ui.results.FrameArtworkView android:id="@+id/details_artwork" android:layout_width="match_parent" android:layout_height="170dp" />
+        </LinearLayout>
+        <TextView android:id="@+id/details_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="30sp" android:textColor="@color/facefit_ink" android:textStyle="bold" android:layout_marginTop="20dp" />
+        <TextView android:id="@+id/details_subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="17sp" android:textColor="@color/facefit_ink_muted" android:layout_marginTop="6dp" android:layout_marginBottom="24dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="24dp" android:layout_margin="6dp" android:background="@drawable/bg_frame_details_card" android:elevation="4dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:id="@+id/details_score" android:layout_width="72dp" android:layout_height="wrap_content" android:text="" android:textSize="32sp" android:textColor="@color/facefit_teal" android:textStyle="bold" android:gravity="center" android:layout_marginEnd="16dp" />
+                <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+                    <TextView android:id="@+id/details_compatibility" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/details_compatibility" android:textSize="13sp" android:textColor="@color/facefit_teal" android:letterSpacing="0.12" android:textStyle="bold" />
+                    <TextView android:id="@+id/details_explanation" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="14sp" android:textColor="@color/facefit_ink_muted" android:layout_marginTop="10dp" android:lineSpacingExtra="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="6dp" android:layout_marginBottom="18dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/details_face" android:textColor="@color/facefit_ink_muted" android:textSize="16sp" />
+                <TextView android:id="@+id/details_face_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/facefit_teal" android:textSize="16sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ProgressBar android:id="@+id/details_face_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="8dp" android:max="100" android:progressDrawable="@drawable/bg_frame_details_progress" android:importantForAccessibility="no" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/details_fit" android:textColor="@color/facefit_ink_muted" android:textSize="16sp" />
+                <TextView android:id="@+id/details_fit_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/facefit_teal" android:textSize="16sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ProgressBar android:id="@+id/details_fit_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="8dp" android:max="100" android:progressDrawable="@drawable/bg_frame_details_progress" android:importantForAccessibility="no" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="18dp">
+                <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="@string/details_style" android:textColor="@color/facefit_ink_muted" android:textSize="16sp" />
+                <TextView android:id="@+id/details_style_value" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="@color/facefit_teal" android:textSize="16sp" android:textStyle="bold" />
+            </LinearLayout>
+            <ProgressBar android:id="@+id/details_style_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="8dp" android:max="100" android:progressDrawable="@drawable/bg_frame_details_progress" android:importantForAccessibility="no" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:clipChildren="false" android:clipToPadding="false">
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_margin="6dp" android:padding="20dp" android:orientation="vertical" android:background="@drawable/bg_frame_details_card" android:elevation="3dp">
+                <TextView android:id="@+id/details_material_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/details_material" android:textSize="12sp" android:textColor="@color/facefit_ink_muted" />
+                <TextView android:id="@+id/details_material" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="19sp" android:textColor="@color/facefit_ink" android:textStyle="bold" android:layout_marginTop="8dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:layout_margin="6dp" android:padding="20dp" android:orientation="vertical" android:background="@drawable/bg_frame_details_card" android:elevation="3dp">
+                <TextView android:id="@+id/details_color_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/details_color" android:textSize="12sp" android:textColor="@color/facefit_ink_muted" />
+                <TextView android:id="@+id/details_color" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textSize="19sp" android:textColor="@color/facefit_ink" android:textStyle="bold" android:layout_marginTop="8dp" />
+            </LinearLayout>
+        </LinearLayout>
+        <com.google.android.material.button.MaterialButton android:id="@+id/details_try_on" android:layout_width="match_parent" android:layout_height="64dp" android:layout_marginTop="18dp" android:text="@string/details_try_on" android:textAllCaps="false" android:textSize="18sp" app:cornerRadius="20dp" app:backgroundTint="@color/facefit_teal" android:textColor="@color/facefit_surface" android:alpha="0.65" />
+        <TextView android:id="@+id/details_try_on_notice" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/details_try_on_unavailable" android:textColor="@color/facefit_ink_muted" android:gravity="center" android:layout_marginTop="8dp" />
+    </LinearLayout>
+</ScrollView>

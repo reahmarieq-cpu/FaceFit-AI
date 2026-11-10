@@ -4,9 +4,9 @@ import android.graphics.Bitmap
 import android.opengl.EGL14
 import android.opengl.GLES20
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.facefit.logic.FaceAnalyzer
-import com.example.facefit.ui.components.Glasses3DRenderer
-import com.example.facefit.ui.components.Glasses3DState
+import com.example.facefit.facefit.analysis.FaceAnalyzer
+import com.example.facefit.ui.tryon.rendering.Glasses3DRenderer
+import com.example.facefit.ui.tryon.rendering.Glasses3DState
 import java.io.File
 import java.nio.ByteBuffer
 import kotlin.math.*
@@ -15,7 +15,13 @@ import org.junit.Test
 
 class Glasses3DRenderingTest {
     @Test
-    fun actualGpuRendersFrontAndBothHeadTurns() {
+    fun actualGpuRendersFrontAndBothHeadTurns() = verifyRendering()
+
+    @Test
+    fun squareTortoiseRendersWithoutSeparateLensGeometry() =
+        verifyRendering("frames/square_tortoise/SquareTortoise.glb")
+
+    private fun verifyRendering(assetPath: String? = null) {
         val display = EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY)
         assertTrue(EGL14.eglInitialize(display, IntArray(2), 0, IntArray(2), 0))
         val configs = arrayOfNulls<android.opengl.EGLConfig>(1)
@@ -31,7 +37,11 @@ class Glasses3DRenderingTest {
         assertTrue(EGL14.eglMakeCurrent(display, surface, surface, context))
         try {
             val errors = mutableListOf<String>()
-            val renderer = Glasses3DRenderer(true) { errors.add(it) }
+            val renderer = Glasses3DRenderer(
+                browline = true,
+                assetPath = assetPath,
+                context = InstrumentationRegistry.getInstrumentation().targetContext
+            ) { errors.add(it) }
             renderer.onSurfaceCreated(null, null)
             renderer.onSurfaceChanged(null, 512, 512)
             fun render(angle: Float, name: String): ByteArray {
@@ -44,7 +54,7 @@ class Glasses3DRenderingTest {
                 pixels.position(0); pixels.get(bytes)
                 assertTrue(errors.joinToString(), errors.isEmpty())
                 assertTrue("Blank 3D scene at $angle degrees", bytes.indices.count { it % 4 == 3 && bytes[it].toInt() != 0 } > 800)
-                assertTrue("Clear lenses must remain translucent", (0 until 512 * 512).count {
+                if (assetPath == null) assertTrue("Clear lenses must remain translucent", (0 until 512 * 512).count {
                     (bytes[it * 4 + 3].toInt() and 255) in 1..40
                 } > 200)
                 val argb = IntArray(512 * 512) { i ->
@@ -55,7 +65,7 @@ class Glasses3DRenderingTest {
                 }
                 val bitmap = Bitmap.createBitmap(argb, 512, 512, Bitmap.Config.ARGB_8888)
                 val directory = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)!!
-                File(directory, "vto3d-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                File(directory, "vto3d-${if (assetPath == null) "procedural" else "square"}-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 bitmap.recycle()
                 return bytes
             }

@@ -1,0 +1,7 @@
+D1_face_aspect
+D2_upper_width
+D3_jaw_chord
+D4_chin_depth
+D5_jaw_arc_length
+D7_cheek_vertical_span
+D8_cheek_lateral_span

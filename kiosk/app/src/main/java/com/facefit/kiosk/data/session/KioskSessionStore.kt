@@ -1,11 +1,22 @@
 package com.facefit.kiosk.data.session
 
 import com.facefit.kiosk.model.FrameRecommendation
+import com.facefit.kiosk.model.FaceScanResult
+import com.facefit.kiosk.model.FaceLandmarkScan
+import com.facefit.kiosk.model.FacialFeatureMetrics
 import com.facefit.kiosk.model.ShopAccount
+import com.facefit.kiosk.facefit.analysis.FaceAnalysisResult
+import java.io.File
 
 interface KioskSessionStore {
     var activeShop: ShopAccount?
     var selectedRecommendation: FrameRecommendation?
+    var capturedFaceImagePath: String?
+    var faceLandmarkScan: FaceLandmarkScan?
+    var latestFaceAnalysisResult: FaceAnalysisResult?
+    var capturedScanMetrics: com.facefit.kiosk.facefit.mobilescan.FaceAnalyzer.FaceMetrics?
+    var analysisResult: FaceScanResult?
+    var facialFeatureMetrics: FacialFeatureMetrics?
 
     fun clearCustomerSession()
     fun clearAll()
@@ -14,9 +25,22 @@ interface KioskSessionStore {
 class InMemoryKioskSessionStore : KioskSessionStore {
     override var activeShop: ShopAccount? = null
     override var selectedRecommendation: FrameRecommendation? = null
+    override var capturedFaceImagePath: String? = null
+    override var faceLandmarkScan: FaceLandmarkScan? = null
+    override var latestFaceAnalysisResult: FaceAnalysisResult? = null
+    override var capturedScanMetrics: com.facefit.kiosk.facefit.mobilescan.FaceAnalyzer.FaceMetrics? = null
+    override var analysisResult: FaceScanResult? = null
+    override var facialFeatureMetrics: FacialFeatureMetrics? = null
 
     override fun clearCustomerSession() {
+        capturedScanMetrics = null
+        analysisResult = null
         selectedRecommendation = null
+        faceLandmarkScan = null
+        latestFaceAnalysisResult = null
+        facialFeatureMetrics = null
+        capturedFaceImagePath?.let { File(it).delete() }
+        capturedFaceImagePath = null
     }
 
     override fun clearAll() {
@@ -24,4 +48,3 @@ class InMemoryKioskSessionStore : KioskSessionStore {
         clearCustomerSession()
     }
 }
-
