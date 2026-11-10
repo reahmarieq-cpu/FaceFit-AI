@@ -1,2 +1,14 @@
+*.iml
+.gradle/
+.idea/
+build/
+local.properties
+captures/
+externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+
 web/admin/.firebase/
 web/admin/firestore-debug.log
