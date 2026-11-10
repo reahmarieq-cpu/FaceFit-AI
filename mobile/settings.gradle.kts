@@ -26,7 +26,8 @@ rootProject.name = "facefit"
 include(":app")
 
 // Redirect build outputs outside OneDrive to prevent Windows/OneDrive file locking on temporary zip-cache files
-val buildCacheDir = File("D:/FaceFitAI-build")
+val localAppData = System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir")
+val buildCacheDir = File(localAppData, "FaceFitAI-build")
 
 gradle.beforeProject {
     layout.buildDirectory.set(File(buildCacheDir, if (path == ":") "root" else name))
