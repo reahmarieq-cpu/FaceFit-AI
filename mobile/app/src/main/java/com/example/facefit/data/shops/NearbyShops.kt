@@ -39,17 +39,52 @@ class NearbyShopsRepository {
         awaitClose { listener.remove() }
     }
 
-    fun observeFrames(shopId: String): kotlinx.coroutines.flow.Flow<List<ShopFrame>> = kotlinx.coroutines.flow.callbackFlow {
+    fun observeFrames(shopId: String): kotlinx.coroutines.flow.Flow<List<ShopFrame>> {
         require(shopId.isNotBlank()) { "A shop ID is required" }
-        val listener = firestore.collection("frames").whereEqualTo("retailId", shopId)
-            .whereEqualTo("status", "approved").addSnapshotListener { snapshot, error ->
-                if (error != null) close(error)
-                else if (snapshot != null) trySend(snapshot.documents.mapNotNull { document ->
-                    document.data?.let { ShopFrame.fromData(document.id, it, shopId) }
-                }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) })
-            }
+        val retailerFrames = observeFrameQuery(
+            firestore.collection("retailers").document(shopId).collection("frames")
+                .whereIn("status", listOf("live", "approved")), "retailer"
+        ) { id, data -> ShopFrame.fromRetailerData(id, data, shopId) }
+        val catalogFrames = observeFrameQuery(
+            firestore.collection("frames").whereEqualTo("retailerId", shopId).whereEqualTo("status", "approved"), "catalog"
+        ) { id, data -> ShopFrame.fromData(id, data, shopId) }
+        val legacyFrames = observeFrameQuery(
+            firestore.collection("frames").whereEqualTo("retailId", shopId).whereEqualTo("status", "approved"), "catalog"
+        ) { id, data -> ShopFrame.fromData(id, data, shopId) }
+        return kotlinx.coroutines.flow.combine(retailerFrames, catalogFrames, legacyFrames) { retailer, catalog, legacy ->
+            mergeShopFrames(retailer, catalog, legacy)
+        }
+    }
+
+    fun observeFrame(shopId: String, frameKey: String): kotlinx.coroutines.flow.Flow<ShopFrame?> = kotlinx.coroutines.flow.callbackFlow {
+        require(shopId.isNotBlank()) { "A shop ID is required" }
+        val (source, id) = requireNotNull(parseShopFrameKey(frameKey)) { "Unknown product" }
+        val document = if (source == "retailer") firestore.collection("retailers").document(shopId).collection("frames").document(id)
+            else firestore.collection("frames").document(id)
+        val listener = document.addSnapshotListener { snapshot, error ->
+            if (error != null) close(error)
+            else if (snapshot != null) trySend(snapshot.data?.let { data ->
+                if (source == "retailer") ShopFrame.fromRetailerData(frameKey, data, shopId)
+                else ShopFrame.fromData(frameKey, data, shopId)
+            })
+        }
         awaitClose { listener.remove() }
     }
+
+    private fun observeFrameQuery(
+        query: com.google.firebase.firestore.Query,
+        source: String,
+        parse: (String, Map<String, Any?>) -> ShopFrame?
+    ): kotlinx.coroutines.flow.Flow<List<ShopFrame>> = kotlinx.coroutines.flow.callbackFlow {
+        val listener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) close(error)
+            else if (snapshot != null) trySend(snapshot.documents.mapNotNull { document ->
+                document.data?.let { parse("$source/${document.id}", it) }
+            })
+        }
+        awaitClose { listener.remove() }
+    }
+
 }
 
 

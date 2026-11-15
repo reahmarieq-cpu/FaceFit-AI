@@ -87,6 +87,8 @@ fun VirtualTryOnScreen(frame: SampleFrame, onBack: () -> Unit) {
                 } else metrics=it
             }, onError = { cameraError = it; metrics = null; trackingFeed.publish(null); faceDetected=false },
                 backend = TrackingBackend.GPU,
+                // Live native backend probing is disabled until isolated-device validation.
+                autoSelectBackend = false,
                 onBackendFallback = { backendNotice = it },
                 onTrackingStatus = { trackingStatus = it })
             if (glbPath != null) {

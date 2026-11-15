@@ -78,12 +78,25 @@ internal object VtoHeadPose {
         return Axes(x,y,z)
     }
 
-    fun rig(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int, scale: Float, heightOffset: Float): GlassesRig? {
+    internal data class Candidates(val fitted: GlassesRig?, val fallback: GlassesRig)
+
+    fun rig(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int, scale: Float, heightOffset: Float): GlassesRig? =
+        candidates(face,width,height,scale,heightOffset)?.let { it.fitted ?: it.fallback }
+
+    internal fun candidates(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int,
+        scale: Float, heightOffset: Float): Candidates? {
         if(face.landmarks.size<468) return null
         fun p(i: Int)=face.landmarks[i].let { Vector3(it.x*width,it.y*height,it.z*width) }
         val first=(p(33)+p(133))*.5f; val second=(p(263)+p(362))*.5f
         val fallback=GlassesRig.fromEyes(first,second,p(152),scale,heightOffset,p(10),p(168)) ?: return null
-        val axes=fit(landmarkIndices.map { p(it) }) ?: return fallback
+        val axes=fit(landmarkIndices.map { p(it) })
+        return Candidates(axes?.let { withAxes(face,width,height,scale,heightOffset,it) },fallback)
+    }
+
+    internal fun withAxes(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int,
+        scale: Float, heightOffset: Float, axes: Axes): GlassesRig {
+        fun p(i: Int)=face.landmarks[i].let { Vector3(it.x*width,it.y*height,it.z*width) }
+        val first=(p(33)+p(133))*.5f; val second=(p(263)+p(362))*.5f
         val center=(first+second)*.5f
         val distance=(second-first).length()
         val depth=(p(168)-center).dot(axes.behind)-distance*.08f

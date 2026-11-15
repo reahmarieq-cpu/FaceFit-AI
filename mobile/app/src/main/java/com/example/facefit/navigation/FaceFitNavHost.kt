@@ -11,6 +11,7 @@ import com.example.facefit.ui.profile.ProfileScreen
 import com.example.facefit.ui.scan.ScanResultsScreen
 import com.example.facefit.ui.scan.ScanScreen
 import android.net.Uri
+import com.example.facefit.ui.shops.ShopProductDetailsScreen
 import com.example.facefit.ui.shops.ShopDetailsScreen
 import com.example.facefit.ui.shops.NearbyShopsScreen
 import com.example.facefit.ui.tryon.VirtualTryOnScreen
@@ -116,8 +117,19 @@ fun FaceFitNavHost(
             })
         }
         composable("shopDetails/{shopId}") { entry ->
-            ShopDetailsScreen(shopId = entry.arguments?.getString("shopId").orEmpty(),
-                onBack = { navController.popBackStack() })
+            val shopId = entry.arguments?.getString("shopId").orEmpty()
+            ShopDetailsScreen(shopId = shopId, onBack = { navController.popBackStack() },
+                onFrameClick = { key ->
+                    navController.navigate("shopProduct/${Uri.encode(shopId)}/${Uri.encode(key)}") { launchSingleTop = true }
+                })
+        }
+        composable("shopProduct/{shopId}/{frameKey}") { entry ->
+            val shopId = entry.arguments?.getString("shopId").orEmpty()
+            ShopProductDetailsScreen(shopId = shopId, frameKey = entry.arguments?.getString("frameKey").orEmpty(),
+                onBack = { navController.popBackStack() }, onViewShop = {
+                    val route = "shopDetails/${Uri.encode(shopId)}"
+                    if (!navController.popBackStack(route, false)) navController.navigate(route) { launchSingleTop = true }
+                })
         }
         composable("profile") {
             ProfileScreen(

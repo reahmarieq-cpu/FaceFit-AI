@@ -1,18 +1,23 @@
-// Merge this match block INSIDE the live /databases/{database}/documents block,
-// replacing only the existing frames block. This is NOT a complete rules file.
-// Uses the existing isAdmin() helper. Review live rules before publishing.
-match /frames/{frameId} {
-  allow read: if isAdmin() || (
-    request.auth != null
-    && resource.data.status == "approved"
-    && resource.data.retailId is string
-    && exists(/databases/$(database)/documents/publicShops/$(resource.data.retailId))
-    && get(/databases/$(database)/documents/publicShops/$(resource.data.retailId)).data.status == "approved"
-  );
-  // Preserve the existing admin-only moderation writes.
-  allow update: if isAdmin()
-    && resource.data.status == "pending"
-    && request.resource.data.status in ["approved", "hidden"]
-    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"]);
-  allow create, delete: if false;
+// Reference fragments only. Merge into the CURRENT live rules; preserve all writes.
+// The complete older web/admin/firestore.rules file must not replace live rules.
+
+// Add alongside existing helper functions inside /databases/{database}/documents.
+function isPublishedShop(shopId) {
+  return shopId is string
+    && exists(/databases/$(database)/documents/publicShops/$(shopId))
+    && get(/databases/$(database)/documents/publicShops/$(shopId)).data.status == "approved";
 }
+
+// Replace ONLY the read statement in retailers/{retailerId}/frames/{frameId}:
+// allow read: if isAdmin() || approvedRetailer(retailerId) || (
+//   signedIn() && isPublishedShop(retailerId)
+//   && resource.data.status in ["live", "approved"]
+// );
+
+// Replace ONLY the read statement in top-level frames/{frameId}:
+// allow read: if isAdmin() || (
+//   signedIn() && resource.data.status == "approved" && (
+//     ("retailerId" in resource.data && isPublishedShop(resource.data.retailerId)) ||
+//     ("retailId" in resource.data && isPublishedShop(resource.data.retailId))
+//   )
+// );

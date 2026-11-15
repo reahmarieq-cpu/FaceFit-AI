@@ -2,26 +2,36 @@ package com.example.facefit.ui.camera
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.Rect
 import androidx.camera.core.ImageProxy
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import kotlin.math.hypot
 
 /** Direct CameraX input and its display-coordinate mapping, used only by VTO. */
 internal object VtoCameraFrame {
-    fun copyRgba(image: ImageProxy): Bitmap {
-        val plane=image.planes[0]
-        val buffer=plane.buffer.duplicate()
-        val pixels=IntArray(image.width*image.height)
-        val base=buffer.position()
-        for(y in 0 until image.height) for(x in 0 until image.width) {
-            val offset=base+y*plane.rowStride+x*plane.pixelStride
-            val r=buffer.get(offset).toInt() and 255
-            val g=buffer.get(offset+1).toInt() and 255
-            val b=buffer.get(offset+2).toInt() and 255
-            val a=buffer.get(offset+3).toInt() and 255
-            pixels[y*image.width+x]=(a shl 24) or (r shl 16) or (g shl 8) or b
-        }
-        return Bitmap.createBitmap(pixels,image.width,image.height,Bitmap.Config.ARGB_8888)
+    /** Upright analysis buffer -> sensor -> displayed preview. Mirror is in sensorToView.
+     * Do not add another front-camera flip or swap axes based on device orientation.
+     */
+    fun bufferToPreview(sensorToBuffer: Matrix, sensorToView: Matrix): Matrix? {
+        val bufferToSensor = Matrix()
+        if (!sensorToBuffer.invert(bufferToSensor)) return null
+        return Matrix().apply { setConcat(sensorToView, bufferToSensor) }
+    }
+
+    fun copyRgba(image: ImageProxy): Bitmap = VtoRgbaBuffer().copy(image)
+
+    /** Undo the inference-only crop and front-camera input mirror, before sensor mapping.
+     * Landmarks keep the same semantic handedness as inference on the old mirrored preview.
+     */
+    fun restoreCrop(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int,
+        crop: Rect, mirrored: Boolean): FaceAnalyzer.FaceMetrics {
+        require(width>0 && height>0 && !crop.isEmpty && crop.left>=0 && crop.top>=0 &&
+            crop.right<=width && crop.bottom<=height)
+        if(!mirrored && crop.left==0 && crop.top==0 && crop.width()==width && crop.height()==height) return face
+        return face.copy(landmarks=face.landmarks.map { p -> FaceAnalyzer.LandmarkPoint(
+            (crop.left+(if(mirrored) 1f-p.x else p.x)*crop.width())/width,
+            (crop.top+p.y*crop.height())/height,p.z*crop.width()/width)
+        },imageWidth=width,imageHeight=height)
     }
 
     fun map(face: FaceAnalyzer.FaceMetrics, transform: Matrix, width: Int, height: Int, mirroredInput: Boolean = false): FaceAnalyzer.FaceMetrics {

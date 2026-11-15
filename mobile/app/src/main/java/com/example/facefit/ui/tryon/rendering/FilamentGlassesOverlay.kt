@@ -16,7 +16,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.facefit.facefit.tryon.tracking.VtoHeadPose
+import com.example.facefit.facefit.tryon.tracking.VtoDisplayFollower
+import com.example.facefit.facefit.tryon.tracking.VtoRigResolver
 import com.example.facefit.facefit.tryon.geometry.GlbFaceTransform
 import com.example.facefit.facefit.tryon.geometry.VtoAutomaticFit
 import com.google.android.filament.*
@@ -68,6 +69,7 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
     var trackingFeed: VtoTrackingFeed? = null
     private var session: TrackedGlassesSession? = null
     private var running = false
+    private val follower = VtoDisplayFollower()
     private val choreographer = Choreographer.getInstance()
     private val observer = LifecycleEventObserver { _, _ -> updateRunning() }
 
@@ -93,15 +95,20 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
             owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
         if (running == next) return
         running = next
-        if (running) choreographer.postFrameCallback(this) else choreographer.removeFrameCallback(this)
+        if (running) choreographer.postFrameCallback(this) else {
+            choreographer.removeFrameCallback(this)
+            follower.reset()
+        }
     }
 
     override fun doFrame(frameTimeNanos: Long) {
         if (!running) return
         try {
             val face=if(trackingFeed!=null) trackingFeed?.latest else trackingState.metrics
-            session?.render(frameTimeNanos, trackingState.copy(metrics=face,
-                scale = 1f, heightOffset = 0f))
+            val displayed=follower.sample(face,frameTimeNanos)
+            if (alpha != displayed.opacity) alpha=displayed.opacity
+            session?.render(frameTimeNanos, trackingState.copy(metrics=displayed.face,
+                scale = 1f, heightOffset = 0f), face)
             choreographer.postFrameCallback(this)
         } catch (error: Exception) {
             release()
@@ -116,6 +123,7 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
 
     private fun release() {
         running = false
+        follower.reset()
         choreographer.removeFrameCallback(this)
         owner.lifecycle.removeObserver(observer)
         session?.close()
@@ -156,6 +164,10 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
     private var poseOffset=Float.NaN
     private var poseMatrix: FloatArray? = null
     private var pendingFrame=true
+    private var poseRig: com.example.facefit.facefit.tryon.geometry.GlassesRig? = null
+    private var lastMeasurement: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = null
+    private val rigResolver=VtoRigResolver()
+    private val gpuTiming=VtoGpuTiming(engine)
 
     fun load(texture: TextureView, bytes: ByteArray, triangles: ByteArray) {
         view.scene = scene
@@ -204,22 +216,30 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         helper.attachTo(texture)
     }
 
-    fun render(time: Long, state: Glasses3DState) {
+    fun render(time: Long, state: Glasses3DState,
+        diagnosticFace: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = state.metrics) {
+        gpuTiming.poll()
         if (!helper.isReadyToRender || width <= 0 || height <= 0) return
         val model = asset ?: return
         val diagnosticStart=android.os.SystemClock.uptimeMillis()
-        val changed=state.metrics !== poseFace || width!=poseWidth || height!=poseHeight ||
+        // Follower runs at display rate, with stable identity once converged.
+        // The exact same followed landmarks and rigid axes drive model and occluder.
+        val poseMetrics = state.metrics
+        val geometryChanged=poseMetrics !== poseFace || width!=poseWidth || height!=poseHeight ||
             state.scale!=poseScale || state.heightOffset!=poseOffset
+        val rig=if(geometryChanged || diagnosticFace !== lastMeasurement || rigResolver.isTransitioning)
+            rigResolver.resolve(poseMetrics,width,height,state.scale,state.heightOffset,time,diagnosticFace)
+            else poseRig
+        lastMeasurement=diagnosticFace
+        val changed=geometryChanged || rig != poseRig
         if(changed) {
             pendingFrame=true
-            val rig=state.metrics?.takeIf { it.isFaceDetected }?.let {
-                VtoHeadPose.rig(it,width,height,state.scale,state.heightOffset)
-            }
-            poseMatrix=GlbFaceTransform.matrix(state.metrics,width,height,
+            poseRig=rig
+            poseMatrix=GlbFaceTransform.matrix(poseMetrics,width,height,
                 model.boundingBox.center,model.boundingBox.halfExtent,state.scale,state.heightOffset,calibration,rig)
             poseMatrix?.let { engine.transformManager.setTransform(engine.transformManager.getInstance(model.root),it) }
-            occluder?.update(state.metrics,width,height,poseMatrix!=null,rig)
-            poseFace=state.metrics;poseWidth=width;poseHeight=height
+            occluder?.update(poseMetrics,width,height,poseMatrix!=null,rig)
+            poseFace=poseMetrics;poseWidth=width;poseHeight=height
             poseScale=state.scale;poseOffset=state.heightOffset
         }
         val diagnosticPoseDone=android.os.SystemClock.uptimeMillis()
@@ -231,17 +251,23 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         }
         // Clear transparent pixels even after tracking is lost, so the last pose cannot linger.
         val target = swapChain ?: return
-        val submitted=renderer.beginFrame(target,time)
-        if (submitted) {
-            renderer.render(view)
-            renderer.endFrame()
-            pendingFrame=false
-        }
-        VtoDiagnostics.render(state.metrics,diagnosticStart,diagnosticPoseDone,
+        val marked=gpuTiming.submitMarker(diagnosticFace)
+        val submitted: Boolean
+        try {
+            submitted=renderer.beginFrame(target,time)
+            if (submitted) {
+                renderer.render(view)
+                renderer.endFrame()
+                pendingFrame=false
+                gpuTiming.submitted(diagnosticFace)
+            }
+        } finally { gpuTiming.endMarker(marked) }
+        VtoDiagnostics.render(diagnosticFace,diagnosticStart,diagnosticPoseDone,
             android.os.SystemClock.uptimeMillis(),submitted,show)
     }
 
     fun close() {
+        gpuTiming.close()
         helper.detach()
         occluder?.close()
         occluder = null

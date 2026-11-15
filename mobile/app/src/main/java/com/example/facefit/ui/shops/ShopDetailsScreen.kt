@@ -6,9 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -33,7 +31,7 @@ import kotlinx.coroutines.CancellationException
 import java.util.Locale
 
 @Composable
-fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
+fun ShopDetailsScreen(shopId: String, onBack: () -> Unit, onFrameClick: (String) -> Unit) {
     val repository = remember { NearbyShopsRepository() }
     val context = LocalContext.current
     var shop by remember(shopId) { mutableStateOf<OpticalShop?>(null) }
@@ -44,7 +42,6 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
     var framesError by remember(shopId) { mutableStateOf<String?>(null) }
     var retry by remember { mutableIntStateOf(0) }
     var frameRetry by remember { mutableIntStateOf(0) }
-    var selectedFrame by remember(shopId) { mutableStateOf<ShopFrame?>(null) }
     var actionMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(shopId, retry) {
@@ -52,7 +49,6 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
         try {
             repository.observeShop(shopId).collect { value ->
                 shop = value; shopLoading = false
-                if (value == null) selectedFrame = null
             }
         } catch (e: CancellationException) { throw e }
         catch (_: Exception) { shop = null; shopError = "This shop is unavailable or no longer published." }
@@ -60,17 +56,16 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
     }
     LaunchedEffect(shop?.id, frameRetry) {
         val current = shop
-        frames = emptyList(); framesError = null; selectedFrame = null
+        frames = emptyList(); framesError = null
         if (current != null) {
             framesLoading = true
             try {
                 repository.observeFrames(current.id).collect { value ->
                     frames = value; framesLoading = false
-                    selectedFrame = selectedFrame?.let { selected -> value.find { it.id == selected.id } }
                 }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
-                frames = emptyList(); selectedFrame = null
+                frames = emptyList()
                 framesError = if (e is FirebaseFirestoreException && e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED)
                     "This shop's frames are not available to your account yet. Please contact FaceFit support."
                 else "Could not load this shop's frames. Check your connection and retry."
@@ -109,8 +104,7 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
                                 .clip(RoundedCornerShape(16.dp)), ContentScale.Crop)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Box(Modifier.size(50.dp).background(FaceFitTealVariant, RoundedCornerShape(15.dp)),
-                                contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Storefront, null, tint = FaceFitTeal) }
+                            ShopLogo(current.logoUrl, current.name, size = 64.dp)
                             Text(current.name, fontSize = 24.sp, fontWeight = FontWeight.Bold,
                                 color = FaceFitTextPrimary, modifier = Modifier.weight(1f))
                         }
@@ -156,28 +150,13 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit) {
                 when {
                     framesLoading -> item { ShopLoading() }
                     framesError != null -> item { ShopMessage(framesError!!, onRetry = { frameRetry++ }) }
-                    frames.isEmpty() -> item { ShopMessage("This shop has not published any approved frames yet.") }
+                    frames.isEmpty() -> item { ShopMessage("This shop has not published any frames yet.") }
                     else -> items(frames, key = { it.id }) { frame ->
-                        ShopFrameCard(frame, onClick = { selectedFrame = frame })
+                        ShopFrameCard(frame, onClick = { onFrameClick(frame.id) })
                     }
                 }
             }
         }
-    }
-    selectedFrame?.let { frame ->
-        AlertDialog(
-            onDismissRequest = { selectedFrame = null },
-            title = { Text(frame.name) },
-            text = {
-                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ShopNetworkImage(frame.imageUrl, frame.name, Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)))
-                    FrameAttributes(frame)
-                    if (frame.description.isNotBlank()) Text(frame.description, lineHeight = 21.sp)
-                }
-            },
-            confirmButton = { TextButton(onClick = { selectedFrame = null }) { Text("Close") } }
-        )
     }
 }
 
@@ -199,15 +178,7 @@ private fun ShopFrameCard(frame: ShopFrame, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FrameAttributes(frame: ShopFrame) {
-    listOf("Brand" to frame.brand, "Model" to frame.model, "Type" to frame.type, "Shape" to frame.shape,
-        "Material" to frame.material, "Color" to frame.color).filter { it.second.isNotBlank() }.forEach { (label, value) ->
-        Text("$label: $value", fontSize = 14.sp, color = FaceFitTextSecondary)
-    }
-}
-
-@Composable
-private fun ShopNetworkImage(url: String?, description: String, modifier: Modifier, scale: ContentScale = ContentScale.Fit) {
+internal fun ShopNetworkImage(url: String?, description: String, modifier: Modifier, scale: ContentScale = ContentScale.Fit) {
     var loading by remember(url) { mutableStateOf(url != null) }
     var failed by remember(url) { mutableStateOf(false) }
     Box(modifier.background(Color(0xFFF1F6F7)), contentAlignment = Alignment.Center) {

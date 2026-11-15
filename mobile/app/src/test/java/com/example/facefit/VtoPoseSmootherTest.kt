@@ -65,4 +65,29 @@ class VtoPoseSmootherTest {
         val settled = requireNotNull(filter.sample(moved, 1_000_000_000L))
         assertEquals(.44f, settled.landmarks[33].x, .0001f)
     }
+    @Test fun displayPoseMovesBetweenDetectorUpdatesWithinPredictionLimit() {
+        val filter = VtoPoseSmoother()
+        filter.sample(face(), 0L)
+        val latest = face(.04f)
+        val first = requireNotNull(filter.sample(latest, 60_000_000L))
+        val between = requireNotNull(filter.sample(latest, 76_000_000L))
+        assertTrue(between.landmarks[33].x > first.landmarks[33].x)
+        assertTrue(between.landmarks[33].x <= latest.landmarks[33].x + .0201f)
+    }
+    @Test fun trackingLossImmediatelyHidesTheDisplayPose() {
+        val filter = VtoPoseSmoother()
+        filter.sample(face(), 0L)
+        filter.sample(face(.04f), 60_000_000L)
+        val lost = face().copy(isFaceDetected = false)
+        assertSame(lost, filter.sample(lost, 76_000_000L))
+        val reacquired = face(.1f)
+        assertSame(reacquired, filter.sample(reacquired, 92_000_000L))
+    }
+    @Test fun returningFromPauseDoesNotAnimateFromAnOldPose() {
+        val filter = VtoPoseSmoother()
+        filter.sample(face(), 0L)
+        filter.sample(face(.04f), 60_000_000L)
+        val resumed = face(.08f)
+        assertSame(resumed, filter.sample(resumed, 1_000_000_000L))
+    }
 }

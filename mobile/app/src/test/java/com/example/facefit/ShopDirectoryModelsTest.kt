@@ -2,6 +2,8 @@ package com.example.facefit
 
 import com.example.facefit.data.shops.OpticalShop
 import com.example.facefit.data.shops.ShopFrame
+import com.example.facefit.data.shops.mergeShopFrames
+import com.example.facefit.data.shops.parseShopFrameKey
 import com.example.facefit.data.shops.publishedHttpsUrl
 import org.junit.Assert.*
 import org.junit.Test
@@ -52,5 +54,85 @@ class ShopDirectoryModelsTest {
             "contactNumber" to "private-number", "permit" to "private-permit", "description" to "Public introduction"))!!
         assertEquals("Public introduction", shop.description)
         assertEquals("", shop.phone)
+    }
+
+    @Test fun shopLogoIsSeparateFromCoverAndUnsafeLogoFallsBackToNull() {
+        val fields = mapOf("status" to "approved", "name" to "Shop",
+            "logoUrl" to "https://example.com/logo.png", "imageUrl" to "https://example.com/cover.png")
+        val shop = OpticalShop.fromData("a", fields)!!
+        assertEquals("https://example.com/logo.png", shop.logoUrl)
+        assertEquals("https://example.com/cover.png", shop.imageUrl)
+        assertNull(OpticalShop.fromData("a", fields - "logoUrl")!!.logoUrl)
+        assertNull(OpticalShop.fromData("a", fields + ("logoUrl" to "file:///a"))!!.logoUrl)
+    }
+
+    @Test fun actualRetailerAndOlderCatalogFrameSchemasAreSupported() {
+        val retailer = ShopFrame.fromRetailerData("retailer/f", mapOf("retailerId" to "shop-a", "status" to "live",
+            "name" to "Rose Frame", "shape" to "Rectangle", "productImageUrl" to "https://example.com/rose.png"), "shop-a")!!
+        assertEquals("Rose Frame", retailer.name)
+        assertEquals("https://example.com/rose.png", retailer.imageUrl)
+        val old = ShopFrame.fromData("catalog/f", mapOf("retailerId" to "shop-a", "status" to "approved",
+            "frameName" to "Black Frame", "frameType" to "Eyeglasses", "frameColor" to "Black",
+            "frameMaterial" to "Metal", "imageURL" to "https://example.com/black.png"), "shop-a")!!
+        assertEquals("Black Frame", old.name)
+        assertEquals("Metal", old.material)
+        assertEquals("Black", old.color)
+        assertEquals("Eyeglasses", old.type)
+        assertEquals("https://example.com/black.png", old.imageUrl)
+    }
+
+    @Test fun draftPendingWrongOwnerAndConflictingOwnershipAreExcluded() {
+        val fields = mapOf("retailerId" to "shop-a", "status" to "live", "name" to "Frame")
+        for (status in listOf("draft", "pending", "hidden")) {
+            assertNull(ShopFrame.fromRetailerData("f", fields + ("status" to status), "shop-a"))
+        }
+        assertNull(ShopFrame.fromRetailerData("f", fields, "shop-b"))
+        assertNull(ShopFrame.fromRetailerData("f", fields + ("retailId" to "shop-b"), "shop-a"))
+        assertNull(ShopFrame.fromRetailerData("f", fields - "retailerId", "shop-a"))
+        assertNull(ShopFrame.fromData("f", fields, "shop-a"))
+    }
+
+    @Test fun mergedQueriesDoNotDuplicateCatalogProductsOrLoseDistinctRetailerProducts() {
+        val fields = mapOf("retailerId" to "shop-a", "status" to "approved", "frameName" to "A")
+        val catalog = ShopFrame.fromData("catalog/f", fields, "shop-a")!!
+        val retailer = ShopFrame.fromRetailerData("retailer/f", fields + ("name" to "B"), "shop-a")!!
+        val merged = mergeShopFrames(listOf(catalog), listOf(catalog), listOf(retailer))
+        assertEquals(listOf("catalog/f", "retailer/f"), merged.map { it.id })
+    }
+
+    @Test fun invalidProductImageDoesNotHideAnOtherwisePublishedFrame() {
+        val fields = mapOf("retailerId" to "shop-a", "status" to "live", "name" to "A",
+            "productImageUrl" to "file:///private", "imageURL" to "https://example.com/public.png")
+        assertEquals("https://example.com/public.png", ShopFrame.fromRetailerData("f", fields, "shop-a")!!.imageUrl)
+        assertNull(ShopFrame.fromRetailerData("f", fields - "imageURL", "shop-a")!!.imageUrl)
+    }
+
+    @Test fun productRouteOnlyAcceptsKnownCatalogsAndSingleDocumentIds() {
+        assertEquals("retailer" to "frame-1", parseShopFrameKey("retailer/frame-1"))
+        assertEquals("catalog" to "FRM001", parseShopFrameKey("catalog/FRM001"))
+        for (key in listOf("", "users/private", "retailer/", "catalog/..", "catalog/a/b", "retailer")) {
+            assertNull(parseShopFrameKey(key))
+        }
+    }
+
+    @Test fun productPageReadsOnlyRealFinitePricesAndRecognizedCurrency() {
+        val fields = mapOf("retailerId" to "a", "status" to "approved", "price" to 1299, "currency" to "php")
+        val frame = ShopFrame.fromData("catalog/f", fields, "a")!!
+        assertEquals(1299.0, frame.price!!, 0.0)
+        assertEquals("PHP", frame.currency)
+        assertNull(ShopFrame.fromData("f", fields - "currency", "a")!!.currency)
+        assertNull(ShopFrame.fromData("f", fields + ("currency" to "invalid"), "a")!!.currency)
+        for (price in listOf(-1.0, Double.NaN, Double.POSITIVE_INFINITY, "unknown")) {
+            assertNull(ShopFrame.fromData("f", fields + ("price" to price), "a")!!.price)
+        }
+    }
+
+    @Test fun emptyOrInvalidMeasurementsAreNotInvented() {
+        val fields = mapOf("retailerId" to "a", "status" to "live", "measurements" to
+            mapOf("frameWidthMm" to 127, "lensWidthMm" to "53", "lensHeightMm" to null,
+                "bridgeWidthMm" to -1, "templeLengthMm" to Double.NaN))
+        val frame = ShopFrame.fromRetailerData("retailer/f", fields, "a")!!
+        assertEquals(mapOf("Frame width" to 127.0, "Lens width" to 53.0), frame.measurementsMm)
+        assertTrue(ShopFrame.fromRetailerData("f", fields - "measurements", "a")!!.measurementsMm.isEmpty())
     }
 }

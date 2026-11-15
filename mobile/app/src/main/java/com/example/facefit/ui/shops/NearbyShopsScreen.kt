@@ -10,6 +10,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +24,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -95,22 +102,22 @@ fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopCl
     fun directions(shop: OpticalShop) {
         if (!openShopDirections(context, shop)) locationMessage = "No maps or browser app is available to open directions."
     }
-    Scaffold(containerColor = Color(0xFFEAF3F4), bottomBar = { FaceFitBottomNavBar("nearbyShops", onNavigate) }) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Scaffold(containerColor = Color(0xFFE9F2F4), bottomBar = { FaceFitBottomNavBar("nearbyShops", onNavigate) }) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     FilledIconButton(onClick = onBack, shape = RoundedCornerShape(14.dp),
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White, contentColor = FaceFitTextPrimary)) {
                         Icon(Icons.Outlined.ChevronLeft, "Back")
                     }
-                    Text("Nearby Shops", Modifier.weight(1f).padding(start = 12.dp), fontSize = 22.sp,
+                    Text("Nearby Shops", Modifier.weight(1f).padding(start = 12.dp), fontSize = 20.sp,
                         fontWeight = FontWeight.Bold, color = Color(0xFF17383E))
                     IconButton(onClick = { reload++; if (permission) locationAttempt++ }) { Icon(Icons.Outlined.Refresh, "Refresh shops", tint = FaceFitTeal) }
                 }
             }
             item {
-                ShopMap(center, listed.filter { it.hasCoordinates }, Modifier.fillMaxWidth().height(150.dp)
+                ShopMap(center, listed.filter { it.hasCoordinates }, Modifier.fillMaxWidth().height(120.dp)
                     .softContainerShadow(RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp)))
             }
             if (!permission || center == null || locationMessage != null) item {
@@ -152,28 +159,57 @@ fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopCl
 
 @Composable
 private fun ShopRow(shop: OpticalShop, location: Location?, onOpenShop: () -> Unit, onDirections: () -> Unit) {
-    Surface(onClick = onOpenShop, shape = RoundedCornerShape(22.dp), color = Color.White,
-        modifier = Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(22.dp))) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(48.dp).background(FaceFitTealVariant, RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Outlined.Storefront, null, tint = FaceFitTeal)
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(shop.name, fontWeight = FontWeight.Bold, color = Color(0xFF17383E), fontSize = 16.sp)
+    val cardShape = RoundedCornerShape(24.dp)
+    Surface(onClick = onOpenShop, shape = cardShape, color = Color.White,
+        modifier = Modifier.fillMaxWidth().softContainerShadow(cardShape)) {
+        Row(Modifier.heightIn(min = 102.dp).padding(horizontal = 14.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ShopLogo(shop.logoUrl, shop.name)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(shop.name, fontWeight = FontWeight.Bold, color = Color(0xFF17383E), fontSize = 15.sp,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis)
                 val distance = location?.let { shop.distanceKm(it.latitude, it.longitude) }
-                Text(buildString {
-                    shop.rating?.let { append("★ ${String.format(Locale.getDefault(), "%.1f", it)} · ") }
-                    append(if (distance != null) "${String.format(Locale.getDefault(), "%.1f", distance)} km" else "Distance unavailable")
-                }, fontSize = 12.sp, color = FaceFitTextSecondary)
-                Text(shop.address.ifBlank { "Address not provided" }, fontSize = 12.sp, color = FaceFitTextSecondary)
-                Text("View shop & frames", fontSize = 11.sp, color = FaceFitTeal, fontWeight = FontWeight.SemiBold)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    shop.rating?.let {
+                        Icon(Icons.Outlined.Star, null, tint = Color(0xFFFFB332), modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                    }
+                    Text(buildString {
+                        append(shop.rating?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "Not rated")
+                        append("  ·  ")
+                        append(distance?.let { "${String.format(Locale.getDefault(), "%.1f", it)} km" } ?: "Distance unavailable")
+                    }, modifier = Modifier.weight(1f), fontSize = 12.sp, lineHeight = 16.sp, color = Color(0xFF6A8A99))
+                }
+                Text(shop.address.ifBlank { "Address not provided" }, fontSize = 12.sp,
+                    lineHeight = 16.sp, color = Color(0xFF6A8A99), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            IconButton(onClick = onDirections, modifier = Modifier.size(38.dp)) {
-                Icon(Icons.Outlined.Directions, "Directions to ${shop.name}", tint = Color(0xFFFF6E36), modifier = Modifier.size(28.dp))
+            IconButton(onClick = onDirections, modifier = Modifier.size(48.dp)
+                .semantics { contentDescription = "Directions to ${shop.name}" }) {
+                ShopDirectionsPin()
             }
         }
     }
 }
+
+@Composable
+private fun ShopDirectionsPin() {
+    Canvas(Modifier.size(44.dp, 48.dp)) {
+        val sx = size.width / 44f
+        val sy = size.height / 48f
+        drawOval(Color(0xFF8DAAB6).copy(alpha = .24f), Offset(4f * sx, 39f * sy), Size(36f * sx, 9f * sy))
+        drawOval(Color(0xFF95D0F5), Offset(5f * sx, 37f * sy), Size(34f * sx, 8f * sy))
+        val pin = Path().apply {
+            moveTo(22f * sx, 40f * sy)
+            cubicTo(18f * sx, 34f * sy, 9f * sx, 24f * sy, 9f * sx, 17f * sy)
+            cubicTo(9f * sx, 0f * sy, 35f * sx, 0f * sy, 35f * sx, 17f * sy)
+            cubicTo(35f * sx, 24f * sy, 26f * sx, 34f * sy, 22f * sx, 40f * sy)
+            close()
+        }
+        drawPath(pin, Color(0xFFFF5B1F))
+        drawCircle(Color.White, 5.5f * minOf(sx, sy), Offset(22f * sx, 17f * sy))
+    }
+}
+
 
 internal fun openShopDirections(context: Context, shop: OpticalShop): Boolean {
     val target = if (shop.hasCoordinates) "${shop.latitude},${shop.longitude}" else "${shop.name} ${shop.address}"

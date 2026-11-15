@@ -56,8 +56,9 @@ internal class VtoFaceOccluder(
     private var previousWidth = 0
     private var previousHeight = 0
     private var validGeometry = false
+    private var previousRig: GlassesRig? = null
     fun update(face: FaceAnalyzer.FaceMetrics?, width: Int, height: Int, visible: Boolean, rig: GlassesRig? = null) {
-        if (visible && (face !== previous || width != previousWidth || height != previousHeight)) {
+        if (visible && (face !== previous || width != previousWidth || height != previousHeight || rig != previousRig)) {
             val positions = VtoHeadOcclusionGeometry.positions(face, width, height, rig)
             validGeometry = positions != null
             if (positions != null) {
@@ -72,6 +73,7 @@ internal class VtoFaceOccluder(
                 data.flip()
                 vertices.setBufferAt(engine, 0, data)
             }
+            previousRig = rig
             previous = face
             previousWidth = width
             previousHeight = height
