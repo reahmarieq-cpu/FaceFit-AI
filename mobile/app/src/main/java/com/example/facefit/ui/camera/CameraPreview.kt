@@ -129,8 +129,9 @@ fun CameraPreview(
                     mainExecutor.execute {
                         if (!disposed && preview) {
                             if (!isBurstActive.get()) {
-                                val distance = result.featureFrame?.cheekDistanceCm?.takeIf { result.isFaceDetected }
-                                onDistanceHintCallback(distanceGuide.update(distance, SystemClock.elapsedRealtime()))
+                                val frame = result.featureFrame?.takeIf { result.isFaceDetected }
+                                onDistanceHintCallback(distanceGuide.update(frame?.cheekDistanceCm,
+                                    SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise))
                             }
                         } else if (!disposed) {
                             val target = previewView.outputTransform

@@ -36,6 +36,29 @@ class ScanDistanceGuideTest {
         assertEquals(52, guide.update(52f, 1700L)!!.distanceCm)
     }
 
+    @Test fun smilingBlocksCaptureAtAnyDistance() {
+        val hint = ScanDistanceGuide.hintFor(47f, smileScore = 0.6f)
+        assertTrue(hint.smiling)
+        assertFalse(hint.inRange)
+        assertEquals("Keep a neutral expression, no smile", hint.refusal)
+        assertTrue(ScanDistanceGuide.hintFor(47f, smileScore = 0.005f).inRange)
+        assertTrue(ScanDistanceGuide.hintFor(47f, smileScore = 0.025f).smiling)
+        assertEquals(0.6f, hint.smileScore!!, 1e-6f)
+        // Subtle smile caught by the upper-lip raise alone.
+        assertTrue(ScanDistanceGuide.hintFor(47f, smileScore = 0.002f, upperLipRaise = 0.05f).smiling)
+        assertTrue(ScanDistanceGuide.hintFor(47f, smileScore = 0.002f, upperLipRaise = 0.01f).inRange)
+        assertEquals("Move slightly farther away", ScanDistanceGuide.hintFor(42f).refusal)
+        assertEquals("Move slightly closer", ScanDistanceGuide.hintFor(53f).refusal)
+    }
+
+    @Test fun smileWarningClearsQuicklyAfterRelaxing() {
+        val guide = ScanDistanceGuide()
+        listOf(0.7f, 0.7f, 0.7f).forEachIndexed { i, s -> guide.update(47f, i * 250L, s) }
+        assertTrue(guide.update(47f, 750L, 0.7f)!!.smiling)
+        guide.update(47f, 1000L, 0.002f)
+        assertFalse(guide.update(47f, 1250L, 0.002f)!!.smiling)
+    }
+
     @Test fun distanceEstimateMatchesTheSyntheticCamera() {
         // The estimate the guide displays, from a projected average face at a known distance.
         val capture = SyntheticFace.canonical().capture(47.0)

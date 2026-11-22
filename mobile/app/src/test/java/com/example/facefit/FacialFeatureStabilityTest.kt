@@ -70,11 +70,11 @@ class FacialFeatureStabilityTest {
     @Test fun testA_ratiosAreInvariantToResolutionAndUniformImageScale() {
         val face = SyntheticFace.variant(widthScale = 1.04, depthScale = 1.1)
         val pose = HeadPose(yaw = 2.0, pitch = -1.5, roll = 3.0)
-        val reference = measure(face.capture(45.0, pose))
+        val reference = measure(face.capture(47.5, pose))
         for ((width, height) in listOf(240 to 320, 720 to 960, 960 to 1280, 1080 to 1440, 1536 to 2048)) {
             // Same lens and framing at another resolution: focal length in pixels scales with it.
             val camera = SyntheticCamera(width, height, 487.5 * width / 480.0)
-            val frame = measure(face.capture(45.0, pose, camera))
+            val frame = measure(face.capture(47.5, pose, camera))
             bandWidths(reference.ratios, frame.ratios).forEach { assertTrue("ratios $width", it < 1e-3f) }
             assertEquals(reference.cheekDistanceCm, frame.cheekDistanceCm, 1e-2f)
         }
@@ -83,7 +83,7 @@ class FacialFeatureStabilityTest {
     @Test fun testA_normalizedCoordinatesAreConvertedWithImageWidthAndHeight() {
         // Roll gives the pairs a vertical component, so x and y scaling both matter.
         val camera = SyntheticCamera(480, 640)
-        val capture = SyntheticFace.canonical().capture(45.0, HeadPose(roll = 15.0), camera)
+        val capture = SyntheticFace.canonical().capture(47.5, HeadPose(roll = 15.0), camera)
         val frame = measure(capture)
         fun pixel(a: Int, b: Int) = hypot((capture.points[a].x - capture.points[b].x) * camera.width,
             (capture.points[a].y - capture.points[b].y) * camera.height)
@@ -91,12 +91,12 @@ class FacialFeatureStabilityTest {
         assertEquals(pixel(172, 397) / pixel(234, 454), frame.ratios.jawline, 1e-5f)
         assertEquals(pixel(133, 362) / pixel(234, 454), frame.ratios.eyeSpacing, 1e-5f)
         // Roll does not change the ratio.
-        val upright = measure(SyntheticFace.canonical().capture(45.0, camera = camera))
+        val upright = measure(SyntheticFace.canonical().capture(47.5, camera = camera))
         bandWidths(upright.ratios, frame.ratios).forEach { assertTrue(it < 0.01f) }
     }
 
     @Test fun testA_mediaPipeRelativeDepthIsNotUsed() {
-        val capture = SyntheticFace.canonical().capture(45.0, HeadPose(yaw = 3.0))
+        val capture = SyntheticFace.canonical().capture(47.5, HeadPose(yaw = 3.0))
         val random = Random(7)
         val withDepth = capture.points.map { it.copy(z = random.nextFloat() * 0.2f - 0.1f) }
         val a = measure(capture)
@@ -109,32 +109,65 @@ class FacialFeatureStabilityTest {
     @Test fun testB_unsuitableHeadAnglesDistancesAndFramingAreRejected() {
         val face = SyntheticFace.canonical()
         fun reason(c: SyntheticFace.Capture) = FacialFeatureMeasurement.assess(measure(c))
-        assertNull(reason(face.capture(45.0, HeadPose(yaw = 5.5, pitch = -2.5, roll = 4.5))))
-        assertNull(reason(face.capture(45.0, HeadPose(pitch = 2.8))))
-        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(45.0, HeadPose(pitch = 4.0))))
-        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(45.0, HeadPose(pitch = -4.0))))
-        assertEquals(Rejection.HEAD_TURNED, reason(face.capture(45.0, HeadPose(yaw = 8.0))))
-        assertEquals(Rejection.HEAD_TURNED, reason(face.capture(45.0, HeadPose(yaw = -8.0))))
-        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(45.0, HeadPose(pitch = 8.0))))
-        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(45.0, HeadPose(pitch = -8.0))))
-        assertEquals(Rejection.HEAD_ROLLED, reason(face.capture(45.0, HeadPose(roll = 7.0))))
-        assertEquals(Rejection.TOO_CLOSE, reason(face.capture(32.0)))
-        assertEquals(Rejection.TOO_FAR, reason(face.capture(65.0)))
-        assertEquals(Rejection.LANDMARKS_OUT_OF_FRAME, reason(face.capture(45.0, offsetCm = 14.0 to 0.0)))
+        assertNull(reason(face.capture(47.5, HeadPose(yaw = 5.5, pitch = -2.5, roll = 4.5))))
+        assertNull(reason(face.capture(47.5, HeadPose(pitch = 2.8))))
+        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(47.5, HeadPose(pitch = 4.0))))
+        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(47.5, HeadPose(pitch = -4.0))))
+        assertEquals(Rejection.HEAD_TURNED, reason(face.capture(47.5, HeadPose(yaw = 8.0))))
+        assertEquals(Rejection.HEAD_TURNED, reason(face.capture(47.5, HeadPose(yaw = -8.0))))
+        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(47.5, HeadPose(pitch = 8.0))))
+        assertEquals(Rejection.HEAD_TILTED, reason(face.capture(47.5, HeadPose(pitch = -8.0))))
+        assertEquals(Rejection.HEAD_ROLLED, reason(face.capture(47.5, HeadPose(roll = 7.0))))
+        assertEquals(Rejection.TOO_CLOSE, reason(face.capture(43.0)))
+        assertEquals(Rejection.TOO_FAR, reason(face.capture(53.0)))
+        assertEquals(Rejection.LANDMARKS_OUT_OF_FRAME, reason(face.capture(47.5, offsetCm = 14.0 to 0.0)))
         // No transformation matrix: no measurement, rejected by the collector.
-        val capture = face.capture(45.0)
+        val capture = face.capture(47.5)
         assertNull(FacialFeatureMeasurement.measure(capture.points, 480, 640, null, 487.5f, "test"))
         assertEquals(Rejection.POSE_UNAVAILABLE, FacialFeatureMeasurement.Collector().offer(null))
         assertEquals("Look straight at the camera", Rejection.HEAD_TURNED.guidance)
         assertEquals("Move slightly farther away", Rejection.TOO_CLOSE.guidance)
     }
 
+    @Test fun testB_distanceMustBeWithin45To50Cm() {
+        val face = SyntheticFace.canonical()
+        fun reason(cm: Double) = FacialFeatureMeasurement.assess(measure(face.capture(cm)))
+        assertEquals(Rejection.TOO_CLOSE, reason(44.0))
+        assertNull(reason(45.5))
+        assertNull(reason(49.5))
+        assertEquals(Rejection.TOO_FAR, reason(51.0))
+    }
+
+    @Test fun testB_smilingFramesAreRejected() {
+        val c = SyntheticFace.canonical().capture(47.5)
+        fun frame(smile: Float?) = requireNotNull(FacialFeatureMeasurement.measure(c.points, 480, 640,
+            c.poseMatrix, 487.5f, "test", smileScore = smile))
+        assertNull(FacialFeatureMeasurement.assess(frame(0.005f)))
+        // A slight smile (0.02-0.03 on the phone) is refused too.
+        assertEquals(Rejection.SMILING, FacialFeatureMeasurement.assess(frame(0.025f)))
+        assertNull(FacialFeatureMeasurement.assess(frame(null)))
+        assertEquals(Rejection.SMILING, FacialFeatureMeasurement.assess(frame(0.6f)))
+        assertEquals("Keep a neutral expression, no smile", Rejection.SMILING.guidance)
+        // A subtle closed-mouth smile: little mouth-smile score, but a raised upper lip.
+        fun lips(left: Float, right: Float) = requireNotNull(FacialFeatureMeasurement.measure(c.points, 480, 640,
+            c.poseMatrix, 487.5f, "test", smileScore = 0.002f,
+            expressionScores = mapOf("mouthUpperUpLeft" to left, "mouthUpperUpRight" to right)))
+        assertNull(FacialFeatureMeasurement.assess(lips(0.005f, 0.012f)))
+        assertEquals(Rejection.SMILING, FacialFeatureMeasurement.assess(lips(0.040f, 0.050f)))
+        assertEquals(0.045f, lips(0.040f, 0.050f).upperLipRaise!!, 1e-6f)
+        // A capture where the person keeps smiling asks for another scan with that guidance.
+        val collector = FacialFeatureMeasurement.Collector()
+        repeat(10) { collector.offer(frame(0.7f)) }
+        assertNull(collector.aggregate())
+        assertEquals("Keep a neutral expression, no smile", collector.guidance())
+    }
+
     @Test fun testB_rejectedFramesDoNotAffectTheAggregatedResult() {
         val face = SyntheticFace.variant(depthScale = 1.15)
         val random = Random(3)
-        val good = (0 until 7).map { measure(face.capture(45.0, noise = random, noisePx = 0.3)) }
+        val good = (0 until 7).map { measure(face.capture(47.5, noise = random, noisePx = 0.3)) }
         val bad = listOf(HeadPose(yaw = 15.0), HeadPose(pitch = 12.0), HeadPose(pitch = -12.0), HeadPose(roll = 9.0))
-            .map { measure(face.capture(45.0, it)) } + measure(face.capture(30.0))
+            .map { measure(face.capture(47.5, it)) } + measure(face.capture(30.0))
         val collector = FacialFeatureMeasurement.Collector()
         // Interleave, breaking continuity so the motion check does not compare across a bad frame.
         good.forEachIndexed { i, frame ->
@@ -168,10 +201,10 @@ class FacialFeatureStabilityTest {
     @Test fun testB_movementBetweenFramesIsRejected() {
         val face = SyntheticFace.canonical()
         val collector = FacialFeatureMeasurement.Collector()
-        assertNull(collector.offer(measure(face.capture(45.0))))
-        assertEquals(Rejection.MOVING, collector.offer(measure(face.capture(45.0, offsetCm = 0.8 to 0.0))))
-        assertEquals(Rejection.MOVING, collector.offer(measure(face.capture(41.0, offsetCm = 0.8 to 0.0))))
-        assertNull(collector.offer(measure(face.capture(41.1, offsetCm = 0.8 to 0.0))))
+        assertNull(collector.offer(measure(face.capture(47.5))))
+        assertEquals(Rejection.MOVING, collector.offer(measure(face.capture(47.5, offsetCm = 0.8 to 0.0))))
+        assertEquals(Rejection.MOVING, collector.offer(measure(face.capture(46.0, offsetCm = 0.8 to 0.0))))
+        assertNull(collector.offer(measure(face.capture(46.1, offsetCm = 0.8 to 0.0))))
     }
 
     // ---------------------------------------------------------------- Test D: repeated scans (simulated noise)
@@ -232,8 +265,8 @@ class FacialFeatureStabilityTest {
     @Test fun obviousOutlierFramesAreRemovedBeforeTheMedian() {
         val face = SyntheticFace.canonical()
         val random = Random(11)
-        val frames = (0 until 8).map { measure(face.capture(45.0, noise = random, noisePx = 0.3)) }.toMutableList()
-        val glitch = face.capture(45.0).let { c ->
+        val frames = (0 until 8).map { measure(face.capture(47.5, noise = random, noisePx = 0.3)) }.toMutableList()
+        val glitch = face.capture(47.5).let { c ->
             c.copy(points = c.points.toMutableList().also { it[362] = it[362].copy(x = it[362].x + 12f / 480f) })
         }
         frames += measure(glitch)
@@ -245,8 +278,8 @@ class FacialFeatureStabilityTest {
     @Test fun tooFewReliableFramesRequestsAnotherScan() {
         val face = SyntheticFace.canonical()
         val collector = FacialFeatureMeasurement.Collector()
-        repeat(3) { assertNull(collector.offer(measure(face.capture(45.0)))) }
-        repeat(6) { collector.breakContinuity(); collector.offer(measure(face.capture(45.0, HeadPose(yaw = 12.0)))) }
+        repeat(3) { assertNull(collector.offer(measure(face.capture(47.5)))) }
+        repeat(6) { collector.breakContinuity(); collector.offer(measure(face.capture(47.5, HeadPose(yaw = 12.0)))) }
         assertNull(collector.aggregate())
         assertTrue(!collector.isComplete())
         assertEquals("Look straight at the camera", collector.guidance())

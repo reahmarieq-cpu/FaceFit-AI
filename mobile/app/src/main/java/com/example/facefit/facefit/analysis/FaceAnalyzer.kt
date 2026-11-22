@@ -43,6 +43,8 @@ class FaceAnalyzer(
             .setRunningMode(if (videoTracking) RunningMode.VIDEO else RunningMode.IMAGE)
             .setNumFaces(maxFaces)
             .setOutputFacialTransformationMatrixes(scanQualityChecks)
+            // Expression scores (smile) for scan captures only; landmarks are unaffected.
+            .setOutputFaceBlendshapes(scanQualityChecks)
             .setMinFaceDetectionConfidence(if (scanQualityChecks) 0.5f else 0.35f)
             .setMinFacePresenceConfidence(if (scanQualityChecks) 0.5f else 0.35f)
             .setMinTrackingConfidence(0.4f)
@@ -93,8 +95,14 @@ class FaceAnalyzer(
                     val rawEye = distance(133, 362)
                     val shapeMeasurements = FacialGeometry.measure(landmarkPoints, bitmap.width, bitmap.height)
                     val poseMatrix = result.facialTransformationMatrixes().orElse(emptyList()).firstOrNull()
+                    // All MediaPipe expression scores (0-1) by name, for scan captures only.
+                    val expression = if (scanQualityChecks) result.faceBlendshapes().orElse(null)
+                        ?.firstOrNull()?.associate { it.categoryName() to it.score() }.orEmpty()
+                    else emptyMap()
+                    val smileScore = listOfNotNull(expression["mouthSmileLeft"], expression["mouthSmileRight"])
+                        .takeIf { it.isNotEmpty() }?.average()?.toFloat()
                     val featureFrame = if (scanQualityChecks) measureFeatures(landmarkPoints,
-                        bitmap.width, bitmap.height, poseMatrix) else null
+                        bitmap.width, bitmap.height, poseMatrix, smileScore, expression) else null
                     val preview = previewOnly
                     val shapeImageRgb = if (scanQualityChecks && !videoTracking && !preview) {
                         shapeImageInput.prepare(bitmap, landmarkPoints)
@@ -138,14 +146,17 @@ class FaceAnalyzer(
     }
 
     private fun measureFeatures(
-        points: List<LandmarkPoint>, width: Int, height: Int, poseMatrix: FloatArray?
+        points: List<LandmarkPoint>, width: Int, height: Int, poseMatrix: FloatArray?, smileScore: Float?,
+        expression: Map<String, Float>
     ): FacialFeatureMeasurement.Frame? {
         val intrinsics = cameraIntrinsics
         val calibrated = intrinsics?.focalLengthPx(width, height)
         return FacialFeatureMeasurement.measure(
             points, width, height, poseMatrix,
             focalLengthPx = calibrated ?: FacialFeatureMeasurement.nominalFocalLengthPx(width, height),
-            focalSource = if (calibrated != null) intrinsics.source else "nominal"
+            focalSource = if (calibrated != null) intrinsics.source else "nominal",
+            smileScore = smileScore,
+            expressionScores = expression,
         )
     }
 

@@ -150,7 +150,12 @@ fun ScanScreen(
                     capturing = capturing,
                     isRetake = retakeMessage != null,
                     onCapture = {
-                        if (cameraReady && !capturing && capturedMetrics == null) {
+                        val hint = distanceHint
+                        logCaptureTap(hint, refused = hint != null && !hint.inRange)
+                        if (cameraReady && !capturing && capturedMetrics == null && hint != null && !hint.inRange) {
+                            // Wrong distance or smiling: refuse before starting a capture.
+                            retakeMessage = hint.refusal
+                        } else if (cameraReady && !capturing && capturedMetrics == null) {
                             retakeMessage = null
                             capturing = true
                             captureRequested.set(true)
@@ -337,5 +342,21 @@ private fun AnalysisStep(text: String) {
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold
         )
+    }
+}
+
+/** One line per Capture tap: live distance and smile score, and whether the tap was refused. */
+private fun logCaptureTap(hint: com.example.facefit.facefit.analysis.ScanDistanceGuide.Hint?, refused: Boolean) {
+    runCatching {
+        android.util.Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
+            .put("type", "capture_tap")
+            .put("scan_id", "tap_${System.currentTimeMillis()}")
+            .put("refused", refused)
+            .put("distance_cm", hint?.distanceCm)
+            .put("smile_score", hint?.smileScore?.takeIf { it.isFinite() }?.toDouble())
+            .put("upper_lip_raise", hint?.upperLipRaise?.takeIf { it.isFinite() }?.toDouble())
+            .put("smiling", hint?.smiling)
+            .put("guidance_shown", if (refused) hint?.refusal else null)
+            .toString())
     }
 }

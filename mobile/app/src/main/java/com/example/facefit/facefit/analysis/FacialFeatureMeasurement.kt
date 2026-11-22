@@ -53,6 +53,40 @@ object FacialFeatureMeasurement {
      */
     const val UPPER_FACE_PITCH_SLOPE_PER_DEG = 0.0023f
 
+    /**
+     * Required camera distance to the cheek plane. The live guide shows the same range, and the
+     * repeated phone scans were most consistent there. The estimate is repeatable to about 1 cm
+     * for one person but may be a few cm off in absolute terms.
+     */
+    const val TARGET_MIN_CM = 45f
+    const val TARGET_MAX_CM = 50f
+
+    /**
+     * Highest accepted MediaPipe smile score (mean of mouthSmileLeft/Right, 0-1). On the test
+     * phone, neutral frames scored at most 0.008 and slight smiles 0.018-0.028; slight smiles
+     * moved eye spacing by -0.64, jawline by +0.47 and upper-face width by -0.35 band widths,
+     * enough to change categories. 0.015 sits between the two. Measured on one person; widen it
+     * if neutral faces are refused.
+     */
+    const val MAX_SMILE_SCORE = 0.015f
+
+    /**
+     * Highest accepted upper-lip raise (mean of MediaPipe mouthUpperUpLeft/Right, 0-1). A subtle
+     * closed-mouth smile barely moves the mouth-smile score but lifts the upper lip: on the test
+     * phone neutral frames scored at most 0.015 (right) / 0.008 (left) and subtle-smile frames at
+     * least 0.039 / 0.036. Measured on one person; widen it if neutral faces are refused.
+     */
+    const val MAX_UPPER_LIP_RAISE = 0.025f
+
+    /** Mean of the left/right upper-lip-raise scores, or null when unavailable. */
+    fun upperLipRaise(expression: Map<String, Float>): Float? =
+        listOfNotNull(expression["mouthUpperUpLeft"], expression["mouthUpperUpRight"])
+            .filter { it.isFinite() }.takeIf { it.isNotEmpty() }?.average()?.toFloat()
+
+    /** True when either expression score shows a smile. */
+    fun isSmiling(smileScore: Float?, upperLipRaise: Float?) =
+        (smileScore ?: 0f) > MAX_SMILE_SCORE || (upperLipRaise ?: 0f) > MAX_UPPER_LIP_RAISE
+
     const val MIN_FRAMES = 5
     /** A spread estimated from 5 frames is itself unreliable, so early stopping needs more. */
     const val EARLY_STOP_FRAMES = 8
@@ -78,15 +112,17 @@ object FacialFeatureMeasurement {
      * Acceptable pose, distance, framing and motion for feature measurement. Pitch is the largest
      * pose effect: on 8 phone scans upper-face width changed 0.093 band widths per degree of
      * pitch (the canonical-face projection predicts 0.09), and keeping only scans within
-     * +-3 degrees halved its scan-to-scan spread. Roll does not change the ratios. The distance
-     * range brackets the 39-56 cm the readiness size check allows on the test device.
+     * +-3 degrees halved its scan-to-scan spread. Roll does not change the ratios. Distance must
+     * be within [TARGET_MIN_CM, TARGET_MAX_CM], and smiles above [MAX_SMILE_SCORE] are rejected.
      */
     data class QualityLimits(
         val maxYawDeg: Float = 6f,
         val maxPitchDeg: Float = 3f,
         val maxRollDeg: Float = 5f,
-        val minCheekDistanceCm: Float = 35f,
-        val maxCheekDistanceCm: Float = 60f,
+        val minCheekDistanceCm: Float = TARGET_MIN_CM,
+        val maxCheekDistanceCm: Float = TARGET_MAX_CM,
+        val maxSmileScore: Float = MAX_SMILE_SCORE,
+        val maxUpperLipRaise: Float = MAX_UPPER_LIP_RAISE,
         val edgeMargin: Float = 0.04f,
         /** Between consecutive analysed frames, relative to cheek width. */
         val maxCenterShift: Float = 0.03f,
@@ -102,6 +138,7 @@ object FacialFeatureMeasurement {
         HEAD_ROLLED("Keep your head level"),
         TOO_CLOSE("Move slightly farther away"),
         TOO_FAR("Move slightly closer"),
+        SMILING("Keep a neutral expression, no smile"),
         MOVING("Hold still for a moment"),
     }
 
@@ -150,6 +187,14 @@ object FacialFeatureMeasurement {
         val landmarksInFrame: Boolean,
         val focalLengthPx: Float,
         val focalSource: String,
+        /** MediaPipe smile score 0-1, or null when expression scores are unavailable. */
+        val smileScore: Float? = null,
+        /** All MediaPipe expression scores (blendshapes) by name; diagnostics only. */
+        val expressionScores: Map<String, Float> = emptyMap(),
+        /** Mean upper-lip raise (mouthUpperUpLeft/Right), or null when unavailable. */
+        val upperLipRaise: Float? = null,
+        /** Mouth-corner distance (61-291) / cheek width; diagnostics only. */
+        val mouthWidthRatio: Float? = null,
     )
 
     data class Aggregate(
@@ -178,6 +223,8 @@ object FacialFeatureMeasurement {
         focalLengthPx: Float,
         focalSource: String,
         edgeMargin: Float = QualityLimits().edgeMargin,
+        smileScore: Float? = null,
+        expressionScores: Map<String, Float> = emptyMap(),
     ): Frame? {
         if (imageWidth <= 0 || imageHeight <= 0 || !focalLengthPx.isFinite() || focalLengthPx <= 0f) return null
         if (REQUIRED.any { it !in points.indices }) return null
@@ -221,12 +268,19 @@ object FacialFeatureMeasurement {
             landmarksInFrame = inFrame,
             focalLengthPx = focalLengthPx,
             focalSource = focalSource,
+            smileScore = smileScore?.takeIf { it.isFinite() },
+            expressionScores = expressionScores,
+            upperLipRaise = upperLipRaise(expressionScores),
+            mouthWidthRatio = if (61 in points.indices && 291 in points.indices)
+                (distance(61, 291) / cheekPx).takeIf { it.isFinite() } else null,
         )
     }
 
     /** Single-frame quality checks; motion is checked by [Collector]. */
     fun assess(frame: Frame, limits: QualityLimits = QualityLimits()): Rejection? = when {
         !frame.landmarksInFrame -> Rejection.LANDMARKS_OUT_OF_FRAME
+        (frame.smileScore ?: 0f) > limits.maxSmileScore ||
+            (frame.upperLipRaise ?: 0f) > limits.maxUpperLipRaise -> Rejection.SMILING
         abs(frame.yawDeg) > limits.maxYawDeg -> Rejection.HEAD_TURNED
         abs(frame.pitchDeg) > limits.maxPitchDeg -> Rejection.HEAD_TILTED
         abs(frame.rollDeg) > limits.maxRollDeg -> Rejection.HEAD_ROLLED

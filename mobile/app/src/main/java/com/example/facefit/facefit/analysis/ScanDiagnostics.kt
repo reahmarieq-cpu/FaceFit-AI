@@ -63,6 +63,8 @@ internal object ScanDiagnostics {
             .put("median_yaw", median(frames.map { it.yawDeg }).json())
             .put("median_pitch", median(frames.map { it.pitchDeg }).json())
             .put("median_roll", median(frames.map { it.rollDeg }).json())
+            .put("median_smile_score", median(frames.mapNotNull { it.smileScore }).json())
+            .put("median_upper_lip_raise", median(frames.mapNotNull { it.upperLipRaise }).json())
             .put("focal_px", frames.firstOrNull()?.focalLengthPx.json())
             .put("focal_source", frames.firstOrNull()?.focalSource)
             .put("classifier_frames", metrics.shapeSampleCount)
@@ -79,6 +81,15 @@ internal object ScanDiagnostics {
         .put("yaw", frame.yawDeg.json()).put("pitch", frame.pitchDeg.json()).put("roll", frame.rollDeg.json())
         .put("distance_cm", frame.cheekDistanceCm.json())
         .put("cheek_px", frame.cheekWidthPx.json())
+        .put("smile_score", frame.smileScore.json())
+        .put("mouth_width", frame.mouthWidthRatio.json())
+        .put("upper_lip_raise", frame.upperLipRaise.json())
+        .put("expr", JSONObject().apply {
+            // Rounded to 4 decimals to keep each line short (logcat truncates near 4,000 chars).
+            frame.expressionScores.forEach { (name, score) ->
+                if (score.isFinite()) put(name, Math.round(score * 10000.0) / 10000.0)
+            }
+        })
 
     fun featureJson(metrics: FaceAnalyzer.FaceMetrics, thresholds: FacialFeatureThresholds?): JSONObject {
         val aggregate = metrics.featureAggregate
