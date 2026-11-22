@@ -2,6 +2,7 @@ package com.example.facefit.ui.camera
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import android.graphics.RectF
 import android.graphics.Rect
 import androidx.camera.core.ImageProxy
 import com.example.facefit.facefit.analysis.FaceAnalyzer
@@ -16,6 +17,24 @@ internal object VtoCameraFrame {
         val bufferToSensor = Matrix()
         if (!sensorToBuffer.invert(bufferToSensor)) return null
         return Matrix().apply { setConcat(sensorToView, bufferToSensor) }
+    }
+
+    /** Map CameraX's shared upright crop to FILL_CENTER, mirroring the front preview once. */
+    fun frontViewportToPreview(crop: Rect, width: Int, height: Int): Matrix? {
+        if (crop.isEmpty || width <= 0 || height <= 0) return null
+        val scale = maxOf(width.toFloat() / crop.width(), height.toFloat() / crop.height())
+        return Matrix().apply {
+            setScale(-scale, scale)
+            postTranslate(width * .5f + crop.exactCenterX() * scale,
+                height * .5f - crop.exactCenterY() * scale)
+        }
+    }
+
+    fun coversPreview(transform: Matrix, bufferWidth: Int, bufferHeight: Int, width: Int, height: Int): Boolean {
+        if (bufferWidth <= 0 || bufferHeight <= 0) return false
+        val bounds = RectF(0f, 0f, bufferWidth.toFloat(), bufferHeight.toFloat())
+        transform.mapRect(bounds)
+        return VtoPreviewBounds.coversView(bounds.left, bounds.top, bounds.right, bounds.bottom, width, height)
     }
 
     fun copyRgba(image: ImageProxy): Bitmap = VtoRgbaBuffer().copy(image)

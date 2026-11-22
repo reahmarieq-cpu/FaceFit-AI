@@ -3,9 +3,8 @@ package com.example.facefit.ui.tryon.rendering
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.facefit.geometry.FaceMeshTopology
 import com.example.facefit.facefit.tryon.geometry.GlassesMesh
-import com.example.facefit.facefit.tryon.geometry.GlassesRig
 import com.example.facefit.facefit.tryon.geometry.GlbParser
-import com.example.facefit.facefit.tryon.geometry.Vector3
+import com.example.facefit.facefit.tryon.tracking.VtoHeadPose
 
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
@@ -105,13 +104,7 @@ class Glasses3DRenderer(
         val face = current.metrics ?: return
         if (!face.isFaceDetected || face.landmarks.size < 468) return
         try {
-            fun point(index: Int): Vector3 {
-                val p = face.landmarks[index]
-                return Vector3(p.x * width, p.y * height, p.z * width)
-            }
-            val rig = GlassesRig.fromEyes((point(33) + point(133)) * 0.5f,
-                (point(263) + point(362)) * 0.5f, point(152), current.scale, current.heightOffset,
-                forehead = point(10), noseBridge = point(168)) ?: return
+            val rig = VtoHeadPose.rig(face, width, height, current.scale, current.heightOffset) ?: return
             if (face.landmarks.any { !it.x.isFinite() || !it.y.isFinite() || !it.z.isFinite() }) return
             GLES20.glEnable(GLES20.GL_SCISSOR_TEST)
             GLES20.glScissor(0, current.clipBottom.coerceIn(0, height), width,

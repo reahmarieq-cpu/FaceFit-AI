@@ -23,6 +23,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.data.auth.GoogleSignInClient
+import com.example.facefit.data.auth.GoogleAuthDiagnostics
 import com.example.facefit.ui.theme.FaceFitTextPrimary
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthException
@@ -54,12 +55,14 @@ internal fun GoogleAuthButton(
                     try {
                         val token = client.getIdToken()
                         authManager.signInWithGoogle(token).getOrThrow()
+                        GoogleAuthDiagnostics.event("signInComplete")
                         successCallback()
-                    } catch (_: GetCredentialCancellationException) {
-                        // Closing the chooser leaves the form available for another attempt.
+                    } catch (e: GetCredentialCancellationException) {
+                        GoogleAuthDiagnostics.failure("credentialCanceled", e)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
+                        GoogleAuthDiagnostics.failure("signInFailed", e)
                         val message = when (e) {
                             is FirebaseAuthUserCollisionException ->
                                 "This email already uses another sign-in method. Please sign in with that method."
@@ -69,8 +72,13 @@ internal fun GoogleAuthButton(
                                 "No Google account is available. Add one on your phone and try again."
                             is GetCredentialException ->
                                 "Google sign-in could not complete. Check Google Play services and try again."
-                            is FirebaseAuthException ->
-                                "Google sign-in is unavailable. Please try email sign-in."
+                            is FirebaseAuthException -> when (e.errorCode) {
+                                "ERROR_OPERATION_NOT_ALLOWED" ->
+                                    "Google sign-in is disabled for this Firebase project. Contact support."
+                                "ERROR_INVALID_CREDENTIAL" ->
+                                    "Google sign-in configuration could not be verified. Contact support."
+                                else -> "Google sign-in is unavailable. Please try email sign-in."
+                            }
                             is IllegalStateException -> e.message
                                 ?: "Google sign-in could not complete. Please try again."
                             else -> "Google sign-in could not complete. Please try again."

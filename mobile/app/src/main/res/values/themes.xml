@@ -7,4 +7,11 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
+    <style name="Theme.Facefit.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/facefit_splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_facefit_splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.Facefit</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
 </resources>

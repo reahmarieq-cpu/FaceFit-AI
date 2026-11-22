@@ -9,6 +9,7 @@ import org.junit.Test
 import kotlin.math.*
 
 class GlbFaceTransformTest {
+    private val eyeSpan = 240f * (4.445859f + 1.856432f) / (2f * 4.445859f)
     private val center = floatArrayOf(0f, -11.5f, -73.5f)
     private val extent = floatArrayOf(70f, 24f, 76.25f)
     private fun face(yaw: Float = 0f, shiftX: Float = 0f): FaceAnalyzer.FaceMetrics {
@@ -20,7 +21,7 @@ class GlbFaceTransformTest {
         points[33] = p(-0.6f, 0f); points[133] = p(-0.4f, 0f)
         points[263] = p(0.6f, 0f); points[362] = p(0.4f, 0f)
         points[152] = p(0f, 1f); points[10] = p(0f, -0.8f)
-        points[168] = p(0f, 0f, -0.2f)
+        points[168] = p(0f, -.0470915f, -0.2f)
         return FaceAnalyzer.FaceMetrics(0f, 0f, 0f, "Oval", points, 800, 1000, true)
     }
     private fun matrix(face: FaceAnalyzer.FaceMetrics? = face(), scale: Float = 1f,
@@ -34,10 +35,10 @@ class GlbFaceTransformTest {
         val m = matrix()!!
         val bridge = transform(m, Vector3(0f, center[1], 2.75f))
         assertEquals(400f, bridge.x, 0.01f)
-        assertEquals(600f, bridge.y, 0.01f)
+        assertEquals(611.7729f, bridge.y, 0.01f)
         val left = transform(m, Vector3(-70f, center[1], 2.75f))
         val right = transform(m, Vector3(70f, center[1], 2.75f))
-        assertEquals(400f, right.x-left.x, 0.01f)
+        assertEquals(2f * eyeSpan, right.x-left.x, 0.01f)
         assertTrue(transform(m, Vector3(65f, center[1], -140f)).z < bridge.z)
         assertTrue(transform(m, Vector3(0f, 12f, 2.75f)).y > bridge.y)
     }
@@ -46,9 +47,9 @@ class GlbFaceTransformTest {
         val initial = transform(matrix()!!, p)
         val moved = transform(matrix(face(shiftX = 0.1f))!!, p)
         assertEquals(80f, moved.x-initial.x, 0.01f)
-        assertEquals(initial.y-40f, transform(matrix(offset = 0.2f)!!, p).y, 0.01f)
+        assertEquals(initial.y - .2f * eyeSpan, transform(matrix(offset = 0.2f)!!, p).y, 0.01f)
         val m = matrix(scale = 1.2f)!!
-        assertEquals(480f, (transform(m, Vector3(70f, center[1], 2.75f)) -
+        assertEquals(2.4f * eyeSpan, (transform(m, Vector3(70f, center[1], 2.75f)) -
             transform(m, Vector3(-70f, center[1], 2.75f))).length(), 0.01f)
     }
     @Test fun turnsPreserveRigidMeshAndReverseTempleMotion() {

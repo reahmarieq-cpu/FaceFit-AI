@@ -3,6 +3,8 @@ package com.example.facefit
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.facefit.analysis.FaceShapeClassifier
 import com.example.facefit.facefit.analysis.FaceScanSamples
+import com.example.facefit.facefit.analysis.FacialGeometry
+import com.example.facefit.facefit.analysis.ScanStabilityFeatures
 import org.junit.Assert.*
 import org.junit.Test
 import kotlin.math.cos
@@ -72,31 +74,40 @@ class FaceShapeClassifierTest {
         val points = outline(square)
         val shape = FaceShapeClassifier.measure(points, 800, 1200)!!
         return FaceAnalyzer.FaceMetrics(0.9f, shape.jawToCheek, 0.25f,
-            FaceShapeClassifier.classify(shape), points, 800, 1200, true, shape)
+            FaceShapeClassifier.classify(shape), points, 800, 1200, true,
+            shapeMeasurements = FacialGeometry.measure(points, 800, 1200),
+            stabilityFeatures = requireNotNull(ScanStabilityFeatures.extract(points, 800, 1200)))
     }
 
-    @Test fun captureRequiresSixFreshFramesAndMinimumDuration() {
+    @Test fun captureRequiresFreshFramesAndMinimumDuration() {
         val collector = FaceScanSamples()
-        for (time in listOf(0L, 140L, 280L, 420L, 560L)) {
-            assertNull(collector.add(metrics(), true, time).captured)
+        val face = metrics()
+        val step = 100L
+        val duration = FaceScanSamples.MIN_DURATION_MS
+        for (time in 0L until duration step step) {
+            assertNull(collector.add(face, true, time).captured)
         }
-        val captured = collector.add(metrics(), true, 700L).captured!!
-        assertEquals(6, captured.shapeSampleCount)
+        val captured = requireNotNull(collector.add(face, true, duration).captured)
+        assertEquals((duration / step + 1L).toInt(), captured.shapeSampleCount)
         assertEquals("Round", captured.faceShape)
         val tooFast = FaceScanSamples()
-        repeat(6) { assertNull(tooFast.add(metrics(), true, it * 20L).captured) }
+        repeat(FaceScanSamples.MIN_SAMPLES) { assertNull(tooFast.add(face, true, it * 20L).captured) }
     }
 
     @Test fun losingAlignmentOrReceivingStaleFramesClearsPreviousSamples() {
         val collector = FaceScanSamples()
+        val square = metrics(true)
         repeat(5) { collector.add(metrics(), true, it * 150L) }
         assertEquals(0f, collector.add(metrics(), false, 750L).progress, 0f)
-        assertNull(collector.add(metrics(true), true, 900L).captured)
-        assertNull(collector.add(metrics(true), true, 2000L).captured)
-        repeat(5) { i ->
-            val result = collector.add(metrics(true), true, 2140L + i * 140L)
-            if (i < 4) assertNull(result.captured)
-            else assertEquals("Square", result.captured!!.faceShape)
+        assertNull(collector.add(square, true, 900L).captured)
+        val restartedAt = 2000L
+        assertEquals(0f, collector.add(square, true, restartedAt).progress, 0f)
+        for (elapsed in 100L until FaceScanSamples.MIN_DURATION_MS step 100L) {
+            assertNull(collector.add(square, true, restartedAt + elapsed).captured)
         }
+        val captured = requireNotNull(
+            collector.add(square, true, restartedAt + FaceScanSamples.MIN_DURATION_MS).captured
+        )
+        assertEquals("Square", captured.faceShape)
     }
 }

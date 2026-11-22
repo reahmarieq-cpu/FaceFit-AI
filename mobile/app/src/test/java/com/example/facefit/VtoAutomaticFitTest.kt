@@ -19,28 +19,46 @@ class VtoAutomaticFitTest {
     }
     @Test fun calibratedLensCentersFollowEyesAtDifferentDistances() {
         val anchors=VtoAutomaticFit.squareTortoise
+        val halfSpan = 150f * (4.445859f + 1.856432f) / (2f * 4.445859f)
         for(zoom in listOf(.6f,1f,1.3f)) {
             val m=requireNotNull(GlbFaceTransform.matrix(face(zoom),1000,1000,
                 floatArrayOf(0f,-11.5f,-73.5f),floatArrayOf(70f,24f,76.25f),1f,0f,anchors))
-            for((point,expectedX) in listOf(anchors.firstLens to (500f-125f*zoom),anchors.secondLens to (500f+125f*zoom))) {
+            for((point,expectedX) in listOf(anchors.firstLens to (500f-halfSpan*zoom),anchors.secondLens to (500f+halfSpan*zoom))) {
                 val x=m[0]*point.x+m[4]*point.y+m[8]*point.z+m[12]
                 val y=m[1]*point.x+m[5]*point.y+m[9]*point.z+m[13]
                 assertEquals(expectedX,x,.01f); assertEquals(600f,y,.01f)
             }
         }
     }
-    @Test fun wideFacePlacesFrameEdgesOutsideTheTemples() {
+    @Test fun faceWidthRestoresSizingWhilePreservingBridgePosition() {
         val base=face(1f)
         val points=base.landmarks.toMutableList()
         points[127]=FaceAnalyzer.LandmarkPoint(.20f,.4f)
         points[356]=FaceAnalyzer.LandmarkPoint(.80f,.4f)
         val m=requireNotNull(GlbFaceTransform.matrix(base.copy(landmarks=points),1000,1000,
             floatArrayOf(0f,-11.5f,-73.5f),floatArrayOf(70f,24f,76.25f),1f,0f,VtoAutomaticFit.squareTortoise))
-        assertEquals(618f,140f*m[0],.01f)
+        val baseline = requireNotNull(GlbFaceTransform.matrix(base,1000,1000,
+            floatArrayOf(0f,-11.5f,-73.5f),floatArrayOf(70f,24f,76.25f),1f,0f,VtoAutomaticFit.squareTortoise))
+        assertTrue(m[0] > baseline[0])
+        assertEquals(618f, 140f * m[0], .01f)
         val c=VtoAutomaticFit.squareTortoise.center
         assertEquals(500f,m[0]*c.x+m[4]*c.y+m[8]*c.z+m[12],.01f)
         assertEquals(600f,m[1]*c.x+m[5]*c.y+m[9]*c.z+m[13],.01f)
     }
+    @Test fun cheekWidthAlsoFitsTheFrameAndInvalidWidthsUseEyeScale() {
+        val base = face(1f)
+        fun matrix(width: Float): FloatArray {
+            val points = base.landmarks.toMutableList()
+            points[234] = FaceAnalyzer.LandmarkPoint(.5f - width / 2f, .4f)
+            points[454] = FaceAnalyzer.LandmarkPoint(.5f + width / 2f, .4f)
+            return requireNotNull(GlbFaceTransform.matrix(base.copy(landmarks = points), 1000, 1000,
+                floatArrayOf(0f,-11.5f,-73.5f), floatArrayOf(70f,24f,76.25f), 1f, 0f,
+                VtoAutomaticFit.squareTortoise))
+        }
+        assertEquals(618f, 140f * matrix(.6f)[0], .01f)
+        assertEquals(matrix(0f)[0], matrix(2f)[0], .00001f)
+    }
+
     @Test fun unknownAssetsDoNotReceiveSquareTortoiseCalibration() {
         assertNull(VtoAutomaticFit.forAsset("other.glb"))
         assertTrue(VtoAutomaticFit.squareTortoise.isValid())
@@ -54,7 +72,7 @@ class VtoAutomaticFitTest {
             .order(java.nio.ByteOrder.LITTLE_ENDIAN).asShortBuffer()
         while(indices.hasRemaining()) assertTrue((indices.get().toInt() and 65535) < 544)
     }
-    @Test fun rearMaskDoesNotNarrowAndExposeHiddenTempleTips() {
+    @Test fun rearMaskUsesFullHeadEnvelopeAndRetainsSkullDepth() {
         val base=face(1f)
         val points=base.landmarks.toMutableList()
         val oval=VtoHeadOcclusionGeometry.oval
@@ -67,7 +85,10 @@ class VtoAutomaticFitTest {
         val vertices=requireNotNull(VtoHeadOcclusionGeometry.positions(base.copy(landmarks=points),1000,1000))
         val frontX=oval.map { vertices[it*3] }
         val rearX=(504..539).map { vertices[it*3] }
-        assertTrue(rearX.max()-rearX.min() >= frontX.max()-frontX.min())
+        val nearX = (468..503).map { vertices[it*3] }
+        val faceWidth = frontX.max() - frontX.min()
+        assertEquals(faceWidth * 1.02f, nearX.max() - nearX.min(), .001f)
+        assertEquals(faceWidth * 1.02f, rearX.max() - rearX.min(), .001f)
         assertTrue(vertices[540*3+2] < -2700f)
     }
     @Test fun missingFaceDoesNotProduceAnOccluder() {

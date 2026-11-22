@@ -14,6 +14,10 @@ import com.example.facefit.facefit.tryon.tracking.VtoHeadPose
  * This class is used only for 3D Virtual Try-On.
  */
 object GlbFaceTransform {
+    internal fun frontAnchor(center: FloatArray, halfExtent: FloatArray,
+        calibration: VtoAutomaticFit.ModelAnchors?): Vector3 =
+        calibration?.center ?: Vector3(center[0], center[1], center[2] + halfExtent[2])
+
 
     internal fun matrix(
         face: FaceAnalyzer.FaceMetrics?,

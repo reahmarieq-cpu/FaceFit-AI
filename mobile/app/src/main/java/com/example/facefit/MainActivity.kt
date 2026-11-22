@@ -4,57 +4,105 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.graphics.Color
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.navigation.FaceFitNavHost
 import com.example.facefit.ui.theme.FacefitTheme
 
 class MainActivity : ComponentActivity() {
     private val authManager by lazy { AuthManager() }
+    private var composeReady = false
+    private var nativeSplashGone by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val systemSplash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        val freshLaunch = savedInstanceState == null
+        val reduceMotion = Settings.Global.getFloat(contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+        systemSplash.setKeepOnScreenCondition { !composeReady }
+        systemSplash.setOnExitAnimationListener { provider ->
+            provider.remove()
+            nativeSplashGone = true
+        }
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         setContent {
             FacefitTheme {
+                var startupVisible by rememberSaveable { mutableStateOf(freshLaunch && !reduceMotion) }
+                val showStartup = freshLaunch && startupVisible
+                // Observe native removal even when reduced motion skips the Compose overlay.
+                // The OS restores post-splash system-bar flags during this handoff.
+                val nativeGone = nativeSplashGone
+                LaunchedEffect(showStartup, nativeGone) {
+                    val style = if (showStartup) SystemBarStyle.dark(Color.TRANSPARENT)
+                        else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+                    enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                    // Reassert after Android's splash/theme restoration on Samsung/Android 12+.
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !showStartup
+                        isAppearanceLightNavigationBars = !showStartup
+                        if (showStartup) hide(WindowInsetsCompat.Type.systemBars())
+                        else show(WindowInsetsCompat.Type.systemBars())
+                    }
+                    withFrameNanos { }
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = !showStartup
+                        isAppearanceLightNavigationBars = !showStartup
+                        if (showStartup) hide(WindowInsetsCompat.Type.systemBars())
+                        else show(WindowInsetsCompat.Type.systemBars())
+                    }
+                }
                 var hasCameraPermission by remember {
-                    mutableStateOf(
-                        ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                    )
+                    mutableStateOf(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
                 }
-
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-                ) { isGranted ->
-                    hasCameraPermission = isGranted
+                val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+                    hasCameraPermission = it
                 }
-
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    FaceFitNavHost(
-                        authManager = authManager,
-                        hasCameraPermission = hasCameraPermission,
-                        onRequestCameraPermission = {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
-                        },
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Box(Modifier.fillMaxSize().onGloballyPositioned { composeReady = true }) {
+                    // The startup route checks the cached Firebase session; no camera or model warm-up blocks it.
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        contentWindowInsets = if (showStartup) androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+                            else androidx.compose.material3.ScaffoldDefaults.contentWindowInsets,
+                    ) { innerPadding ->
+                        FaceFitNavHost(
+                            authManager = authManager,
+                            hasCameraPermission = hasCameraPermission,
+                            onRequestCameraPermission = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                            modifier = Modifier.padding(innerPadding),
+                            showStartup = showStartup,
+                            startupReady = nativeGone,
+                            onStartupFinished = {
+                                WindowCompat.getInsetsController(window, window.decorView).apply {
+                                    isAppearanceLightStatusBars = true
+                                    isAppearanceLightNavigationBars = true
+                                    show(WindowInsetsCompat.Type.systemBars())
+                                }
+                                startupVisible = false
+                            },
+                        )
+                    }
                 }
             }
         }

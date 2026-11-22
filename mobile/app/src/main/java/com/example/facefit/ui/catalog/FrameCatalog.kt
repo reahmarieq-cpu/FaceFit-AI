@@ -32,7 +32,8 @@ data class SampleFrame(
     val rightArmAssetPath: String? = null,
     val leftArmAnchors: FrameArmAnchors? = null,
     val compatibilityScore: Double? = null,
-    val rightArmAnchors: FrameArmAnchors? = null
+    val rightArmAnchors: FrameArmAnchors? = null,
+    val id: String = android.net.Uri.encode(name),
 )
 
 // Preview catalog until the real frame dataset and scoring are connected.

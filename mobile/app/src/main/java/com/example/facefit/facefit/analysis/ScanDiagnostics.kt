@@ -32,7 +32,9 @@ internal object ScanDiagnostics {
         .toString(2)
 
     fun saveLatest(context: Context, metrics: FaceAnalyzer.FaceMetrics) {
-        if (!BuildConfig.DEBUG) return
+        if (!BuildConfig.DEBUG || !context.applicationContext
+            .getSharedPreferences("profile_scan_history", Context.MODE_PRIVATE)
+            .getBoolean("historyEnabled", true)) return
         try {
             context.filesDir.resolve("latest-scan-diagnostics.json").writeText(json(metrics))
         } catch (error: IOException) {

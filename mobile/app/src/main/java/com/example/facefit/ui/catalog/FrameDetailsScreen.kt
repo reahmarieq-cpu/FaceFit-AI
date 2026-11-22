@@ -52,6 +52,35 @@ fun FrameDetailsScreen(
                     tint = if (isFavorite) Color(0xFFFF7A69) else FaceFitTextSecondary)
             }
         }
+        FrameDetailsContent(frame)
+        if (frame.assetPath?.endsWith(".glb", ignoreCase = true) == true) {
+            OutlinedButton(
+                onClick = onPreviewModel,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Preview 3D Model", fontWeight = FontWeight.Bold)
+            }
+        }
+        Button(
+            onClick = onStartTryOn,
+            enabled = frame.tryOnAssetPath != null,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = FaceFitTeal)
+        ) {
+            Icon(Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(if (frame.tryOnAssetPath != null) "Start Virtual Try-On" else "Try-On Not Available",
+                fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** Shared product details used by the catalog screen and the live try-on sheet. */
+@Composable
+internal fun FrameDetailsContent(frame: SampleFrame, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Box(Modifier.fillMaxWidth().height(130.dp).softContainerShadow(RoundedCornerShape(20.dp)).clip(RoundedCornerShape(20.dp))
             .background(Color(0xFFE5EBEE)).padding(24.dp), contentAlignment = Alignment.Center) {
             FrameIllustration(frame, Modifier.fillMaxWidth().height(85.dp))
@@ -79,27 +108,6 @@ fun FrameDetailsScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DetailAttribute("MATERIAL", frame.material, Modifier.weight(1f))
             DetailAttribute("COLOR", frame.colorName, Modifier.weight(1f))
-        }
-        if (frame.assetPath?.endsWith(".glb", ignoreCase = true) == true) {
-            OutlinedButton(
-                onClick = onPreviewModel,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Preview 3D Model", fontWeight = FontWeight.Bold)
-            }
-        }
-        Button(
-            onClick = onStartTryOn,
-            enabled = frame.tryOnAssetPath != null,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = FaceFitTeal)
-        ) {
-            Icon(Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(if (frame.tryOnAssetPath != null) "Start Virtual Try-On" else "Try-On Not Available",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

@@ -166,5 +166,6 @@ class FaceAnalyzer(
         val shapeDecisionPolicy: String? = null,
         val headPose: FaceScanPose.Angles? = null,
         val scanLighting: FaceScanLighting.Measurement? = null,
+        val snrFactor: Float = 1f,
     )
 }

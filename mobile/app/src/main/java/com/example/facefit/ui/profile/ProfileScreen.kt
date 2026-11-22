@@ -1,6 +1,7 @@
 package com.example.facefit.ui.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,6 +19,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,14 +35,20 @@ import com.example.facefit.ui.theme.*
 fun ProfileScreen(
     authManager: AuthManager,
     onNavigate: (String) -> Unit = {},
-    onSignOut: () -> Unit = {}
+    onSignOut: () -> Unit = {},
+    savedCount: Int = 0,
+    recentFaceShape: String? = null,
+    favoritesLoading: Boolean = false,
+    favoritesError: String? = null,
+    onNavigateToResults: () -> Unit = { onNavigate("scanResults") },
+    onNavigateToScan: () -> Unit = { onNavigate("scan") }
 ) {
     var userData by remember { mutableStateOf<Map<String, Any>?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var signingOut by remember { mutableStateOf(false) }
     
-    LaunchedEffect(Unit) {
+    LaunchedEffect(authManager.currentUser?.uid) {
         authManager.getUserProfile().onSuccess {
             userData = it
         }
@@ -122,27 +132,32 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Stats Row
-            Card(
-                modifier = Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    StatItem("3", "SCANS", FaceFitTextPrimary)
-                    VerticalDivider(modifier = Modifier.height(40.dp), color = FaceFitBorder)
-                    StatItem("2", "SAVED", Color(0xFFFF7878))
-                    VerticalDivider(modifier = Modifier.height(40.dp), color = FaceFitBorder)
-                    StatItem("Oval", "SHAPE", FaceFitTeal)
-                }
+                StatTile(
+                    title = "Saved",
+                    value = if (favoritesLoading) "..." else savedCount.toString(),
+                    icon = Icons.Outlined.FavoriteBorder,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    onClick = { onNavigate("favorites") },
+                )
+                StatTile(
+                    title = "Face Shape",
+                    value = recentFaceShape ?: "Not Scanned",
+                    icon = Icons.Outlined.Face,
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    onClick = {
+                        if (recentFaceShape != null) onNavigateToResults() else onNavigateToScan()
+                    },
+                )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
+            favoritesError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                Spacer(Modifier.height(12.dp))
+            }
 
             // Menu List
             Card(
@@ -155,7 +170,7 @@ fun ProfileScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = FaceFitBackground)
                     ProfileMenuItem(icon = Icons.Outlined.Notifications, label = "Notifications") {}
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = FaceFitBackground)
-                    ProfileMenuItem(icon = Icons.Outlined.Shield, label = "Privacy & Security") {}
+                    ProfileMenuItem(icon = Icons.Outlined.Shield, label = "Privacy & Security") { onNavigate("privacySecurity") }
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = FaceFitBackground)
                     ProfileMenuItem(icon = Icons.AutoMirrored.Outlined.Logout, label = "Sign Out") {
                         if (!signingOut) {
@@ -177,9 +192,33 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun StatItem(value: String, label: String, valueColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = value, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = valueColor)
-        Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = FaceFitTextSecondary)
+private fun StatTile(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = modifier.clip(RoundedCornerShape(20.dp))
+            .clickable(role = Role.Button, onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, contentDescription = null,
+                tint = Color(0xFF0F766E), modifier = Modifier.size(24.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(value, fontSize = 20.sp, fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E293B), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(4.dp))
+                    Text(title, fontSize = 13.sp, color = Color(0xFF64748B),
+                textAlign = TextAlign.Center)
+        }
     }
 }

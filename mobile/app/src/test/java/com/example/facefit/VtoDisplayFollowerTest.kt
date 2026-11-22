@@ -1,10 +1,11 @@
 package com.example.facefit
 
 import com.example.facefit.facefit.analysis.FaceAnalyzer
+import com.example.facefit.facefit.tryon.geometry.Vector3
+import com.example.facefit.facefit.tryon.tracking.VtoPositionHandoff
 import com.example.facefit.facefit.tryon.tracking.VtoDisplayFollower
 import org.junit.Assert.*
 import org.junit.Test
-import kotlin.math.exp
 
 class VtoDisplayFollowerTest {
     private fun face(dx: Float=0f)=FaceAnalyzer.FaceMetrics(0f,0f,0f,"",List(478) { i ->
@@ -15,14 +16,13 @@ class VtoDisplayFollowerTest {
         assertSame(target,f.sample(target,0L).face)
         assertEquals(1f,f.sample(target,16_000_000L).opacity,0f)
     }
-    @Test fun movesOnDisplayTicksWithoutNewInference() {
-        val f=VtoDisplayFollower();f.sample(face(),0L)
-        val target=face(.03f)
-        val a=f.sample(target,16_000_000L).face!!
-        val b=f.sample(target,32_000_000L).face!!
-        assertTrue(b.landmarks[33].x>a.landmarks[33].x)
-        assertTrue(b.landmarks[33].x<=target.landmarks[33].x)
+    @Test fun everyDetectionPassesThroughWithoutAccumulatedLag() {
+        val follower = VtoDisplayFollower()
+        follower.sample(face(), 0L)
+        val target = face(.03f)
+        assertSame(target, follower.sample(target, 16_000_000L).face)
     }
+
     @Test fun neverOvershootsOrRecoilsWhileTargetIsUnchanged() {
         val f=VtoDisplayFollower();f.sample(face(),0L)
         val target=face(.04f);var previous=.4f
@@ -31,47 +31,55 @@ class VtoDisplayFollowerTest {
             assertTrue(x>=previous);assertTrue(x<=target.landmarks[33].x);previous=x
         }
     }
-    @Test fun realDtMatchesExponentialAtTinyError() {
-        val f=VtoDisplayFollower();f.sample(face(),0L)
-        val target=face(.0015f)
-        val actual=f.sample(target,20_000_000L).face!!.landmarks[33].x
-        assertEquals(.4f+.0015f*(1f-exp(-.020f/.045f)),actual,.000001f)
+    @Test fun displaySubstepsIntegrateTheSameElapsedTime() {
+        val regular = VtoDisplayFollower()
+        val split = VtoDisplayFollower()
+        regular.sample(face(), 0L)
+        split.sample(face(), 0L)
+        val target = face(.03f)
+        regular.sample(target, 16_000_000L)
+        split.sample(target, 16_000_000L)
+        split.sample(target, 24_000_000L)
+        val expected = regular.sample(target, 32_000_000L).face!!.landmarks[33].x
+        assertEquals(expected, split.sample(target, 32_000_000L).face!!.landmarks[33].x, .000001f)
     }
-    @Test fun tinyErrorIsDampedMoreThanLargeMovement() {
-        val small=VtoDisplayFollower();val large=VtoDisplayFollower()
-        small.sample(face(),0L);large.sample(face(),0L)
-        val a=(small.sample(face(.0015f),16_000_000L).face!!.landmarks[33].x-.4f)/.0015f
-        val b=(large.sample(face(.04f),16_000_000L).face!!.landmarks[33].x-.4f)/.04f
-        assertTrue(b>a)
+
+    @Test fun tinyMovementPassesThroughWithoutAnotherFilter() {
+        val follower = VtoDisplayFollower()
+        follower.sample(face(), 0L)
+        val target = face(.0001f)
+        assertSame(target, follower.sample(target, 16_000_000L).face)
     }
-    @Test fun convergencePreservesIdentityAndStopsWork() {
-        val f=VtoDisplayFollower();f.sample(face(),0L);val target=face(.01f)
-        var output=f.sample(target,16_000_000L)
-        for(i in 2..120) output=f.sample(target,i*16_000_000L)
-        assertSame(target,output.face)
-        assertSame(output,f.sample(target,121*16_000_000L))
+    @Test fun latestRestingMeasurementIsUsedDirectly() {
+        val follower = VtoDisplayFollower()
+        follower.sample(face(), 0L)
+        for (i in 1..30) {
+            val target = face(if (i % 2 == 0) .00035f else -.00035f)
+            assertSame(target, follower.sample(target, i * 16_000_000L).face)
+        }
     }
+
     @Test fun shortLossHoldsExactLastDisplayedObject() {
         val f=VtoDisplayFollower();val target=face();val visible=f.sample(target,0L)
         val lost=target.copy(isFaceDetected=false)
         assertSame(visible,f.sample(lost,16_000_000L))
-        assertSame(visible,f.sample(lost,250_000_000L))
-        assertSame(target,f.sample(target,255_000_000L).face)
+        assertSame(visible,f.sample(lost,40_000_000L))
+        assertSame(target,f.sample(target,41_000_000L).face)
     }
     @Test fun graceEndsInFadeThenHides() {
         val f=VtoDisplayFollower();val target=face();f.sample(target,0L)
         f.sample(null,10_000_000L)
-        assertEquals(1f,f.sample(null,259_000_000L).opacity,0f)
-        val fading=f.sample(null,310_000_000L)
+        assertEquals(1f,f.sample(null,34_000_000L).opacity,0f)
+        val fading=f.sample(null,60_000_000L)
         assertSame(target,fading.face);assertEquals(.5f,fading.opacity,.001f)
-        val hidden=f.sample(null,360_000_000L)
+        val hidden=f.sample(null,85_000_000L)
         assertNull(hidden.face);assertEquals(0f,hidden.opacity,0f)
     }
     @Test fun reacquireAfterGraceStartsFreshEvenDuringFade() {
         val f=VtoDisplayFollower();f.sample(face(),0L);f.sample(null,10_000_000L)
-        f.sample(null,310_000_000L)
+        f.sample(null,60_000_000L)
         val next=face(.1f)
-        assertSame(next,f.sample(next,320_000_000L).face)
+        assertSame(next,f.sample(next,70_000_000L).face)
     }
     @Test fun sizeChangeNeverHoldsOldCoordinates() {
         val f=VtoDisplayFollower();f.sample(face(),0L)
@@ -88,6 +96,7 @@ class VtoDisplayFollowerTest {
     }
     @Test fun pauseResumeDoesNotAnimateOldPose() {
         val f=VtoDisplayFollower();f.sample(face(),0L)
+        f.sample(face(.002f),16_000_000L)
         val target=face(.03f)
         assertSame(target,f.sample(target,1_000_000_000L).face)
     }
@@ -96,18 +105,14 @@ class VtoDisplayFollowerTest {
         val invalid=face().copy(landmarks=List(478) { FaceAnalyzer.LandmarkPoint(Float.NaN,0f) })
         assertNull(f.sample(invalid,0L).face)
     }
-    @Test fun alternatingTinyMeasurementsAreDampedWithoutPrediction() {
-        val f=VtoDisplayFollower();f.sample(face(),0L)
-        var sum=0f;var count=0
-        for(i in 1..30) {
-            val target=face(if(i%2==0) .001f else -.001f)
-            for(frame in 0..2) {
-                val result=f.sample(target,(i*3L+frame)*16_000_000L).face!!
-                if(i>5) { sum+=kotlin.math.abs(result.landmarks[33].x-.4f);count++ }
-            }
-        }
-        assertTrue(sum/count<.0008f)
+    @Test fun stoppingAfterReversalNeverContinuesHistoricalVelocity() {
+        val follower = VtoDisplayFollower()
+        follower.sample(face(), 0L)
+        follower.sample(face(.04f), 16_000_000L)
+        val stopped = face(.02f)
+        for (i in 2..30) assertSame(stopped, follower.sample(stopped, i * 16_000_000L).face)
     }
+
     @Test fun identicalNewMeasurementsPreserveDisplayedIdentity() {
         val follower=VtoDisplayFollower();val first=face()
         val display=follower.sample(first,0L)
@@ -119,5 +124,20 @@ class VtoDisplayFollowerTest {
         val follower=VtoDisplayFollower();val first=follower.sample(face(),0L)
         val invalid=face().copy(imageWidth=0,isFaceDetected=false)
         assertSame(first,follower.sample(invalid,16_000_000L))
+    }
+    @Test fun handoffNeverStoresMomentumAfterTheTargetStops() {
+        val handoff = VtoPositionHandoff()
+        val previous = Any()
+        val next = Any()
+        val period = 58_000_000L
+        fun sample(x: Float, source: Any, ms: Long) =
+            handoff.sample(Vector3(x, 0f, 0f), source, false, ms * 1_000_000L, period).x
+
+        assertEquals(0f, sample(0f, previous, 0L), .0001f)
+        assertEquals(16f, sample(16f, previous, 16L), .0001f)
+        assertEquals(52f, sample(52f, next, 32L), .0001f)
+        assertEquals(81f, sample(81f, next, 61L), .0001f)
+        assertEquals(110f, sample(110f, next, 90L), .0001f)
+        assertEquals(110f, sample(110f, next, 120L), .0001f)
     }
 }

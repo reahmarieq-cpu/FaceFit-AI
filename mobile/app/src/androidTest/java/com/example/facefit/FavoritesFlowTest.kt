@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.ui.favorites.FavoritesScreen
 import com.example.facefit.ui.catalog.FrameMatchesScreen
+import com.example.facefit.ui.catalog.sampleFrames
 import com.example.facefit.ui.theme.FacefitTheme
 import org.junit.Rule
 import org.junit.Test
@@ -21,7 +22,7 @@ class FavoritesFlowTest {
         }
         compose.setContent {
             FacefitTheme {
-                if(favoritesVisible.value) FavoritesScreen(savedFrames=saved.value,onFavoriteChange=update)
+                if(favoritesVisible.value) FavoritesScreen(frames=sampleFrames.filter { it.name in saved.value },onFavoriteChange=update)
                 else FrameMatchesScreen(FaceAnalyzer.FaceMetrics(140f,120f,65f,"Oval",isFaceDetected=true),
                     onBack={},onScanAgain={},savedFrames=saved.value,onFavoriteChange=update,onFrameClick={})
             }

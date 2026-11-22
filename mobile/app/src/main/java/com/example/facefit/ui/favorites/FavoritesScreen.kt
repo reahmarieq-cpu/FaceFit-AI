@@ -31,11 +31,14 @@ import com.example.facefit.ui.theme.*
 fun FavoritesScreen(
     onBack: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
-    savedFrames: List<String> = emptyList(),
+    frames: List<SampleFrame> = emptyList(),
+    loading: Boolean = false,
+    error: String? = null,
+    signedIn: Boolean = true,
     onFavoriteChange: (String,Boolean) -> Unit = {_,_->},
     onFrameClick: (SampleFrame) -> Unit = {}
 ) {
-    val favorites=sampleFrames.filter { it.name in savedFrames }
+    val favorites = frames
     Scaffold(bottomBar={ FaceFitBottomNavBar("favorites",onNavigate) },containerColor=FaceFitBackground) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding),contentPadding=PaddingValues(24.dp),
             verticalArrangement=Arrangement.spacedBy(16.dp)) {
@@ -53,17 +56,19 @@ fun FavoritesScreen(
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            if(favorites.isEmpty()) item {
+            if (loading) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            error?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
+            if (!loading && favorites.isEmpty()) item {
                 Column(Modifier.fillMaxWidth().padding(vertical=40.dp),horizontalAlignment=Alignment.CenterHorizontally) {
                     Icon(Icons.Outlined.FavoriteBorder,null,tint=FaceFitTeal,modifier=Modifier.size(48.dp))
                     Spacer(Modifier.height(12.dp))
-                    Text("No favorite frames yet",fontWeight=FontWeight.SemiBold,color=FaceFitTextPrimary)
+                    Text(if (signedIn) "No favorite frames yet" else "Sign in to sync your favorites",fontWeight=FontWeight.SemiBold,color=FaceFitTextPrimary)
                     Text("Tap a heart in the frame catalog to save a frame here.",
                         modifier=Modifier.padding(top=8.dp),fontSize=14.sp,color=FaceFitTextSecondary)
                     TextButton(onClick={onNavigate("frameMatches")}) { Text("Browse frames") }
                 }
             }
-            items(favorites,key={it.name}) { frame ->
+            items(favorites,key={it.id}) { frame ->
                 Card(modifier=Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(24.dp))
                     .clickable(onClickLabel="View ${frame.name} details") { onFrameClick(frame) },
                     shape=RoundedCornerShape(24.dp),colors=CardDefaults.cardColors(containerColor=Color.White)) {
@@ -91,5 +96,5 @@ fun FavoritesScreen(
 @Preview(showBackground=true)
 @Composable
 fun FavoritesScreenPreview() {
-    FacefitTheme { FavoritesScreen(savedFrames=listOf("Nova","Pax")) }
+    FacefitTheme { FavoritesScreen(frames=sampleFrames.filter { it.name in listOf("Nova", "Pax") }) }
 }
