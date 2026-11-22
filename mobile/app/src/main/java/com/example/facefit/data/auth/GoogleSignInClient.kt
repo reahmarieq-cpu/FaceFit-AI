@@ -1,8 +1,8 @@
 package com.example.facefit.data.auth
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
-import com.example.facefit.R
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -26,11 +26,14 @@ class GoogleSignInClient(private val context: Context) {
         return GoogleIdTokenCredential.createFrom(credential.data).idToken
     }
 
-    // Generated from the Web OAuth client in app/google-services.json.
-    private fun serverClientId(): String =
-        context.getString(R.string.default_web_client_id).also {
-            check(it.isNotBlank()) { "Google sign-in is not available yet. Please use email sign-in." }
-        }
+    // The Google services plugin only generates this resource when a Web OAuth client is configured.
+    @SuppressLint("DiscouragedApi")
+    private fun serverClientId(): String {
+        val resourceId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+        val clientId = if (resourceId != 0) context.getString(resourceId) else ""
+        check(clientId.isNotBlank()) { "Google sign-in is not available yet. Please use email sign-in." }
+        return clientId
+    }
 
     companion object {
         suspend fun clearSignInState(context: Context) {

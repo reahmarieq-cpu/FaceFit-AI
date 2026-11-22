@@ -1,0 +1,57 @@
+package com.example.facefit.facefit.analysis
+
+/** The outline used for both drawing and validating the scan guide. */
+internal object FaceScanGuide {
+    data class Point(val x: Float, val y: Float) {
+        fun mirrored() = Point(-x, y)
+    }
+
+    private val outline = buildList {
+        val top = Point(0f, -1f)
+        val side = Point(1f, -.08f)
+        val lowerSide = Point(1f, .36f)
+        val chin = Point(0f, 1f)
+        add(top)
+        addAll(curve(top, Point(.75f, -1f), Point(1f, -.58f), side))
+        add(lowerSide)
+        addAll(curve(lowerSide, Point(.92f, .78f), Point(.48f, 1f), chin))
+        addAll(toList().drop(1).dropLast(1).asReversed().map { it.mirrored() })
+    }
+
+    private fun curve(a: Point, b: Point, c: Point, d: Point): List<Point> =
+        (1..24).map { step ->
+            val t = step / 24f
+            val u = 1f - t
+            fun coordinate(start: Float, first: Float, second: Float, end: Float) =
+                u * u * u * start + 3 * u * u * t * first + 3 * u * t * t * second + t * t * t * end
+            Point(coordinate(a.x, b.x, c.x, d.x), coordinate(a.y, b.y, c.y, d.y))
+        }
+
+    fun points(width: Float, height: Float): List<Point> {
+        val halfWidth = minOf(width * .31f, height * .52f / 2.84f)
+        val halfHeight = halfWidth * 1.42f
+        val centerY = height * .22f + halfHeight
+        return outline.map { Point(width / 2 + it.x * halfWidth, centerY + it.y * halfHeight) }
+    }
+
+    fun containsFace(width: Int, height: Int, landmarks: FloatArray): Boolean {
+        if (width <= 0 || height <= 0 || landmarks.isEmpty() || landmarks.size % 2 != 0) return false
+        val boundary = points(width.toFloat(), height.toFloat())
+        for (index in landmarks.indices step 2) {
+            val x = landmarks[index]
+            val y = landmarks[index + 1]
+            if (!x.isFinite() || !y.isFinite()) return false
+            var inside = false
+            var previous = boundary.last()
+            for (current in boundary) {
+                if ((current.y > y) != (previous.y > y) &&
+                    x < (previous.x - current.x) * (y - current.y) /
+                        (previous.y - current.y) + current.x
+                ) inside = !inside
+                previous = current
+            }
+            if (!inside) return false
+        }
+        return true
+    }
+}

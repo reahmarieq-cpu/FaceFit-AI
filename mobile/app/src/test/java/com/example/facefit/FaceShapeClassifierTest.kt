@@ -2,7 +2,6 @@ package com.example.facefit
 
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.facefit.analysis.FaceShapeClassifier
-import com.example.facefit.facefit.analysis.FaceScanSamples
 import org.junit.Assert.*
 import org.junit.Test
 import kotlin.math.cos
@@ -66,37 +65,5 @@ class FaceShapeClassifierTest {
         val m = FaceShapeClassifier.Measurements(1.20f, 0.90f, 0.76f, 0.59f, 155f)
         val result = FaceShapeClassifier.median(listOf(m, m, m.copy(lengthToWidth = 1.8f)))!!
         assertEquals("Round", FaceShapeClassifier.classify(result))
-    }
-
-    private fun metrics(square: Boolean = false): FaceAnalyzer.FaceMetrics {
-        val points = outline(square)
-        val shape = FaceShapeClassifier.measure(points, 800, 1200)!!
-        return FaceAnalyzer.FaceMetrics(0.9f, shape.jawToCheek, 0.25f,
-            FaceShapeClassifier.classify(shape), points, 800, 1200, true, shape)
-    }
-
-    @Test fun captureRequiresSixFreshFramesAndMinimumDuration() {
-        val collector = FaceScanSamples()
-        for (time in listOf(0L, 140L, 280L, 420L, 560L)) {
-            assertNull(collector.add(metrics(), true, time).captured)
-        }
-        val captured = collector.add(metrics(), true, 700L).captured!!
-        assertEquals(6, captured.shapeSampleCount)
-        assertEquals("Round", captured.faceShape)
-        val tooFast = FaceScanSamples()
-        repeat(6) { assertNull(tooFast.add(metrics(), true, it * 20L).captured) }
-    }
-
-    @Test fun losingAlignmentOrReceivingStaleFramesClearsPreviousSamples() {
-        val collector = FaceScanSamples()
-        repeat(5) { collector.add(metrics(), true, it * 150L) }
-        assertEquals(0f, collector.add(metrics(), false, 750L).progress, 0f)
-        assertNull(collector.add(metrics(true), true, 900L).captured)
-        assertNull(collector.add(metrics(true), true, 2000L).captured)
-        repeat(5) { i ->
-            val result = collector.add(metrics(true), true, 2140L + i * 140L)
-            if (i < 4) assertNull(result.captured)
-            else assertEquals("Square", result.captured!!.faceShape)
-        }
     }
 }

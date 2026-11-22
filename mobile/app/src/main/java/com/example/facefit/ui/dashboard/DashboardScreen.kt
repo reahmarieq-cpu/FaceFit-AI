@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -23,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.ui.components.FaceFitBottomNavBar
+import com.example.facefit.notifications.rememberNotificationSettingsAction
+import com.example.facefit.ui.profile.openProfileSystemSettings
 import com.example.facefit.ui.components.FaceFitCard
 import com.example.facefit.ui.components.FaceFitLogo
 import com.example.facefit.ui.theme.*
@@ -41,6 +43,10 @@ fun DashboardScreen(
     onNavigate: (String) -> Unit = {}
 ) {
     var fullName by remember(userName) { mutableStateOf(userName) }
+    val context = LocalContext.current
+    val openNotifications = rememberNotificationSettingsAction {
+        context.openProfileSystemSettings(notifications = true)
+    }
 
     LaunchedEffect(authManager) {
         authManager?.getUserProfile()?.onSuccess { userData ->
@@ -83,7 +89,8 @@ fun DashboardScreen(
                     modifier = Modifier
                         .size(48.dp)
                         .softContainerShadow(RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp))
-                        .background(Color.White),
+                        .background(Color.White)
+                        .clickable(onClickLabel = "Notification settings", onClick = openNotifications),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

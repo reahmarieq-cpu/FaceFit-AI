@@ -1,6 +1,7 @@
 package com.example.facefit.ui.catalog
 
 import androidx.compose.ui.graphics.Color
+import com.example.facefit.facefit.recommendation.FrameCompatibility
 
 data class FrameLensAnchors(
     val leftX: Float = 0.25f,
@@ -31,9 +32,11 @@ data class SampleFrame(
     val leftArmAssetPath: String? = null,
     val rightArmAssetPath: String? = null,
     val leftArmAnchors: FrameArmAnchors? = null,
-    val compatibilityScore: Double? = null,
+    val compatibilityAssessment: FrameCompatibility.Assessment? = null,
     val rightArmAnchors: FrameArmAnchors? = null
-)
+) {
+    val compatibilityScore: Double? get() = compatibilityAssessment?.score
+}
 
 // Preview catalog until the real frame dataset and scoring are connected.
 val sampleFrames = listOf(

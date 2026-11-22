@@ -28,7 +28,8 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
+import com.example.facefit.facefit.analysis.FaceScanGuide
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -51,12 +52,16 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun FaceScanOverlay(
-    isFaceDetected: Boolean,
     statusText: String,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
-    captureProgress: Float,
-    modifier: Modifier = Modifier
+    captureEnabled: Boolean,
+    capturing: Boolean,
+    isRetake: Boolean,
+    onCapture: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** Live distance guide, shown above the status line before capture. */
+    distanceHint: com.example.facefit.facefit.analysis.ScanDistanceGuide.Hint? = null,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "GlowTransition")
     val glowAlpha by infiniteTransition.animateFloat(
@@ -107,13 +112,7 @@ fun FaceScanOverlay(
         }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val frameWidth = size.width * 0.62f
-            val frameHeight = frameWidth * 1.42f
-            val frameLeft = (size.width - frameWidth) / 2f
-            val frameTop = size.height * 0.22f
-            val frameRect = Rect(frameLeft, frameTop, frameLeft + frameWidth, frameTop + frameHeight)
-
-            drawReferenceScanFrame(frameRect, isFaceDetected, glowAlpha)
+            drawReferenceScanFrame(glowAlpha)
         }
 
         Column(
@@ -124,6 +123,22 @@ fun FaceScanOverlay(
                 .padding(horizontal = 28.dp, vertical = 26.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (distanceHint != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(if (distanceHint.inRange) Color(0xE62E7D32) else Color(0xE6B26A00))
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = distanceHint.text,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(18.dp))
@@ -138,7 +153,7 @@ fun FaceScanOverlay(
                 )
             }
 
-            Spacer(modifier = Modifier.height(72.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier
@@ -164,12 +179,25 @@ fun FaceScanOverlay(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-            LinearProgressIndicator(
-                progress = { captureProgress.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                color = Color.White,
-                trackColor = Color.White.copy(alpha = 0.24f)
-            )
+            Button(
+                onClick = onCapture,
+                enabled = captureEnabled,
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF063D46)
+                )
+            ) {
+                Text(
+                    when {
+                        capturing -> "Checking…"
+                        isRetake -> "Retake"
+                        else -> "Capture"
+                    },
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -190,25 +218,17 @@ private fun ScanIconButton(
     }
 }
 
-private fun DrawScope.drawReferenceScanFrame(rect: Rect, isFaceDetected: Boolean, glowAlpha: Float) {
-    val strokeColor = if (isFaceDetected) Color.White else Color.White.copy(alpha = 0.62f)
-    val glowColor = Color.White.copy(alpha = if (isFaceDetected) 0.28f * glowAlpha else 0.18f * glowAlpha)
+private fun DrawScope.drawReferenceScanFrame(glowAlpha: Float) {
+    val strokeColor = Color.White.copy(alpha = 0.85f)
+    val glowColor = Color.White.copy(alpha = 0.18f * glowAlpha)
     val dash = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 6.dp.toPx()), 0f)
-    val cx = rect.center.x
-    val cy = rect.center.y
-    val rx = rect.width / 2f
-    val ry = rect.height / 2f
-
+    val outline = FaceScanGuide.points(size.width, size.height)
     val facePath = Path().apply {
-        moveTo(cx, cy - ry)
-        cubicTo(cx + rx * 0.75f, cy - ry, cx + rx, cy - ry * 0.58f, cx + rx, cy - ry * 0.08f)
-        lineTo(cx + rx, cy + ry * 0.36f)
-        cubicTo(cx + rx * 0.92f, cy + ry * 0.78f, cx + rx * 0.48f, cy + ry, cx, cy + ry)
-        cubicTo(cx - rx * 0.48f, cy + ry, cx - rx * 0.92f, cy + ry * 0.78f, cx - rx, cy + ry * 0.36f)
-        lineTo(cx - rx, cy - ry * 0.08f)
-        cubicTo(cx - rx, cy - ry * 0.58f, cx - rx * 0.75f, cy - ry, cx, cy - ry)
+        moveTo(outline.first().x, outline.first().y)
+        outline.drop(1).forEach { lineTo(it.x, it.y) }
         close()
     }
+    val rect = facePath.getBounds()
 
     drawPath(
         path = facePath,

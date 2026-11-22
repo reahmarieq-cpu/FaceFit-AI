@@ -10,6 +10,7 @@ import com.example.facefit.ui.favorites.FavoritesScreen
 import com.example.facefit.ui.profile.ProfileScreen
 import com.example.facefit.ui.scan.ScanResultsScreen
 import com.example.facefit.ui.scan.ScanScreen
+import android.content.Context
 import android.net.Uri
 import com.example.facefit.ui.shops.ShopDetailsScreen
 import com.example.facefit.ui.shops.NearbyShopsScreen
@@ -26,6 +27,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.facefit.data.auth.AuthManager
+import com.example.facefit.notifications.FrameNotifications
 import kotlinx.coroutines.launch
 
 @Composable
@@ -33,20 +35,56 @@ fun FaceFitNavHost(
     authManager: AuthManager,
     hasCameraPermission: Boolean,
     onRequestCameraPermission: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    notificationFrame: String? = null,
+    onNotificationHandled: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
     var latestScanMetrics by remember { mutableStateOf<com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics?>(null) }
-    var savedFrameNames by rememberSaveable { mutableStateOf(emptyList<String>()) }
-    val updateFrameFavorite: (String, Boolean) -> Unit = { name, saved ->
-        savedFrameNames = if (saved) (savedFrameNames + name).distinct() else savedFrameNames - name
+    var accountId by remember(authManager) { mutableStateOf(authManager.currentUser?.uid) }
+    DisposableEffect(authManager) {
+        val unsubscribe = authManager.observeAccountId { accountId = it }
+        onDispose(unsubscribe)
     }
+    val favoritePreferences = remember(context) {
+        context.getSharedPreferences("saved_frames", Context.MODE_PRIVATE)
+    }
+    var guestSavedFrames by rememberSaveable { mutableStateOf(emptyList<String>()) }
+    val favoriteAccountId = accountId
+    var accountSavedFrames by remember(favoritePreferences, favoriteAccountId) {
+        mutableStateOf(favoriteAccountId?.let { id ->
+            favoritePreferences.getStringSet(id, emptySet()).orEmpty().sorted()
+        }.orEmpty())
+    }
+    val savedFrameNames by rememberUpdatedState(
+        if (favoriteAccountId == null) guestSavedFrames else accountSavedFrames
+    )
+    val updateFrameFavorite by rememberUpdatedState<(String, Boolean) -> Unit>(update@{ name, saved ->
+        if (authManager.currentUser?.uid != favoriteAccountId) return@update
+        val current = if (favoriteAccountId == null) guestSavedFrames else accountSavedFrames
+        val updated = if (saved) (current + name).distinct() else current - name
+        if (favoriteAccountId == null) {
+            guestSavedFrames = updated
+        } else {
+            accountSavedFrames = updated
+            favoritePreferences.edit().putStringSet(favoriteAccountId, updated.toSet()).apply()
+        }
+    })
     val startDest = try {
         if (authManager.currentUser != null) "dashboard" else "splash"
     } catch (e: Exception) {
         "splash"
+    }
+
+    var announcedScan by remember { mutableStateOf(false) }
+    LaunchedEffect(notificationFrame) {
+        val frame = notificationFrame ?: return@LaunchedEffect
+        if (authManager.currentUser != null) {
+            navController.navigate("frameDetails/${Uri.encode(frame)}") { launchSingleTop = true }
+        }
+        onNotificationHandled()
     }
 
     NavHost(
@@ -122,6 +160,8 @@ fun FaceFitNavHost(
         composable("profile") {
             ProfileScreen(
                 authManager = authManager,
+                accountId = accountId,
+                savedFrameCount = sampleFrames.count { it.name in savedFrameNames },
                 onNavigate = { route ->
                     if (route == "scan") {
                         if (hasCameraPermission) {
@@ -134,6 +174,7 @@ fun FaceFitNavHost(
                     }
                 },
                 onSignOut = {
+                    FrameNotifications.clear(context)
                     navController.navigate("splash") {
                         popUpTo(0) { inclusive = true }
                     }
@@ -164,6 +205,7 @@ fun FaceFitNavHost(
                 onBack = { navController.popBackStack() },
                 onComplete = { metrics ->
                     latestScanMetrics = metrics
+                    announcedScan = false
                     coroutineScope.launch {
                         val result = authManager.saveFaceScan(
                             foreheadWidth = metrics.foreheadWidth,
@@ -171,7 +213,11 @@ fun FaceFitNavHost(
                             eyeSpacing = metrics.eyeSpacing,
                             faceShape = metrics.faceShape,
                             shapeMeasurements = metrics.shapeMeasurements,
-                            shapeSampleCount = metrics.shapeSampleCount
+                            shapeSampleCount = metrics.shapeSampleCount,
+                            shapeModelId = metrics.shapeModelId,
+                            shapeModelScores = metrics.shapeModelScores,
+                            shapeModelFeatures = metrics.shapeModelFeatures,
+                            shapeDecisionPolicy = metrics.shapeDecisionPolicy
                         )
 
                         if (result.isSuccess) {
@@ -197,7 +243,18 @@ fun FaceFitNavHost(
             latestScanMetrics?.let { metrics ->
                 ScanResultsScreen(
                     metrics = metrics,
-                    onNext = { navController.navigate("frameMatches") { launchSingleTop = true } },
+                    onNext = {
+                        val accountId = authManager.currentUser?.uid
+                        if (accountId != null && !announcedScan && FrameNotifications.canPost(context)) {
+                            announcedScan = true
+                            coroutineScope.launch {
+                                FrameNotifications.postTopMatch(context, metrics.faceShape) {
+                                    authManager.currentUser?.uid == accountId
+                                }
+                            }
+                        }
+                        navController.navigate("frameMatches") { launchSingleTop = true }
+                    },
                     onBack = { navController.navigate("dashboard") },
                     onScanAgain = {
                         latestScanMetrics = null
@@ -213,15 +270,14 @@ fun FaceFitNavHost(
             )
         }
         composable("frameMatches") {
-            val metrics = latestScanMetrics ?: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics(
-                foreheadWidth = 140f,
-                jawline = 120f,
-                eyeSpacing = 65f,
-                faceShape = "Oval",
-                isFaceDetected = true
-            )
+            val metrics = latestScanMetrics
             FrameMatchesScreen(
                 metrics = metrics,
+                onDone = {
+                    if (!navController.popBackStack("dashboard", inclusive = false)) {
+                        navController.navigate("dashboard") { launchSingleTop = true }
+                    }
+                },
                 savedFrames = savedFrameNames,
                 onFavoriteChange = updateFrameFavorite,
                 onFrameClick = { frame -> navController.navigate("frameDetails/${frame.name}") },
@@ -238,6 +294,7 @@ fun FaceFitNavHost(
             sampleFrames.find { it.name == entry.arguments?.getString("frameName") }?.let { frame ->
                 FrameDetailsScreen(
                     frame = frame,
+                    faceShape = latestScanMetrics?.faceShape,
                     isFavorite = frame.name in savedFrameNames,
                     onBack = { navController.popBackStack() },
                     onFavoriteChange = { saved -> updateFrameFavorite(frame.name, saved) },

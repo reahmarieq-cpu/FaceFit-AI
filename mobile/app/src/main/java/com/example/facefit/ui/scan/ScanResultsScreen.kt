@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.facefit.analysis.FaceAnalyzer
+import com.example.facefit.facefit.recommendation.FacialExplanationRules
 import com.example.facefit.facefit.recommendation.RecommendationResult
 import com.example.facefit.ui.components.ResultIconButton
 import com.example.facefit.ui.theme.FaceFitTeal
@@ -43,7 +44,19 @@ fun ScanResultsScreen(
 ) {
     val context = LocalContext.current
     val thresholds = remember(context) { com.example.facefit.facefit.recommendation.FacialFeatureThresholds.load(context) }
-    val result = remember(metrics, thresholds) { RecommendationResult.from(metrics, thresholds) }
+    val rules = remember(context) { FacialExplanationRules.load(context) }
+    val result = remember(metrics, thresholds, rules) { RecommendationResult.from(metrics, thresholds, rules) }
+
+    androidx.compose.runtime.LaunchedEffect(result) {
+        android.util.Log.i("FaceFitFeatureDebug", ">>> ScanResultsScreen UI DISPLAYED: Forehead=${result.foreheadLabel}, Jawline=${result.jawlineLabel}, EyeSpacing=${result.eyeSpacingLabel}, FaceShape=${metrics.faceShape}")
+        android.util.Log.i("FACEFIT_FEATURE_DEBUG", ">>> ScanResultsScreen UI DISPLAYED: Forehead=${result.foreheadLabel}, Jawline=${result.jawlineLabel}, EyeSpacing=${result.eyeSpacingLabel}, FaceShape=${metrics.faceShape}")
+        android.util.Log.i("FACEFIT_FEATURE_DEBUG", ">>> Ratios: foreheadRatio=${metrics.foreheadWidth}, jawlineRatio=${metrics.jawline}, eyeSpacingRatio=${metrics.eyeSpacing}, cheekWidthPx=${metrics.rawCheekWidthPx}")
+        android.util.Log.i("FACEFIT_FEATURE_DEBUG", ">>> Borderline: forehead=${result.foreheadBorderline}, jawline=${result.jawlineBorderline}, eyeSpacing=${result.eyeSpacingBorderline}")
+        android.util.Log.i("FACEFIT_FEATURE_DEBUG", ">>> Burst: ${metrics.shapeSampleCount} accepted, ${metrics.rejectedSampleCount} rejected")
+        metrics.burstSampleMeasurements.forEachIndexed { i, s ->
+            android.util.Log.i("FACEFIT_FEATURE_DEBUG", ">>>   Sample#${i+1}: forehead=${s.foreheadWidth}, jaw=${s.jawline}, eye=${s.eyeSpacing}, cheek=${s.cheekWidthPx}px, yaw=${s.yawDeg}° pitch=${s.pitchDeg}°")
+        }
+    }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(ResultsBackground)) {
         val sidePadding = if (maxWidth < 360.dp) 16.dp else 24.dp
@@ -81,9 +94,11 @@ fun ScanResultsScreen(
                         fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Text(result.headline, color = ResultsInk, fontSize = 18.sp,
                         fontWeight = FontWeight.Bold, lineHeight = 25.sp)
+                    result.suggestedStyle?.let { style ->
+                        Text("Try $style frames", color = FaceFitTeal,
+                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    }
                     Text(result.explanation, color = ResultsMuted, fontSize = 14.sp, lineHeight = 21.sp)
-                    Text("Suggested styles: ${result.recommendedFrame}", color = FaceFitTeal,
-                        fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.height(24.dp))
                 Button(

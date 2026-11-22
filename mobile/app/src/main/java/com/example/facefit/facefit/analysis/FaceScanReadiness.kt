@@ -61,15 +61,6 @@ internal fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
     val faceWidth = bounds.maxX - bounds.minX
     val faceHeight = bounds.maxY - bounds.minY
     val centerX = (bounds.minX + bounds.maxX) / 2f
-    val centerY = (bounds.minY + bounds.maxY) / 2f
-    val frameLeft = 0.18f
-    val frameRight = 0.82f
-    val frameTop = 0.18f
-    val frameBottom = 0.88f
-    val faceOutsideFrame = bounds.minX < frameLeft ||
-        bounds.maxX > frameRight ||
-        bounds.minY < frameTop ||
-        bounds.maxY > frameBottom
     val nose = landmarks[1]
     val leftEyeOuter = landmarks[33]
     val leftEyeInner = landmarks[133]
@@ -83,23 +74,36 @@ internal fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
     val lighting = scanLighting
     val noseCentered = kotlin.math.abs(nose.x - centerX) <= faceWidth * 0.24f
 
+    val topHairline = landmarks[10]
+    val midBrow = landmarks.getOrNull(151) ?: landmarks[1]
+    val chinBottom = landmarks[152]
+    val foreheadHeight = (midBrow.y - topHairline.y) * imageHeight
+    val fullFaceHeight = (chinBottom.y - topHairline.y) * imageHeight
+    val foreheadRatio = if (fullFaceHeight > 10f) foreheadHeight / fullFaceHeight else 0f
+
     return when {
-        sizeRatio < 0.32f -> ScanReadiness(false, "Move closer to the camera")
-        sizeRatio > 0.42f || faceWidth > 0.62f || faceHeight > 0.74f -> ScanReadiness(false, "Move farther from the camera")
-        faceOutsideFrame -> ScanReadiness(false, "Include your full face in the frame")
+        // 1. Distance check: Hold phone at arm's length (50-60 cm) to eliminate wide-angle lens distortion
+        sizeRatio > 0.40f || faceWidth > 0.60f || faceHeight > 0.72f ->
+            ScanReadiness(false, "Hold phone farther at arm's length (50–60 cm)")
+        sizeRatio < 0.28f ->
+            ScanReadiness(false, "Move slightly closer while keeping phone at arm's length")
+
+        // 2. Head & Eye Level Alignment: Keep phone parallel to eyes, chin level
         pose == null || !listOf(pose.pitch, pose.yaw, pose.roll).all { it.isFinite() } ->
             ScanReadiness(false, "Face the camera directly")
         kotlin.math.abs(pose.yaw) > 8f || !noseCentered || !FaceScanPose.isFacingCamera(this) ->
             ScanReadiness(false, "Face the camera directly")
-        kotlin.math.abs(pose.pitch) > 10f -> ScanReadiness(false, "Keep your chin level")
-        kotlin.math.abs(pose.roll) > 5f || eyeTilt > 5.0 -> ScanReadiness(false, "Keep your head level")
+        pose.pitch > 7f ->
+            ScanReadiness(false, "Raise phone to eye level (do not tilt head down)")
+        pose.pitch < -7f ->
+            ScanReadiness(false, "Hold phone at eye level parallel to your eyes")
+        kotlin.math.abs(pose.roll) > 5f || eyeTilt > 5.0 ->
+            ScanReadiness(false, "Keep your head level")
+
+        // 3. Lighting checks
         lighting == null -> ScanReadiness(false, "Position your face in even lighting")
         lighting.guidance() != null -> ScanReadiness(false, lighting.guidance()!!)
-        centerX < 0.4f -> ScanReadiness(false, "Move your face slightly right")
-        centerX > 0.6f -> ScanReadiness(false, "Move your face slightly left")
-        centerY < 0.34f -> ScanReadiness(false, "Move your face slightly down")
-        centerY > 0.62f -> ScanReadiness(false, "Move your face slightly up")
-        else -> ScanReadiness(true, "Hold still - capturing automatically")
+        else -> ScanReadiness(true, "Capture passed the face checks")
     }
 }
 

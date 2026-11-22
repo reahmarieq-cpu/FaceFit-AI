@@ -41,20 +41,21 @@ import com.example.facefit.ui.theme.*
 
 @Composable
 fun FrameMatchesScreen(
-    metrics: FaceAnalyzer.FaceMetrics,
+    metrics: FaceAnalyzer.FaceMetrics?,
     onBack: () -> Unit,
     onScanAgain: () -> Unit,
+    onDone: () -> Unit,
     savedFrames: List<String>,
     onFavoriteChange: (String, Boolean) -> Unit,
     onFrameClick: (SampleFrame) -> Unit
 ) {
     val context = LocalContext.current
     val thresholds = remember(context) { com.example.facefit.facefit.recommendation.FacialFeatureThresholds.load(context) }
-    val result = remember(metrics, thresholds) { RecommendationResult.from(metrics, thresholds) }
+    val result = remember(metrics, thresholds) { metrics?.let { RecommendationResult.from(it, thresholds) } }
 
     val compatibility = remember(context) { com.example.facefit.facefit.recommendation.FrameCompatibility.load(context) }
-    val matches = remember(metrics.faceShape, compatibility) {
-        sampleFrames.map { frame -> frame.copy(compatibilityScore = compatibility.lookup(metrics.faceShape, frame.category)?.score) }
+    val matches = remember(metrics?.faceShape, compatibility) {
+        sampleFrames.map { frame -> frame.copy(compatibilityAssessment = compatibility.lookup(metrics?.faceShape, frame.category)) }
             .sortedByDescending { it.compatibilityScore ?: -1.0 }
     }
     LazyColumn(
@@ -75,16 +76,20 @@ fun FrameMatchesScreen(
             }
             Spacer(Modifier.height(8.dp))
         }
-        item {
-            ScanResultSummaryCard(metrics = metrics, result = result)
+        if (metrics != null && result != null) {
+            item { ScanResultSummaryCard(metrics = metrics, result = result) }
         }
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Top matches", Modifier.weight(1f), color = FaceFitTextPrimary,
+                Text(if (matches.any { it.compatibilityScore != null }) "Top matches" else "Available frames", Modifier.weight(1f), color = FaceFitTextPrimary,
                     fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 Text("${sampleFrames.size} sample frames", color = FaceFitTextSecondary, fontSize = 12.sp)
             }
-            Text("Assessor-based compatibility", color = FaceFitTextSecondary, fontSize = 11.sp)
+            Text(when {
+                metrics == null -> "Scan your face to see frame preferences."
+                compatibility.loadError != null -> compatibility.loadError
+                else -> "Frame shape preferences from survey and assessor ratings"
+            }, color = FaceFitTextSecondary, fontSize = 11.sp)
         }
         itemsIndexed(matches, key = { _, frame -> frame.name }) { index, frame ->
             Column {
@@ -105,11 +110,13 @@ fun FrameMatchesScreen(
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(frame.name, color = FaceFitTextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         Text(frame.category, color = FaceFitTextSecondary, fontSize = 12.sp)
-                        Spacer(Modifier.height(9.dp))
-                        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp))
-                            .background(Color(0xFFE1EBEE))) {
-                            Box(Modifier.fillMaxWidth(((frame.compatibilityScore ?: 0.0) / 100.0).toFloat()).fillMaxHeight()
-                                .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
+                        frame.compatibilityScore?.let { score ->
+                            Spacer(Modifier.height(9.dp))
+                            Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp))
+                                .background(Color(0xFFE1EBEE))) {
+                                Box(Modifier.fillMaxWidth((score / 100.0).toFloat()).fillMaxHeight()
+                                    .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
+                            }
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -122,9 +129,21 @@ fun FrameMatchesScreen(
                                 tint = if (saved) Color(0xFFFF7A69) else FaceFitTextSecondary,
                                 modifier = Modifier.size(20.dp))
                         }
-                        Text(frame.compatibilityScore?.let { "${kotlin.math.round(it).toInt()}%" } ?: "N/A", color = FaceFitTeal, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        frame.compatibilityScore?.let { score ->
+                            Text("${kotlin.math.round(score).toInt()}/100", color = FaceFitTeal,
+                                fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
+            }
+        }
+        item {
+            OutlinedButton(
+                onClick = onDone,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text("Done", fontWeight = FontWeight.Bold)
             }
         }
     }

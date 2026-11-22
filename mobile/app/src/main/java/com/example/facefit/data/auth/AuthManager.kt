@@ -9,7 +9,10 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.AggregateSource
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
 
@@ -122,13 +125,101 @@ class AuthManager {
         }
     }
 
+    val passwordResetEmail: String?
+        get() = auth.currentUser
+            ?.takeIf { user -> user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID } }
+            ?.email
+            ?.takeIf { it.isNotBlank() }
+
+    suspend fun sendPasswordResetEmail(): Result<Unit> {
+        val email = passwordResetEmail ?: return Result.failure(IllegalStateException("Password reset unavailable"))
+        return try {
+            auth.sendPasswordResetEmail(email).await()
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateProfile(
+        fullName: String,
+        phone: String,
+        age: Int?,
+        gender: String,
+        photo: ByteArray?
+    ): Result<Map<String, Any>> {
+        val user = auth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
+        val names = fullName.trim().split(Regex("\\s+"), limit = 2)
+        if (names.first().isBlank()) return Result.failure(IllegalArgumentException("Full name is required"))
+        if (age != null && age !in 0..125) {
+            return Result.failure(IllegalArgumentException("Age is out of range"))
+        }
+
+        val profile = db.collection("users").document(user.uid)
+        val fields = buildMap<String, Any> {
+            put("firstName", names.first())
+            put("lastName", names.getOrElse(1) { "" })
+            put("phone", phone.trim())
+            put("gender", gender)
+            age?.let { put("age", it) }
+            photo?.let { put("profilePhoto", Blob.fromBytes(it)) }
+        }
+        val changes = fields + ("updatedAt" to FieldValue.serverTimestamp())
+        return try {
+            db.runTransaction { transaction ->
+                if (transaction.get(profile).exists()) {
+                    val updates = if (age == null) changes + ("age" to FieldValue.delete()) else changes
+                    transaction.update(profile, updates)
+                } else {
+                    transaction.set(profile, changes + mapOf(
+                        "uid" to user.uid,
+                        "email" to user.email.orEmpty(),
+                        "createdAt" to FieldValue.serverTimestamp()
+                    ))
+                }
+                Unit
+            }.await()
+            Result.success(fields)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun observeAccountId(onChanged: (String?) -> Unit): () -> Unit {
+        val listener = FirebaseAuth.AuthStateListener { onChanged(it.currentUser?.uid) }
+        auth.addAuthStateListener(listener)
+        return { auth.removeAuthStateListener(listener) }
+    }
+
+    private fun faceScans(userId: String) =
+        db.collection("users").document(userId).collection("faceScans")
+
+    suspend fun getSavedScanCount(userId: String): Result<Long> {
+        if (auth.currentUser?.uid != userId) return Result.failure(IllegalStateException("Account changed"))
+        return try {
+            Result.success(faceScans(userId).count().get(AggregateSource.SERVER).await().count)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun saveFaceScan(
         foreheadWidth: Float,
         jawline: Float,
         eyeSpacing: Float,
         faceShape: String,
         shapeMeasurements: FacialGeometry.Measurements? = null,
-        shapeSampleCount: Int = 1
+        shapeSampleCount: Int = 1,
+        shapeModelId: String? = null,
+        shapeModelScores: Map<String, Float> = emptyMap(),
+        shapeModelFeatures: List<Double> = emptyList(),
+        shapeDecisionPolicy: String? = null
     ): Result<Unit> {
         return try {
             val userId = auth.currentUser?.uid ?: throw Exception("Not signed in")
@@ -139,7 +230,10 @@ class AuthManager {
                 "faceShape" to faceShape,
                 "measurementVersion" to 2,
                 "measurementUnit" to "fractionOfCheekWidth",
-                "shapeMethod" to "geometricEstimateV2",
+                "shapeMethod" to shapeModelId,
+                "shapeModelScores" to shapeModelScores,
+                "shapeModelFeatures" to shapeModelFeatures,
+                "shapeDecisionPolicy" to shapeDecisionPolicy,
                 "shapeSampleCount" to shapeSampleCount,
                 "shapeMeasurements" to shapeMeasurements?.let {
                     mapOf(
@@ -153,11 +247,7 @@ class AuthManager {
                 "createdAt" to FieldValue.serverTimestamp()
             )
 
-            db.collection("users")
-                .document(userId)
-                .collection("faceScans")
-                .add(scan)
-                .await()
+            faceScans(userId).add(scan).await()
 
             Result.success(Unit)
         } catch (e: Exception) {

@@ -188,4 +188,122 @@ class FacialGeometryTest {
             assertTrue(update.waitingForStability)
         }
     }
+
+    // ── New tests for effectiveLength floor and camera-distance invariance ────
+
+    /**
+     * When landmark 10 (top of head) is pulled down by bangs, [browToChin * 1.18] must
+     * serve as a minimum face length so the person is not incorrectly classified as Oblong.
+     *
+     * Coordinate setup:
+     *   landmark 151 (glabella/brow centre) → y = -60 px
+     *   landmark 152 (chin)                 → y = +150 px  → browToChin = 210 px
+     *   landmark 10  (hairline)             → y = -50 px   → rawHeight = 200 px (bangs hiding 10 px)
+     *
+     *   effectiveLength = max(200, 210 × 1.18) = max(200, 247.8) = 247.8 px
+     *   cheekWidth      = landmark 234 to 454  = 200 px
+     *   expectedLW      = 247.8 / 200 ≈ 1.239
+     */
+    @Test fun effectiveLengthFloorProtectsAgainstBangsHidingHairline() {
+        // Build a minimal 478-landmark list; only the indices we use need real values.
+        val browY    = -60f   // landmark 151 — glabella
+        val chinY    = 150f   // landmark 152
+        val hairY    = -50f   // landmark 10  — deliberately too low (bangs)
+        val cheekX   = 100f   // landmarks 234 / 454
+        val w        = 400
+        val h        = 600
+        val cx       = w / 2f
+        val cy       = h / 2f
+
+        val coords = mapOf(
+            10  to ( 0f to hairY),
+            152 to ( 0f to chinY),
+            151 to ( 0f to browY),
+            103 to (-90f to -50f), 332 to (90f to -50f),
+            234 to (-cheekX to 0f), 454 to (cheekX to 0f),
+            172 to (-80f to 80f), 397 to (80f to 80f),
+            136 to (-40f to 110f), 365 to (40f to 110f)
+        )
+        val lms = List(478) { i ->
+            val (dx, dy) = coords[i] ?: (0f to 0f)
+            FaceAnalyzer.LandmarkPoint((cx + dx) / w, (cy + dy) / h)
+        }
+
+        val m = FacialGeometry.measure(lms, w, h)
+        assertNotNull("Measurement should succeed for valid landmark set", m)
+        m!!
+
+        // browToChin = 150 - (-60) = 210 px; effectiveLength = max(200, 247.8) = 247.8
+        // cheekWidth = 200 px
+        val browToChin   = chinY - browY          // 210
+        val rawHeight    = chinY - hairY          // 200
+        val effectiveLen = maxOf(rawHeight, browToChin * 1.18f)
+        val cheekWidth   = cheekX * 2f            // 200
+        val expectedLW   = effectiveLen / cheekWidth
+
+        assertEquals("lengthToWidth must use the 1.18× floor when bangs hide landmark 10",
+            expectedLW, m.lengthToWidth, 0.0005f)
+        assertTrue("effectiveLength floor must produce lw > raw lw",
+            m.lengthToWidth > rawHeight / cheekWidth)
+    }
+
+    @Test fun effectiveLengthDoesNotInflateNormalFace() {
+        // When rawHeight > browToChin × 1.18, the floor must NOT raise lengthToWidth
+        // i.e. the max() picks rawHeight, not the browToChin formula.
+        val browY   = -70f    // landmark 151
+        val chinY   = 150f    // landmark 152
+        val hairY   = -120f   // landmark 10 — clearly above brow (no bangs)
+        val cheekX  = 100f
+        val w       = 400
+        val h       = 600
+        val cx      = w / 2f
+        val cy      = h / 2f
+
+        val coords = mapOf(
+            10  to ( 0f to hairY),
+            152 to ( 0f to chinY),
+            151 to ( 0f to browY),
+            103 to (-90f to -60f), 332 to (90f to -60f),
+            234 to (-cheekX to 0f), 454 to (cheekX to 0f),
+            172 to (-80f to 80f), 397 to (80f to 80f),
+            136 to (-40f to 110f), 365 to (40f to 110f)
+        )
+        val lms = List(478) { i ->
+            val (dx, dy) = coords[i] ?: (0f to 0f)
+            FaceAnalyzer.LandmarkPoint((cx + dx) / w, (cy + dy) / h)
+        }
+
+        val m = FacialGeometry.measure(lms, w, h)
+        assertNotNull(m)
+        m!!
+
+        val rawHeight  = chinY - hairY      // 270
+        val cheekWidth = cheekX * 2f        // 200
+        val expectedLW = rawHeight / cheekWidth   // 1.35
+
+        assertEquals("effectiveLength must equal rawHeight when hairline is clearly visible",
+            expectedLW, m.lengthToWidth, 0.0005f)
+    }
+
+    @Test fun ratiosMustBeInvariantToCameraDistance() {
+        // Scaling ALL landmarks by factor k relative to image centre must not change any ratio.
+        val base = FacialGeometry.measure(outline(false), 800, 1200)!!
+        // Zoom in: scale landmarks so face appears 20% larger on screen
+        val zoomed = outline(false, 800, 1200).map { lm ->
+            val k = 1.20f
+            FaceAnalyzer.LandmarkPoint(
+                0.5f + (lm.x - 0.5f) * k,
+                0.5f + (lm.y - 0.5f) * k
+            )
+        }
+        val scaled = FacialGeometry.measure(zoomed, 800, 1200)!!
+        assertEquals("lengthToWidth must be scale-invariant",
+            base.lengthToWidth,   scaled.lengthToWidth,   0.0001f)
+        assertEquals("foreheadToCheek must be scale-invariant",
+            base.foreheadToCheek, scaled.foreheadToCheek, 0.0001f)
+        assertEquals("jawToCheek must be scale-invariant",
+            base.jawToCheek,      scaled.jawToCheek,      0.0001f)
+        assertEquals("jawAngle must be scale-invariant",
+            base.jawAngle,        scaled.jawAngle,         0.001f)
+    }
 }

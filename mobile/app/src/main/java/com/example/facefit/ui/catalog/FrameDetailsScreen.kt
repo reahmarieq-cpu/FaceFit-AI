@@ -14,13 +14,14 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import com.example.facefit.facefit.recommendation.FrameCompatibility
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.ui.theme.*
@@ -28,12 +29,18 @@ import com.example.facefit.ui.theme.*
 @Composable
 fun FrameDetailsScreen(
     frame: SampleFrame,
+    faceShape: String?,
     isFavorite: Boolean,
     onBack: () -> Unit,
     onFavoriteChange: (Boolean) -> Unit,
     onPreviewModel: () -> Unit,
     onStartTryOn: () -> Unit
 ) {
+    val context = LocalContext.current
+    val compatibility = remember(context) { FrameCompatibility.load(context) }
+    val assessment = remember(compatibility, faceShape, frame.category) {
+        compatibility.lookup(faceShape, frame.category)
+    }
     Column(
         Modifier.fillMaxSize().background(FaceFitBackground)
             .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 18.dp),
@@ -61,20 +68,47 @@ fun FrameDetailsScreen(
             Text("${frame.category} · ${frame.material} · ${frame.colorName}",
                 color = FaceFitTextSecondary, fontSize = 13.sp)
         }
-        Row(Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp)).background(Color.White).padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Text(frame.compatibilityScore?.let { "${kotlin.math.round(it).toInt()}%" } ?: "N/A", color = FaceFitTeal, fontSize = 28.sp, fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(end = 22.dp))
-            Column(Modifier.weight(1f)) {
-                Text("COMPATIBILITY", color = FaceFitTeal, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(frame.explanation, color = FaceFitTextSecondary, fontSize = 12.sp, lineHeight = 18.sp)
+        val cardShape = RoundedCornerShape(24.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .softContainerShadow(cardShape)
+                .background(Color.White, cardShape)
+                .padding(horizontal = 20.dp, vertical = 22.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (assessment != null) {
+                Text(
+                    text = kotlin.math.round(assessment.score).toInt().toString(),
+                    modifier = Modifier.weight(1f),
+                    color = FaceFitTeal,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
             }
-        }
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Assessor-based compatibility; component ratings unavailable", color = FaceFitTextSecondary, fontSize = 11.sp)
-            DetailScore("Face shape", frame.compatibilityScore?.toInt())
-            DetailScore("Proportion fit", null)
-            DetailScore("Style & color", null)
+            Column(
+                modifier = Modifier.weight(2f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    "COMPATIBILITY",
+                    color = FaceFitTeal,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                )
+                Text(
+                    text = when {
+                        compatibility.loadError != null -> compatibility.loadError
+                        faceShape.isNullOrBlank() -> "Complete a face scan to view compatibility."
+                        else -> frame.explanation
+                    },
+                    color = FaceFitTextSecondary,
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp
+                )
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DetailAttribute("MATERIAL", frame.material, Modifier.weight(1f))
@@ -100,20 +134,6 @@ fun FrameDetailsScreen(
             Spacer(Modifier.width(10.dp))
             Text(if (frame.tryOnAssetPath != null) "Start Virtual Try-On" else "Try-On Not Available",
                 fontSize = 15.sp, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun DetailScore(label: String, score: Int?) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth()) {
-            Text(label, Modifier.weight(1f), color = FaceFitTextSecondary, fontSize = 12.sp)
-            Text(score?.let { "$it%" } ?: "N/A", color = FaceFitTeal, fontSize = 12.sp)
-        }
-        Box(Modifier.fillMaxWidth().height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFDDE7EA))) {
-            Box(Modifier.fillMaxWidth((score ?: 0) / 100f).fillMaxHeight()
-                .background(Brush.horizontalGradient(listOf(FaceFitTeal, Color(0xFF367CE5)))))
         }
     }
 }

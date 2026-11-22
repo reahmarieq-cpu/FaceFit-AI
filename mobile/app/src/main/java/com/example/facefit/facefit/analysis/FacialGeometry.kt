@@ -19,7 +19,7 @@ object FacialGeometry {
         imageHeight: Int
     ): Measurements? {
         if (imageWidth <= 0 || imageHeight <= 0) return null
-        val indices = listOf(10, 152, 103, 332, 234, 454, 172, 397, 136, 365)
+        val indices = listOf(10, 152, 103, 332, 234, 454, 172, 397, 136, 365, 151)
         if (indices.any { it !in landmarks.indices }) return null
         val points = indices.associateWith { index ->
             val point = landmarks[index]
@@ -32,8 +32,20 @@ object FacialGeometry {
         if (cheek < 1f || jaw < 1f) return null
         val leftAngle = angle(points.getValue(234), points.getValue(172), points.getValue(152))
         val rightAngle = angle(points.getValue(454), points.getValue(397), points.getValue(152))
+
+        val rawHeight = distance(10, 152)
+        val browToChin = distance(151, 152)
+
+        // Protect against heavy bangs pulling landmark 10 down below natural brow margin,
+        // while preserving true measured height without inflating normal faces into Oblong.
+        val effectiveLength = if (browToChin > 10f) {
+            maxOf(rawHeight, browToChin * 1.18f)
+        } else {
+            rawHeight
+        }
+
         return Measurements(
-            lengthToWidth = distance(10, 152) / cheek,
+            lengthToWidth = effectiveLength / cheek,
             foreheadToCheek = distance(103, 332) / cheek,
             jawToCheek = jaw / cheek,
             chinToJaw = distance(136, 365) / jaw,

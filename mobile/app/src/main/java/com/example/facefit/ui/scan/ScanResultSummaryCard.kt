@@ -96,7 +96,7 @@ private fun AnalysisSummary(
 
 @Composable
 private fun ResultMetrics(result: RecommendationResult) {
-    val items = listOf(result.foreheadLabel to "Width", result.jawlineLabel to "Jawline",
+    val items = listOf(result.foreheadLabel to "Upper-face width", result.jawlineLabel to "Jawline width",
         result.eyeSpacingLabel to "Eye spacing")
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         if (maxWidth < 240.dp || LocalDensity.current.fontScale > 1.4f) {

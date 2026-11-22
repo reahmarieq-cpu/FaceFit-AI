@@ -23,7 +23,7 @@ class FavoritesFlowTest {
             FacefitTheme {
                 if(favoritesVisible.value) FavoritesScreen(savedFrames=saved.value,onFavoriteChange=update)
                 else FrameMatchesScreen(FaceAnalyzer.FaceMetrics(140f,120f,65f,"Oval",isFaceDetected=true),
-                    onBack={},onScanAgain={},savedFrames=saved.value,onFavoriteChange=update,onFrameClick={})
+                    onBack={},onScanAgain={},onDone={},savedFrames=saved.value,onFavoriteChange=update,onFrameClick={})
             }
         }
         compose.onNodeWithContentDescription("Save Pax").performScrollTo().performClick()

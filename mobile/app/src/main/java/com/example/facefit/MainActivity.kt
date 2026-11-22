@@ -1,6 +1,7 @@
 package com.example.facefit
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.graphics.Color
@@ -16,15 +17,25 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.example.facefit.notifications.FrameNotifications
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.navigation.FaceFitNavHost
 import com.example.facefit.ui.theme.FacefitTheme
 
 class MainActivity : ComponentActivity() {
     private val authManager by lazy { AuthManager() }
+    private var notificationFrame by mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationFrame = FrameNotifications.frameFromIntent(intent)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FrameNotifications.createChannel(this)
+        if (savedInstanceState == null) notificationFrame = FrameNotifications.frameFromIntent(intent)
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
@@ -49,6 +60,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     FaceFitNavHost(
                         authManager = authManager,
+                        notificationFrame = notificationFrame,
+                        onNotificationHandled = { notificationFrame = null },
                         hasCameraPermission = hasCameraPermission,
                         onRequestCameraPermission = {
                             permissionLauncher.launch(Manifest.permission.CAMERA)

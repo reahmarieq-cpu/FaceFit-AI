@@ -45,8 +45,14 @@ class FaceScanReadinessTest {
     }
 
     @Test fun distanceBandRequiresMovingCloserOrFarther() {
-        assertEquals("Move closer to the camera", face(size = .28f).getScanReadiness().message)
-        assertEquals("Move farther from the camera", face(size = .46f).getScanReadiness().message)
+        assertEquals("Move slightly closer while keeping phone at arm's length", face(size = .25f).getScanReadiness().message)
+        assertEquals("Hold phone farther at arm's length (50–60 cm)", face(size = .46f).getScanReadiness().message)
+    }
+
+    @Test fun eyeLevelAndPostureValidationsEnforceProperScanPosture() {
+        val face = face()
+        assertEquals("Raise phone to eye level (do not tilt head down)", face.copy(headPose = FaceScanPose.Angles(9f, 0f, 0f)).getScanReadiness().message)
+        assertEquals("Hold phone at eye level parallel to your eyes", face.copy(headPose = FaceScanPose.Angles(-9f, 0f, 0f)).getScanReadiness().message)
     }
 
     @Test fun headTurnsTiltsAndMissingPosePreventCapture() {

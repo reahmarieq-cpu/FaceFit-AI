@@ -1,4 +1,164 @@
 {
   "version": "1.0",
-  "entries": []
+  "entries": [],
+  "publishedSurvey": {
+    "source": "US20180268458A1, Figure 26",
+    "url": "https://patents.google.com/patent/US20180268458A1/en",
+    "scale": [
+      -3,
+      3
+    ],
+    "means": [
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Oval",
+        "mean": 0.67215
+      },
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Round",
+        "mean": 0.501486
+      },
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Rectangular",
+        "mean": 1.1245
+      },
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Square",
+        "mean": 0.78836
+      },
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Aviator",
+        "mean": 0.199597
+      },
+      {
+        "faceShape": "Oval",
+        "frameCategory": "Wayfarer",
+        "mean": 0.358466
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Oval",
+        "mean": 0.476728
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Round",
+        "mean": 0.44
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Rectangular",
+        "mean": 1.24078
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Square",
+        "mean": 1.49718
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Aviator",
+        "mean": 0.868545
+      },
+      {
+        "faceShape": "Square",
+        "frameCategory": "Wayfarer",
+        "mean": 0.544048
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Oval",
+        "mean": 0.714085
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Round",
+        "mean": 0.193342
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Rectangular",
+        "mean": 1.14759
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Square",
+        "mean": 0.55477
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Aviator",
+        "mean": 0.569961
+      },
+      {
+        "faceShape": "Oblong",
+        "frameCategory": "Wayfarer",
+        "mean": 0.860629
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Oval",
+        "mean": 0.562764
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Round",
+        "mean": 0.344758
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Rectangular",
+        "mean": 0.260563
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Square",
+        "mean": 0.658974
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Aviator",
+        "mean": 0.943662
+      },
+      {
+        "faceShape": "Round",
+        "frameCategory": "Wayfarer",
+        "mean": 0.207921
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Oval",
+        "mean": 0.54717
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Round",
+        "mean": 1.07042
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Rectangular",
+        "mean": 1.22727
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Square",
+        "mean": 1.08511
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Aviator",
+        "mean": 0.577465
+      },
+      {
+        "faceShape": "Heart",
+        "frameCategory": "Wayfarer",
+        "mean": 0.59887
+      }
+    ]
+  }
 }

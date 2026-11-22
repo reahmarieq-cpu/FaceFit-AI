@@ -28,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -38,38 +37,58 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.facefit.analysis.FaceAnalyzer
-import com.example.facefit.facefit.analysis.FaceScanSamples
-import com.example.facefit.facefit.analysis.FaceShapeOnnxModel
+import com.example.facefit.facefit.analysis.FaceShapeDecision
+import com.example.facefit.facefit.analysis.FaceShapeImageModel
 import com.example.facefit.facefit.analysis.getScanReadiness
 import com.example.facefit.facefit.analysis.ScanDiagnostics
-import com.example.facefit.BuildConfig
 import com.example.facefit.ui.camera.CameraPreview
-import com.example.facefit.ui.scan.FaceScanOverlay
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Composable
 fun ScanScreen(
     onBack: () -> Unit,
     onComplete: (FaceAnalyzer.FaceMetrics) -> Unit
 ) {
-    var metrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
     var capturedMetrics by remember { mutableStateOf<FaceAnalyzer.FaceMetrics?>(null) }
-    var captureProgress by remember { mutableStateOf(0f) }
-    var waitingForStability by remember { mutableStateOf(false) }
+    var capturing by remember { mutableStateOf(false) }
+    var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
+    var retakeMessage by remember { mutableStateOf<String?>(null) }
+    var distanceHint by remember { mutableStateOf<com.example.facefit.facefit.analysis.ScanDistanceGuide.Hint?>(null) }
     var cameraAttempt by remember { mutableStateOf(0) }
-    var waitingForFrames by remember { mutableStateOf(false) }
-    val scanSamples = remember { FaceScanSamples() }
+    val captureRequested = remember(cameraAttempt) { AtomicBoolean(false) }
 
-    val scanReadiness = remember(metrics) { metrics.getScanReadiness() }
-    LaunchedEffect(cameraAttempt, capturedMetrics) {
-        waitingForFrames = false
-        if (capturedMetrics == null) {
+    fun restartCamera() {
+        captureRequested.set(false)
+        capturing = false
+        cameraReady = false
+        cameraError = null
+        retakeMessage = null
+        cameraAttempt++
+    }
+
+    LaunchedEffect(cameraAttempt, cameraReady, capturedMetrics) {
+        if (!cameraReady && capturedMetrics == null && cameraError == null) {
             delay(6000)
-            waitingForFrames = metrics == null
+            cameraError = "No camera frames yet. Tap refresh to retry."
+        }
+    }
+    LaunchedEffect(cameraAttempt, capturing) {
+        if (capturing) {
+            // Feature measurement may analyse up to 70 frames before finishing.
+            delay(10000)
+            android.util.Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
+                .put("type", "rejected_capture").put("scan_id", "capture_${System.currentTimeMillis()}")
+                .put("stage", "timeout").put("guidance_shown", "Capture timed out. Tap refresh to retry.")
+                .toString())
+            captureRequested.set(false)
+            cameraReady = false
+            capturing = false
+            cameraError = "Capture timed out. Tap refresh to retry."
         }
     }
 
@@ -79,51 +98,64 @@ fun ScanScreen(
     ) { analyzingMetrics ->
         if (analyzingMetrics == null) {
             Box(modifier = Modifier.fillMaxSize()) {
-                key(cameraAttempt) {
-                    CameraPreview(onError = { error ->
-                        if (capturedMetrics == null) {
-                            cameraError = error
-                            metrics = null
-                            scanSamples.reset()
-                            captureProgress = 0f
-                            waitingForStability = false
+                val attempt = cameraAttempt
+                key(attempt) {
+                    CameraPreview(
+                        captureRequested = captureRequested,
+                        onDistanceHint = { hint ->
+                            if (attempt == cameraAttempt && capturedMetrics == null) distanceHint = hint
+                        },
+                        onReady = {
+                            if (attempt == cameraAttempt && capturedMetrics == null) {
+                                cameraReady = true
+                                cameraError = null
+                            }
+                        },
+                        onError = { error ->
+                            if (attempt == cameraAttempt && capturedMetrics == null) {
+                                captureRequested.set(false)
+                                capturing = false
+                                cameraReady = false
+                                cameraError = error
+                            }
                         }
-                    }) { result ->
-                        if (capturedMetrics == null) {
-                            cameraError = null
-                            metrics = result
-                            val update = scanSamples.add(
-                                result, result.getScanReadiness().canCapture,
-                                android.os.SystemClock.elapsedRealtime()
-                            )
-                            captureProgress = update.progress
-                            waitingForStability = update.waitingForStability
-                            update.captured?.let {
-                                capturedMetrics = it
-                                scanSamples.reset()
+                    ) { result, insideGuide ->
+                        if (attempt == cameraAttempt && capturing && capturedMetrics == null) {
+                            val validation = result.getScanReadiness()
+                            capturing = false
+                            when {
+                                result.captureGuidance != null -> retakeMessage = result.captureGuidance
+                                !validation.canCapture -> retakeMessage = validation.message
+                                insideGuide == null -> retakeMessage = "Camera preview is still loading. Try again."
+                                !insideGuide -> retakeMessage = "Keep your full face inside the dashed outline."
+                                result.shapeImageRgb == null ->
+                                    retakeMessage = "Could not measure your face. Face the camera and try again."
+                                else -> capturedMetrics = result
                             }
                         }
                     }
                 }
 
                 FaceScanOverlay(
-                    isFaceDetected = metrics?.isFaceDetected == true,
                     statusText = cameraError ?: when {
-                        metrics == null && waitingForFrames -> "No camera frames yet. Tap refresh to retry."
-                        metrics == null -> "Starting front camera…"
-                        waitingForStability && scanReadiness.canCapture -> "Hold still for a clearer scan"
-                        else -> scanReadiness.message
+                        capturing -> "Checking your capture…"
+                        retakeMessage != null -> retakeMessage.orEmpty()
+                        cameraReady -> "Center your face and tap Capture"
+                        else -> "Starting front camera…"
                     },
                     onBack = onBack,
-                    onRefresh = {
-                        scanSamples.reset()
-                        captureProgress = 0f
-                        waitingForStability = false
-                        metrics = null
-                        cameraError = null
-                        cameraAttempt++
-                    },
-                    captureProgress = captureProgress
+                    onRefresh = ::restartCamera,
+                    distanceHint = distanceHint.takeIf { cameraReady && !capturing && cameraError == null },
+                    captureEnabled = cameraReady && !capturing && capturedMetrics == null,
+                    capturing = capturing,
+                    isRetake = retakeMessage != null,
+                    onCapture = {
+                        if (cameraReady && !capturing && capturedMetrics == null) {
+                            retakeMessage = null
+                            capturing = true
+                            captureRequested.set(true)
+                        }
+                    }
                 )
             }
         } else {
@@ -132,10 +164,7 @@ fun ScanScreen(
                 onComplete = onComplete,
                 onBack = onBack,
                 onRetry = {
-                    scanSamples.reset()
-                    captureProgress = 0f
-                    waitingForStability = false
-                    metrics = null
+                    restartCamera()
                     capturedMetrics = null
                 }
             )
@@ -156,19 +185,17 @@ private fun AnalyzeCapturedFace(
     var animationFinished by remember(metrics) { mutableStateOf(false) }
     LaunchedEffect(metrics) {
         try {
-            val assessment = withContext(Dispatchers.Default) {
-                FaceShapeOnnxModel.open(context).use {
-                    it.assess(metrics.shapeFeatureSamples, metrics.stabilityFeatures)
+            val rawPrediction = withContext(Dispatchers.Default) {
+                FaceShapeImageModel.open(context).use {
+                    it.predict(requireNotNull(metrics.shapeImageRgb))
                 }
             }
+            val prediction = FaceShapeDecision.calibrate(rawPrediction, metrics.shapeMeasurements)
             val result = metrics.copy(
-                faceShape = assessment.label,
-                shapeModelId = FaceShapeOnnxModel.MODEL_ID,
-                shapeModelScores = assessment.scores,
-                shapeDecisionReason = assessment.reason,
-                shapeAgreement = assessment.agreement,
-                shapeDecisionPolicy = FaceShapeOnnxModel.POLICY_ID,
-                shapeFeatureSamples = if (BuildConfig.DEBUG) metrics.shapeFeatureSamples else emptyList()
+                faceShape = prediction.label,
+                shapeModelId = FaceShapeImageModel.MODEL_ID,
+                shapeModelScores = prediction.scores,
+                shapeDecisionPolicy = "geometricAspectCalibratedV1",
             )
             withContext(Dispatchers.IO) {
                 ScanDiagnostics.saveLatest(context, result)

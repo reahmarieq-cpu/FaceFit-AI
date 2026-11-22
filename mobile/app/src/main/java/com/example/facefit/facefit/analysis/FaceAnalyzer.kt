@@ -24,7 +24,12 @@ class FaceAnalyzer(
 ) : ImageAnalysis.Analyzer {
 
     private val faceLandmarker: FaceLandmarker
+    private val shapeImageInput by lazy { FaceShapeImageInput(context.applicationContext) }
     private var lastTimestampMs = -1L
+    /** Camera focal-length data for perspective-corrected feature ratios; set after the camera binds. */
+    @Volatile var cameraIntrinsics: FacialFeatureMeasurement.CameraIntrinsics? = null
+    /** Preview-only frames (distance guide) skip the classifier image and lighting work. */
+    @Volatile var previewOnly: Boolean = false
     private val imageBuffer = if (reuseRgbaBuffers) TryOnImageBuffer() else null
 
     init {
@@ -72,8 +77,8 @@ class FaceAnalyzer(
                     val landmarks = result.faceLandmarks()[0]
 
                     val landmarkPoints = landmarks.map { LandmarkPoint(it.x(), it.y(), it.z()) }
-                    // Pixel distances remove image aspect-ratio distortion. Store widths relative
-                    // to cheek width so moving the camera does not change feature labels.
+                    // Ratios to cheek width in pixels: invariant to resolution and uniform scale.
+                    // Scan results use the multi-frame median from FacialFeatureMeasurement.
                     fun distance(a: Int, b: Int): Float = hypot(
                         (landmarkPoints[a].x - landmarkPoints[b].x) * bitmap.width,
                         (landmarkPoints[a].y - landmarkPoints[b].y) * bitmap.height
@@ -83,13 +88,27 @@ class FaceAnalyzer(
                         onResult(noFaceMetrics())
                         return
                     }
+                    val rawForehead = distance(103, 332)
+                    val rawJaw = distance(172, 397)
+                    val rawEye = distance(133, 362)
                     val shapeMeasurements = FacialGeometry.measure(landmarkPoints, bitmap.width, bitmap.height)
+                    val poseMatrix = result.facialTransformationMatrixes().orElse(emptyList()).firstOrNull()
+                    val featureFrame = if (scanQualityChecks) measureFeatures(landmarkPoints,
+                        bitmap.width, bitmap.height, poseMatrix) else null
+                    val preview = previewOnly
+                    val shapeImageRgb = if (scanQualityChecks && !videoTracking && !preview) {
+                        shapeImageInput.prepare(bitmap, landmarkPoints)
+                    } else null
 
                     onResult(
                         FaceMetrics(
-                            foreheadWidth = distance(103, 332) / cheekWidth,
-                            jawline = distance(172, 397) / cheekWidth,
-                            eyeSpacing = distance(133, 362) / cheekWidth,
+                            foreheadWidth = rawForehead / cheekWidth,
+                            jawline = rawJaw / cheekWidth,
+                            eyeSpacing = rawEye / cheekWidth,
+                            rawCheekWidthPx = cheekWidth,
+                            rawForeheadWidthPx = rawForehead,
+                            rawJawlineWidthPx = rawJaw,
+                            rawEyeSpacingPx = rawEye,
                             faceShape = "",
                             stabilityFeatures = ScanStabilityFeatures.extract(landmarkPoints, bitmap.width, bitmap.height)
                                 ?: emptyList(),
@@ -98,10 +117,13 @@ class FaceAnalyzer(
                             imageWidth = bitmap.width,
                             imageHeight = bitmap.height,
                             isFaceDetected = true,
-                            headPose = result.facialTransformationMatrixes().orElse(emptyList())
-                                .firstOrNull()?.let(FaceScanPose::angles),
-                            scanLighting = if (scanQualityChecks)
+                            headPose = poseMatrix?.let(FaceScanPose::angles),
+                            scanLighting = if (scanQualityChecks && !preview)
                                 FaceScanLighting.measure(bitmap, landmarkPoints) else null,
+                            shapeImageRgb = shapeImageRgb,
+                            featureFrame = featureFrame,
+                            featureRejection = if (scanQualityChecks && featureFrame == null)
+                                FacialFeatureMeasurement.Rejection.POSE_UNAVAILABLE else null,
                         )
                     )
                 } else {
@@ -113,6 +135,18 @@ class FaceAnalyzer(
             if (sourceBitmap !== rotatedBitmap) sourceBitmap?.takeUnless { it.isRecycled }?.recycle()
             image.close()
         }
+    }
+
+    private fun measureFeatures(
+        points: List<LandmarkPoint>, width: Int, height: Int, poseMatrix: FloatArray?
+    ): FacialFeatureMeasurement.Frame? {
+        val intrinsics = cameraIntrinsics
+        val calibrated = intrinsics?.focalLengthPx(width, height)
+        return FacialFeatureMeasurement.measure(
+            points, width, height, poseMatrix,
+            focalLengthPx = calibrated ?: FacialFeatureMeasurement.nominalFocalLengthPx(width, height),
+            focalSource = if (calibrated != null) intrinsics.source else "nominal"
+        )
     }
 
     private fun Bitmap.rotate(rotationDegrees: Int): Bitmap {
@@ -145,6 +179,15 @@ class FaceAnalyzer(
 
     data class LandmarkPoint(val x: Float, val y: Float, val z: Float = 0f)
 
+    data class SampleMeasurement(
+        val foreheadWidth: Float,
+        val jawline: Float,
+        val eyeSpacing: Float,
+        val cheekWidthPx: Float,
+        val yawDeg: Float = 0f,
+        val pitchDeg: Float = 0f
+    )
+
     data class FaceMetrics(
         val foreheadWidth: Float,
         val jawline: Float,
@@ -166,5 +209,21 @@ class FaceAnalyzer(
         val shapeDecisionPolicy: String? = null,
         val headPose: FaceScanPose.Angles? = null,
         val scanLighting: FaceScanLighting.Measurement? = null,
+        val shapeModelFeatures: List<Double> = emptyList(),
+        val shapeImageRgb: ByteArray? = null,
+        val rawCheekWidthPx: Float = 0f,
+        val rawForeheadWidthPx: Float = 0f,
+        val rawJawlineWidthPx: Float = 0f,
+        val rawEyeSpacingPx: Float = 0f,
+        val burstSampleMeasurements: List<SampleMeasurement> = emptyList(),
+        val rejectedSampleCount: Int = 0,
+        val rejectedSampleReasons: List<String> = emptyList(),
+        /** Per-frame perspective-corrected feature measurement (scan capture only). */
+        val featureFrame: FacialFeatureMeasurement.Frame? = null,
+        val featureRejection: FacialFeatureMeasurement.Rejection? = null,
+        /** Multi-frame result; when present, foreheadWidth/jawline/eyeSpacing are its medians. */
+        val featureAggregate: FacialFeatureMeasurement.Aggregate? = null,
+        /** Set on a failed capture to tell the person what to change. */
+        val captureGuidance: String? = null,
     )
 }

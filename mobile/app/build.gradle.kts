@@ -35,6 +35,23 @@ android {
         buildConfig = true
         compose = true
     }
+
+    // ── 16 KB page-size compatibility ────────────────────────────────────────
+    // Newer devices (Samsung Galaxy S25, etc.) ship a 16 KB page-size kernel.
+    // Prebuilt .so files from TFLite/LiteRT, MediaPipe, Filament, and OpenCV
+    // must be zip-aligned at 16384-byte boundaries inside the APK.
+    // This packaging block re-aligns every native library at pack time without
+    // requiring a recompile of the prebuilt SOs — it eliminates the
+    // "This app isn't 16 KB-compatible" warning on affected devices.
+    packaging {
+        jniLibs {
+            // Re-align prebuilt .so files to 16 KB page boundaries.
+            // AGP 8.3+ honours android.bundle.enableUncompressedNativeLibs by
+            // default; the useLegacyPackaging = false here ensures they are
+            // stored uncompressed so the OS can mmap them directly.
+            useLegacyPackaging = false
+        }
+    }
 }
 
 dependencies {
@@ -61,7 +78,8 @@ dependencies {
 
     // MediaPipe
     implementation(libs.mediapipe.tasks.vision)
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.25.1")
+    implementation("com.google.ai.edge.litert:litert:1.4.2")
+    implementation("org.opencv:opencv:4.12.0")
 
     // Google account chooser and secure ID-token exchange with Firebase Auth.
     implementation("androidx.credentials:credentials:1.3.0")

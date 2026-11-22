@@ -1,0 +1,28 @@
+{
+  "model_id": "face_shape_max_efficientnetb0",
+  "source_sha256": "e743242f4488e8fb369e371cedca1c05af56449401157a9e81042e19113a02fa",
+  "model_sha256": "cf32c6cccad5600f4fa949601baf90b9bfc8fdac93a768b3b4e7a3de08e5e0ea",
+  "class_order": [
+    "Oval",
+    "Round",
+    "Square",
+    "Oblong",
+    "Heart"
+  ],
+  "input": {
+    "shape": [
+      1,
+      256,
+      256,
+      3
+    ],
+    "dtype": "float32",
+    "color": "RGB",
+    "range": [
+      0,
+      255
+    ]
+  },
+  "preprocessing": "OpenCV Haar crop with training padding, INTER_AREA resize to 224, nearest resize to 256",
+  "decision": "Average original and deterministic horizontal flip scores"
+}
