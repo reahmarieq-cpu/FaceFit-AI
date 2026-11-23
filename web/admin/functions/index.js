@@ -184,3 +184,6 @@ exports.hideFrame = onCall(async (request) => {
     auth: request.auth
   });
 });
+
+// Publish only public shop fields for the mobile Nearby Shops directory.
+exports.syncPublicShop = require("./public-shops").syncPublicShop;
