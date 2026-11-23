@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.google.mediapipe.framework.image.MPImage
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
@@ -69,74 +70,11 @@ class FaceAnalyzer(
             }
             withFrameImage(bitmap, reusable?.image) { mpImage ->
                 // Video mode reuses tracking rather than rerunning face detection for every image.
-                val result = if (videoTracking) {
-                    val timestampMs = (image.imageInfo.timestamp / 1_000_000L)
-                        .coerceAtLeast(lastTimestampMs + 1L)
-                    lastTimestampMs = timestampMs
-                    faceLandmarker.detectForVideo(mpImage, timestampMs)
-                } else faceLandmarker.detect(mpImage)
-                if (result.faceLandmarks().size == 1) {
-                    val landmarks = result.faceLandmarks()[0]
-
-                    val landmarkPoints = landmarks.map { LandmarkPoint(it.x(), it.y(), it.z()) }
-                    // Ratios to cheek width in pixels: invariant to resolution and uniform scale.
-                    // Scan results use the multi-frame median from FacialFeatureMeasurement.
-                    fun distance(a: Int, b: Int): Float = hypot(
-                        (landmarkPoints[a].x - landmarkPoints[b].x) * bitmap.width,
-                        (landmarkPoints[a].y - landmarkPoints[b].y) * bitmap.height
-                    )
-                    val cheekWidth = distance(234, 454)
-                    if (!cheekWidth.isFinite() || cheekWidth < 1f) {
-                        onResult(noFaceMetrics())
-                        return
-                    }
-                    val rawForehead = distance(103, 332)
-                    val rawJaw = distance(172, 397)
-                    val rawEye = distance(133, 362)
-                    val shapeMeasurements = FacialGeometry.measure(landmarkPoints, bitmap.width, bitmap.height)
-                    val poseMatrix = result.facialTransformationMatrixes().orElse(emptyList()).firstOrNull()
-                    // All MediaPipe expression scores (0-1) by name, for scan captures only.
-                    val expression = if (scanQualityChecks) result.faceBlendshapes().orElse(null)
-                        ?.firstOrNull()?.associate { it.categoryName() to it.score() }.orEmpty()
-                    else emptyMap()
-                    val smileScore = listOfNotNull(expression["mouthSmileLeft"], expression["mouthSmileRight"])
-                        .takeIf { it.isNotEmpty() }?.average()?.toFloat()
-                    val featureFrame = if (scanQualityChecks) measureFeatures(landmarkPoints,
-                        bitmap.width, bitmap.height, poseMatrix, smileScore, expression) else null
-                    val preview = previewOnly
-                    val shapeImageRgb = if (scanQualityChecks && !videoTracking && !preview) {
-                        shapeImageInput.prepare(bitmap, landmarkPoints)
-                    } else null
-
-                    onResult(
-                        FaceMetrics(
-                            foreheadWidth = rawForehead / cheekWidth,
-                            jawline = rawJaw / cheekWidth,
-                            eyeSpacing = rawEye / cheekWidth,
-                            rawCheekWidthPx = cheekWidth,
-                            rawForeheadWidthPx = rawForehead,
-                            rawJawlineWidthPx = rawJaw,
-                            rawEyeSpacingPx = rawEye,
-                            faceShape = "",
-                            stabilityFeatures = ScanStabilityFeatures.extract(landmarkPoints, bitmap.width, bitmap.height)
-                                ?: emptyList(),
-                            shapeMeasurements = shapeMeasurements,
-                            landmarks = landmarkPoints,
-                            imageWidth = bitmap.width,
-                            imageHeight = bitmap.height,
-                            isFaceDetected = true,
-                            headPose = poseMatrix?.let(FaceScanPose::angles),
-                            scanLighting = if (scanQualityChecks && !preview)
-                                FaceScanLighting.measure(bitmap, landmarkPoints) else null,
-                            shapeImageRgb = shapeImageRgb,
-                            featureFrame = featureFrame,
-                            featureRejection = if (scanQualityChecks && featureFrame == null)
-                                FacialFeatureMeasurement.Rejection.POSE_UNAVAILABLE else null,
-                        )
-                    )
-                } else {
-                    onResult(noFaceMetrics(result.faceLandmarks().size))
-                }
+                val timestampMs = if (videoTracking) {
+                    (image.imageInfo.timestamp / 1_000_000L).coerceAtLeast(lastTimestampMs + 1L)
+                        .also { lastTimestampMs = it }
+                } else null
+                onResult(process(bitmap, mpImage, timestampMs, previewOnly))
             }
         } finally {
             rotatedBitmap?.takeUnless { it.isRecycled }?.recycle()
@@ -144,6 +82,81 @@ class FaceAnalyzer(
             image.close()
         }
     }
+
+    /**
+     * Runs MediaPipe and all measurements on one image. [timestampMs] is used only in video mode.
+     * [preview] skips the classifier image and lighting work (live distance guide only).
+     */
+    private fun process(bitmap: Bitmap, mpImage: MPImage, timestampMs: Long?, preview: Boolean): FaceMetrics {
+        val result = if (videoTracking && timestampMs != null) {
+            faceLandmarker.detectForVideo(mpImage, timestampMs)
+        } else faceLandmarker.detect(mpImage)
+        if (result.faceLandmarks().size == 1) {
+            val landmarks = result.faceLandmarks()[0]
+
+            val landmarkPoints = landmarks.map { LandmarkPoint(it.x(), it.y(), it.z()) }
+            // Ratios to cheek width in pixels: invariant to resolution and uniform scale.
+            // Scan results use the multi-frame median from FacialFeatureMeasurement.
+            fun distance(a: Int, b: Int): Float = hypot(
+                (landmarkPoints[a].x - landmarkPoints[b].x) * bitmap.width,
+                (landmarkPoints[a].y - landmarkPoints[b].y) * bitmap.height
+            )
+            val cheekWidth = distance(234, 454)
+            if (!cheekWidth.isFinite() || cheekWidth < 1f) {
+                return noFaceMetrics()
+            }
+            val rawForehead = distance(103, 332)
+            val rawJaw = distance(172, 397)
+            val rawEye = distance(133, 362)
+            val shapeMeasurements = FacialGeometry.measure(landmarkPoints, bitmap.width, bitmap.height)
+            val poseMatrix = result.facialTransformationMatrixes().orElse(emptyList()).firstOrNull()
+            // All MediaPipe expression scores (0-1) by name, for scan captures only.
+            val expression = if (scanQualityChecks) result.faceBlendshapes().orElse(null)
+                ?.firstOrNull()?.associate { it.categoryName() to it.score() }.orEmpty()
+            else emptyMap()
+            val smileScore = listOfNotNull(expression["mouthSmileLeft"], expression["mouthSmileRight"])
+                .takeIf { it.isNotEmpty() }?.average()?.toFloat()
+            val featureFrame = if (scanQualityChecks) measureFeatures(landmarkPoints,
+                bitmap.width, bitmap.height, poseMatrix, smileScore, expression) else null
+            val shapeImageRgb = if (scanQualityChecks && !videoTracking && !preview) {
+                shapeImageInput.prepare(bitmap, landmarkPoints)
+            } else null
+
+            return FaceMetrics(
+                    foreheadWidth = rawForehead / cheekWidth,
+                    jawline = rawJaw / cheekWidth,
+                    eyeSpacing = rawEye / cheekWidth,
+                    rawCheekWidthPx = cheekWidth,
+                    rawForeheadWidthPx = rawForehead,
+                    rawJawlineWidthPx = rawJaw,
+                    rawEyeSpacingPx = rawEye,
+                    faceShape = "",
+                    stabilityFeatures = ScanStabilityFeatures.extract(landmarkPoints, bitmap.width, bitmap.height)
+                        ?: emptyList(),
+                    shapeMeasurements = shapeMeasurements,
+                    landmarks = landmarkPoints,
+                    imageWidth = bitmap.width,
+                    imageHeight = bitmap.height,
+                    isFaceDetected = true,
+                    headPose = poseMatrix?.let(FaceScanPose::angles),
+                    scanLighting = if (scanQualityChecks && !preview)
+                        FaceScanLighting.measure(bitmap, landmarkPoints) else null,
+                    shapeImageRgb = shapeImageRgb,
+                    featureFrame = featureFrame,
+                    featureRejection = if (scanQualityChecks && featureFrame == null)
+                        FacialFeatureMeasurement.Rejection.POSE_UNAVAILABLE else null,
+                )
+        } else {
+            return noFaceMetrics(result.faceLandmarks().size)
+        }
+    }
+
+    /**
+     * Full scan processing of a frozen camera frame (already rotated upright), off the camera
+     * stream. Uses the same code as live frames, so classifier inputs are produced identically.
+     */
+    fun analyzeFrozen(bitmap: Bitmap): FaceMetrics =
+        withFrameImage(bitmap) { mpImage -> process(bitmap, mpImage, null, preview = false) }
 
     private fun measureFeatures(
         points: List<LandmarkPoint>, width: Int, height: Int, poseMatrix: FloatArray?, smileScore: Float?,

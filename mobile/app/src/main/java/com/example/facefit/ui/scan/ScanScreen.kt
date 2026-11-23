@@ -138,7 +138,7 @@ fun ScanScreen(
 
                 FaceScanOverlay(
                     statusText = cameraError ?: when {
-                        capturing -> "Checking your capture…"
+                        capturing -> "Photo taken · analyzing…"
                         retakeMessage != null -> retakeMessage.orEmpty()
                         cameraReady -> "Center your face and tap Capture"
                         else -> "Starting front camera…"

@@ -1,6 +1,14 @@
 package com.example.facefit.ui.camera
 
 import android.hardware.camera2.CameraCharacteristics
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
@@ -38,7 +46,6 @@ import androidx.core.content.ContextCompat
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 @Composable
 fun CameraPreview(
@@ -63,10 +70,18 @@ fun CameraPreview(
         }
     }
 
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { previewView }
-    )
+    // Shown from the moment of capture until the result is ready (or the capture is retried).
+    var frozenPhoto by remember { mutableStateOf<ImageBitmap?>(null) }
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { previewView }
+        )
+        frozenPhoto?.let {
+            Image(it, contentDescription = "Captured photo", modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds)
+        }
+    }
     DisposableEffect(lifecycleOwner, previewView, captureRequested) {
         val executor = Executors.newSingleThreadExecutor()
         val mainExecutor = ContextCompat.getMainExecutor(context)
@@ -92,118 +107,100 @@ fun CameraPreview(
                 }
 
                 var receivedFrame = false
-                // Accessed only on the analysis executor. Copy before posting the result.
-                var sourceTransform: OutputTransform? = null
-                // Burst state below is touched only on the main thread, except the atomics.
-                val classifierFrames = mutableListOf<FaceAnalyzer.FaceMetrics>()
-                val classifierRejectedReasons = mutableListOf<String>()
-                var classifierFrozen = false
-                var burstStartMs = 0L
-                var featureCollector = FacialFeatureMeasurement.Collector(featureTarget)
-                val isBurstActive = AtomicBoolean(false)
-                val burstGeneration = AtomicInteger(0)
-                var analysisAttempt = 0  // analysis executor only
-                var analysisGeneration = 0  // analysis executor only
-                var analysingPreview = false  // analysis executor only
-                var lastPreviewMs = 0L  // analysis executor only
                 val distanceGuide = ScanDistanceGuide()  // main thread only
+                var lastPreviewMs = 0L  // analysis executor only
+                // Frozen capture: frames grabbed right after the tap, processed afterwards.
+                val isCapturing = AtomicBoolean(false)
+                val grabbed = mutableListOf<FrozenFrame>()  // analysis executor only
+                var captureStartMs = 0L  // analysis executor only
 
-                fun finishBurst(result: FaceAnalyzer.FaceMetrics, success: Boolean) {
-                    isBurstActive.set(false)
+                fun logTiming(success: Boolean, timing: CaptureTiming, classifierFrames: Int, featureFrames: Int) {
                     Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
                         .put("type", "capture_timing").put("scan_id", "timing_${System.currentTimeMillis()}")
                         .put("success", success)
-                        .put("capture_ms", SystemClock.elapsedRealtime() - burstStartMs)
-                        .put("classifier_frames", classifierFrames.size)
-                        .put("feature_frames", featureCollector.acceptedCount)
+                        .put("mode", "frozen_burst")
+                        .put("grab_ms", timing.grabMs)
+                        .put("process_ms", timing.processMs)
+                        .put("frame_ms", org.json.JSONArray(timing.frameMs))
+                        .put("capture_ms", timing.grabMs + timing.processMs)
+                        .put("classifier_frames", classifierFrames)
+                        .put("feature_frames", featureFrames)
                         .toString())
-                    onResultCallback(result, success)
                 }
 
-                fun failBurst(guidance: String?, stage: String, attempt: Int) {
-                    logRejectedCapture(stage, attempt, guidance, classifierFrames.size,
+                /** Main thread: applies the same frame checks as before to the frozen frames. */
+                fun evaluateFrozen(results: List<Pair<FaceAnalyzer.FaceMetrics, OutputTransform?>>, timing: CaptureTiming) {
+                    val target = previewView.outputTransform
+                    val classifierFrames = mutableListOf<FaceAnalyzer.FaceMetrics>()
+                    val fallbackClassifierFrames = mutableListOf<FaceAnalyzer.FaceMetrics>()
+                    val classifierRejectedReasons = mutableListOf<String>()
+                    val featureCollector = FacialFeatureMeasurement.Collector(featureTarget)
+                    for ((result, source) in results) {
+                        val insideGuide = if (source == null || target == null || !result.isFaceDetected) {
+                            null
+                        } else {
+                            val points = FloatArray(result.landmarks.size * 2)
+                            result.landmarks.forEachIndexed { index, point ->
+                                points[index * 2] = point.x * result.imageWidth
+                                points[index * 2 + 1] = point.y * result.imageHeight
+                            }
+                            CoordinateTransform(source, target).mapPoints(points)
+                            FaceScanGuide.containsFace(previewView.width, previewView.height, points)
+                        }
+                        val readiness = result.getScanReadiness()
+                        val framed = readiness.canCapture && insideGuide == true
+                        // Face-shape classifier frames: same rule as before (frontal within 4 degrees
+                        // preferred; otherwise any framed frame, like the old fallback after 20 attempts).
+                        if (framed && result.shapeImageRgb != null && result.shapeMeasurements != null) {
+                            val pose = result.headPose
+                            val isFrontal = pose == null || (kotlin.math.abs(pose.yaw) <= 4.0f && kotlin.math.abs(pose.pitch) <= 4.0f)
+                            if (isFrontal) {
+                                if (classifierFrames.size < CLASSIFIER_FRAMES) classifierFrames.add(result)
+                            } else {
+                                fallbackClassifierFrames.add(result)
+                                classifierRejectedReasons.add("Frame rejected: head turned/tilted (yaw=${pose?.yaw?.toInt()}°, pitch=${pose?.pitch?.toInt()}°)")
+                            }
+                        } else {
+                            classifierRejectedReasons.add(
+                                if (!readiness.canCapture) readiness.message else "Face moved outside guide outline")
+                        }
+                        // Feature-measurement frames: separate pose, distance, expression and motion gates.
+                        if (framed) featureCollector.offer(result.featureFrame, result.featureRejection)
+                        else featureCollector.breakContinuity()
+                    }
+                    if (classifierFrames.size < MIN_CLASSIFIER_FRAMES) {
+                        classifierFrames += fallbackClassifierFrames.take(CLASSIFIER_FRAMES - classifierFrames.size)
+                    }
+                    val aggregate = featureCollector.aggregate()
+                    val success = classifierFrames.size >= MIN_CLASSIFIER_FRAMES && aggregate != null
+                    logTiming(success, timing, classifierFrames.size, featureCollector.acceptedCount)
+                    if (success) {
+                        onResultCallback(consolidateBurstFrames(classifierFrames.toList(),
+                            classifierRejectedReasons.toList(), requireNotNull(aggregate)), true)
+                        return
+                    }
+                    val stage = if (classifierFrames.size < MIN_CLASSIFIER_FRAMES) "classifier_frames" else "feature_frames"
+                    val guidance = if (stage == "classifier_frames") {
+                        classifierRejectedReasons.groupingBy { it }.eachCount()
+                            .maxByOrNull { it.value }?.key?.takeUnless { it.startsWith("Frame rejected") }
+                    } else featureCollector.guidance()
+                    logRejectedCapture(stage, results.size, guidance, classifierFrames.size,
                         classifierRejectedReasons, featureCollector)
-                    finishBurst(FaceAnalyzer.FaceMetrics(foreheadWidth = 0f, jawline = 0f, eyeSpacing = 0f,
-                        faceShape = "", isFaceDetected = false, captureGuidance = guidance), false)
+                    frozenPhoto = null
+                    onResultCallback(FaceAnalyzer.FaceMetrics(foreheadWidth = 0f, jawline = 0f, eyeSpacing = 0f,
+                        faceShape = "", isFaceDetected = false,
+                        captureGuidance = guidance ?: "Hold still and look straight at the camera"), false)
                 }
 
                 val faceAnalyzer = FaceAnalyzer(context, reuseRgbaBuffers = true, maxFaces = 2,
                     scanQualityChecks = true) { result ->
-                    val source = sourceTransform
-                    val attempt = analysisAttempt
-                    val generation = analysisGeneration
-                    val preview = analysingPreview
+                    // Live analysis is only used for the distance/expression/pose guide before capture.
                     mainExecutor.execute {
-                        if (!disposed && preview) {
-                            if (!isBurstActive.get()) {
-                                val frame = result.featureFrame?.takeIf { result.isFaceDetected }
-                                onDistanceHintCallback(distanceGuide.update(frame?.cheekDistanceCm,
-                                    SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise,
-                                    frame?.pitchDeg, frame?.yawDeg))
-                            }
-                        } else if (!disposed) {
-                            val target = previewView.outputTransform
-                            val insideGuide = if (source == null || target == null) {
-                                null
-                            } else {
-                                val points = FloatArray(result.landmarks.size * 2)
-                                result.landmarks.forEachIndexed { index, point ->
-                                    points[index * 2] = point.x * result.imageWidth
-                                    points[index * 2 + 1] = point.y * result.imageHeight
-                                }
-                                CoordinateTransform(source, target).mapPoints(points)
-                                FaceScanGuide.containsFace(previewView.width, previewView.height, points)
-                            }
-
-                            if (isBurstActive.get() && generation == burstGeneration.get()) {
-                                val readiness = result.getScanReadiness()
-                                val framed = readiness.canCapture && insideGuide == true
-                                // Face-shape classifier frames: same acceptance rule as before.
-                                if (!classifierFrozen && attempt <= CLASSIFIER_ATTEMPTS) {
-                                    if (framed && result.shapeImageRgb != null && result.shapeMeasurements != null) {
-                                        val pose = result.headPose
-                                        // After 20 attempts, accept any otherwise-valid frontal frame to
-                                        // avoid a scan that never completes; timeout still requires >=4 frames.
-                                        val isFrontal = pose == null || (kotlin.math.abs(pose.yaw) <= 4.0f && kotlin.math.abs(pose.pitch) <= 4.0f)
-                                        if (isFrontal || attempt >= 20) {
-                                            classifierFrames.add(result)
-                                            if (classifierFrames.size >= CLASSIFIER_FRAMES) classifierFrozen = true
-                                        } else {
-                                            classifierRejectedReasons.add("Frame rejected: head turned/tilted (yaw=${pose?.yaw?.toInt()}°, pitch=${pose?.pitch?.toInt()}°)")
-                                        }
-                                    } else {
-                                        classifierRejectedReasons.add(
-                                            if (!readiness.canCapture) readiness.message else "Face moved outside guide outline")
-                                    }
-                                }
-                                // Feature-measurement frames: separate pose, distance and motion gates.
-                                if (framed) featureCollector.offer(result.featureFrame, result.featureRejection)
-                                else featureCollector.breakContinuity()
-
-                                // Time cap: finish (or give guidance) before ScanScreen's 10 s timeout.
-                                val outOfTime = SystemClock.elapsedRealtime() - burstStartMs >= MAX_BURST_MS
-                                if (!classifierFrozen && (attempt > CLASSIFIER_ATTEMPTS || outOfTime)) {
-                                    if (classifierFrames.size >= 4) {
-                                        classifierFrozen = true
-                                    } else {
-                                        failBurst(classifierRejectedReasons.groupingBy { it }.eachCount()
-                                            .maxByOrNull { it.value }?.key?.takeUnless { it.startsWith("Frame rejected") },
-                                            stage = "classifier_frames", attempt = attempt)
-                                    }
-                                }
-                                if (isBurstActive.get() && classifierFrozen &&
-                                    (featureCollector.isComplete() || attempt >= MAX_BURST_ATTEMPTS || outOfTime)) {
-                                    val aggregate = featureCollector.aggregate()
-                                    if (aggregate != null) {
-                                        finishBurst(consolidateBurstFrames(classifierFrames.toList(),
-                                            classifierRejectedReasons.toList(), aggregate), true)
-                                    } else {
-                                        // Not enough reliable feature frames: ask for another scan.
-                                        failBurst(featureCollector.guidance() ?: "Hold still and look straight at the camera",
-                                            stage = "feature_frames", attempt = attempt)
-                                    }
-                                }
-                            }
+                        if (!disposed && !isCapturing.get()) {
+                            val frame = result.featureFrame?.takeIf { result.isFaceDetected }
+                            onDistanceHintCallback(distanceGuide.update(frame?.cheekDistanceCm,
+                                SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise,
+                                frame?.pitchDeg, frame?.yawDeg))
                         }
                     }
                 }
@@ -221,57 +218,68 @@ fun CameraPreview(
                         }
                     }
                     if (captureRequested.compareAndSet(true, false)) {
-                        analysisAttempt = 0
-                        analysisGeneration = burstGeneration.incrementAndGet()
-                        // Posted before any result of this burst, so the reset runs first.
+                        grabbed.forEach { it.bitmap.recycle() }
+                        grabbed.clear()
+                        captureStartMs = SystemClock.elapsedRealtime()
+                        isCapturing.set(true)
+                        // Freeze what the person sees at the moment of capture.
                         mainExecutor.execute {
-                            classifierFrames.clear()
-                            classifierRejectedReasons.clear()
-                            classifierFrozen = false
-                            burstStartMs = SystemClock.elapsedRealtime()
-                            featureCollector = FacialFeatureMeasurement.Collector(featureTarget)
+                            if (!disposed) frozenPhoto = previewView.bitmap?.asImageBitmap()
                         }
-                        isBurstActive.set(true)
                     }
-                    if (!isBurstActive.get()) {
-                        // Before capture: a few lightweight frames per second for the distance guide.
+                    if (!isCapturing.get()) {
+                        // Before capture: a few lightweight frames per second for the live guide.
                         val now = SystemClock.elapsedRealtime()
                         if (now - lastPreviewMs < PREVIEW_INTERVAL_MS) {
                             image.close()
                             return@setAnalyzer
                         }
                         lastPreviewMs = now
-                        analysingPreview = true
                         faceAnalyzer.previewOnly = true
-                        var previewHanded = false
                         try {
-                            sourceTransform = transformFactory.getOutputTransform(image)
-                            previewHanded = true
                             faceAnalyzer.analyze(image)
                         } catch (error: Exception) {
-                            if (!previewHanded) image.close()
                             Log.w("CameraPreview", "Preview distance frame failed", error)
                         }
                         return@setAnalyzer
                     }
-                    if (analysisAttempt >= MAX_BURST_ATTEMPTS) {
-                        image.close()
-                        return@setAnalyzer
-                    }
-                    analysingPreview = false
-                    faceAnalyzer.previewOnly = false
-                    analysisAttempt++
-                    var handedToAnalyzer = false
+                    // Capture: copy consecutive camera frames as fast as they arrive (no analysis yet),
+                    // so movement after this short window cannot affect the result.
                     try {
-                        sourceTransform = transformFactory.getOutputTransform(image)
-                        handedToAnalyzer = true
-                        faceAnalyzer.analyze(image)
+                        val transform = transformFactory.getOutputTransform(image)
+                        val source = image.toBitmap()
+                        val upright = source.rotated(image.imageInfo.rotationDegrees)
+                        if (upright !== source) source.recycle()
+                        grabbed += FrozenFrame(upright, transform)
                     } catch (error: Exception) {
-                        if (!handedToAnalyzer) image.close()
-                        Log.e("CameraPreview", "Scan frame analysis failed", error)
-                        mainExecutor.execute {
-                            if (!disposed) onErrorCallback("Camera frame could not be analyzed. Tap refresh to retry.")
+                        Log.e("CameraPreview", "Could not copy capture frame", error)
+                    } finally {
+                        image.close()
+                    }
+                    if (grabbed.size < GRAB_FRAMES) return@setAnalyzer
+                    val grabMs = SystemClock.elapsedRealtime() - captureStartMs
+                    // Frozen: run MediaPipe and the measurements on the copied frames.
+                    val processStart = SystemClock.elapsedRealtime()
+                    val frameMs = mutableListOf<Long>()
+                    val results = grabbed.map { frame ->
+                        val t = SystemClock.elapsedRealtime()
+                        val metrics = try {
+                            faceAnalyzer.analyzeFrozen(frame.bitmap)
+                        } catch (error: Exception) {
+                            Log.e("CameraPreview", "Frozen frame analysis failed", error)
+                            FaceAnalyzer.FaceMetrics(0f, 0f, 0f, "", isFaceDetected = false)
+                        } finally {
+                            frame.bitmap.recycle()
                         }
+                        frameMs += SystemClock.elapsedRealtime() - t
+                        metrics to frame.transform
+                    }
+                    grabbed.clear()
+                    val timing = CaptureTiming(grabMs, SystemClock.elapsedRealtime() - processStart, frameMs)
+                    // Back to live preview frames; the result is evaluated on the main thread.
+                    isCapturing.set(false)
+                    mainExecutor.execute {
+                        if (!disposed) evaluateFrozen(results, timing)
                     }
                 }
                 boundPreview = preview
@@ -310,14 +318,23 @@ fun CameraPreview(
 }
 
 private const val CLASSIFIER_FRAMES = 5
-private const val CLASSIFIER_ATTEMPTS = 35
-/** Upper bound on analysed frames per capture, including the extra feature-measurement frames. */
-private const val MAX_BURST_ATTEMPTS = 70
+/** Fewest face-shape frames accepted, as with the old capture's timeout rule. */
+private const val MIN_CLASSIFIER_FRAMES = 4
 /**
- * The test phone analyses about 6-7 frames per second, so 70 frames can outlast ScanScreen's
- * 10 s timeout. Ending by 8 s lets a scan that never gets level frames show its guidance instead.
+ * Consecutive camera frames copied at the tap (about 0.25 s at 30 fps). Seven leaves room for
+ * two rejected frames while still giving the feature median its minimum of five.
  */
-private const val MAX_BURST_MS = 8000L
+private const val GRAB_FRAMES = 7
+
+private class FrozenFrame(val bitmap: Bitmap, val transform: OutputTransform?)
+
+private class CaptureTiming(val grabMs: Long, val processMs: Long, val frameMs: List<Long>)
+
+private fun Bitmap.rotated(rotationDegrees: Int): Bitmap {
+    if (rotationDegrees == 0) return this
+    val matrix = android.graphics.Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+}
 /** Distance-guide sampling before capture (about 4 per second). */
 private const val PREVIEW_INTERVAL_MS = 250L
 /** Stop collecting feature frames early once each median's standard error is this share of its band. */
