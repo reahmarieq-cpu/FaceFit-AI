@@ -7,5 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="facefit_splash_background">#0F766E</color>
+    <!-- Matches the animated splash gradient, so Android's blank launch screen blends into it. -->
+    <color name="facefit_splash_background">#05484F</color>
 </resources>

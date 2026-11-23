@@ -58,6 +58,9 @@ fun ScanScreen(
     var cameraReady by remember { mutableStateOf(false) }
     var cameraError by remember { mutableStateOf<String?>(null) }
     var retakeMessage by remember { mutableStateOf<String?>(null) }
+    /** Why the last Capture tap was refused before any photo was taken (button stays "Capture"). */
+    var tapRefusal by remember { mutableStateOf<String?>(null) }
+    var guideHalfWidth by remember { mutableStateOf<Float?>(null) }
     var distanceHint by remember { mutableStateOf<com.example.facefit.facefit.analysis.ScanDistanceGuide.Hint?>(null) }
     var cameraAttempt by remember { mutableStateOf(0) }
     val captureRequested = remember(cameraAttempt) { AtomicBoolean(false) }
@@ -68,6 +71,7 @@ fun ScanScreen(
         cameraReady = false
         cameraError = null
         retakeMessage = null
+        tapRefusal = null
         cameraAttempt++
     }
 
@@ -102,8 +106,18 @@ fun ScanScreen(
                 key(attempt) {
                     CameraPreview(
                         captureRequested = captureRequested,
+                        onGuideHalfWidth = { width ->
+                            if (attempt == cameraAttempt) guideHalfWidth = width
+                        },
                         onDistanceHint = { hint ->
-                            if (attempt == cameraAttempt && capturedMetrics == null) distanceHint = hint
+                            if (attempt == cameraAttempt && capturedMetrics == null) {
+                                distanceHint = hint
+                                // Problem fixed: clear the old message and show "Capture" again.
+                                if (hint?.inRange == true) {
+                                    tapRefusal = null
+                                    retakeMessage = null
+                                }
+                            }
                         },
                         onReady = {
                             if (attempt == cameraAttempt && capturedMetrics == null) {
@@ -139,13 +153,15 @@ fun ScanScreen(
                 FaceScanOverlay(
                     statusText = cameraError ?: when {
                         capturing -> "Photo taken · analyzing…"
+                        tapRefusal != null -> tapRefusal.orEmpty()
                         retakeMessage != null -> retakeMessage.orEmpty()
-                        cameraReady -> "Center your face and tap Capture"
+                        cameraReady -> ""
                         else -> "Starting front camera…"
                     },
                     onBack = onBack,
                     onRefresh = ::restartCamera,
                     distanceHint = distanceHint.takeIf { cameraReady && !capturing && cameraError == null },
+                    guideHalfWidth = guideHalfWidth,
                     captureEnabled = cameraReady && !capturing && capturedMetrics == null,
                     capturing = capturing,
                     isRetake = retakeMessage != null,
@@ -153,9 +169,10 @@ fun ScanScreen(
                         val hint = distanceHint
                         logCaptureTap(hint, refused = hint != null && !hint.inRange)
                         if (cameraReady && !capturing && capturedMetrics == null && hint != null && !hint.inRange) {
-                            // Wrong distance or smiling: refuse before starting a capture.
-                            retakeMessage = hint.refusal
+                            // Wrong distance, pose or expression: refuse before taking a photo.
+                            tapRefusal = hint.refusal
                         } else if (cameraReady && !capturing && capturedMetrics == null) {
+                            tapRefusal = null
                             retakeMessage = null
                             capturing = true
                             captureRequested.set(true)

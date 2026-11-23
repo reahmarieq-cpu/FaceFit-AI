@@ -116,6 +116,10 @@ class MainActivity : ComponentActivity() {
                             },
                         )
                     }
+                    // In-app messages (no system toast, so no app icon next to them).
+                    com.example.facefit.ui.components.AppMessageHost(
+                        Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                    )
                 }
             }
         }

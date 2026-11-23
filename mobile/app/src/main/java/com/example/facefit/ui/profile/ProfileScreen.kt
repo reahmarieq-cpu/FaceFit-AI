@@ -1,6 +1,6 @@
 package com.example.facefit.ui.profile
 
-import android.widget.Toast
+import com.example.facefit.ui.components.AppMessages
 import com.example.facefit.notifications.rememberNotificationSettingsAction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -71,7 +71,7 @@ fun ProfileScreen(
             onSaved = { fields ->
                 userData = (userData.orEmpty() - "age") + fields
                 editingProfile = false
-                Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+                AppMessages.show("Profile updated")
             }
         )
         return
@@ -79,7 +79,7 @@ fun ProfileScreen(
 
     val openEditor: () -> Unit = {
         if (loadingProfile) {
-            Toast.makeText(context, "Loading your profile. Try again in a moment.", Toast.LENGTH_SHORT).show()
+            AppMessages.show("Loading your profile. Try again in a moment.")
         } else {
             editingProfile = true
         }

@@ -55,7 +55,19 @@ internal object FrameNotifications {
             context.getSystemService(NotificationManager::class.java)
                 ?.getNotificationChannel(CHANNEL_ID)?.importance?.let { it != NotificationManager.IMPORTANCE_NONE } == true
 
-    suspend fun postTopMatch(context: Context, faceShape: String, isCurrentAccount: () -> Boolean) {
+    /** Title and message for a recommended frame, in the app's notification style. */
+    fun notificationCopy(frame: SampleFrame): Pair<String, String> = when (frame.category) {
+        "Rectangle" -> "Precision Perfect!" to "Clean rectangle lines for your focused lifestyle. Meet ${frame.name}."
+        "Square" -> "A Statement of Quiet Confidence" to
+            "${frame.name}'s square lines command attention. For the leader who values intellect."
+        "Round" -> "Soft and Stylish!" to "${frame.name}'s rounded lenses soften your look for every day."
+        "Aviator" -> "Classic Power!" to "Timeless aviator lines, uncompromised strength. Meet ${frame.name}."
+        "Cat-Eye" -> "See the Difference!" to "${frame.name}'s lifted corners draw attention to your eyes."
+        "Browline" -> "Upgrade Your Eyewear" to "${frame.name}'s bold browline brings out your best look."
+        else -> "${frame.name} is a top match" to "See how this frame looks in Virtual Try-On."
+    }
+
+    suspend fun postTopMatch(context: Context, faceShape: String, accountId: String, isCurrentAccount: () -> Boolean) {
         val match = withContext(Dispatchers.IO) {
             val compatibility = FrameCompatibility.load(context)
             val frame = sampleFrames.maxByOrNull { compatibility.lookup(faceShape, it.category)?.score ?: -1.0 }
@@ -63,9 +75,13 @@ internal object FrameNotifications {
             if (compatibility.lookup(faceShape, frame.category) == null) return@withContext null
             frame to frameThumbnail(context, frame)
         } ?: return
-        if (!isCurrentAccount() || !canPost(context)) return
-
+        if (!isCurrentAccount()) return
         val (frame, thumbnail) = match
+        val (title, description) = notificationCopy(frame)
+        // Always keep it in the in-app list, even if Android notifications are off.
+        NotificationInbox.add(context, accountId, title, description, frame.name)
+        if (!canPost(context)) return
+
         val id = sampleFrames.indexOf(frame) + 1
         val openFrame = Intent(context, MainActivity::class.java)
             .setAction(ACTION)
@@ -74,19 +90,10 @@ internal object FrameNotifications {
         val tap = PendingIntent.getActivity(
             context, id, openFrame, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val description = when (frame.category) {
-            "Rectangle" -> "Straight lines and a clean, defined look."
-            "Square" -> "Angular lenses give this frame a more defined look."
-            "Round" -> "Rounded lenses give this frame a softer outline."
-            "Aviator" -> "Curved lenses give this frame its classic aviator shape."
-            "Cat-Eye" -> "Lifted corners draw attention to the eyes."
-            "Browline" -> "A bold upper rim brings attention to the brow."
-            else -> "See how this frame looks in Virtual Try-On."
-        }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_frame_notification)
             .setLargeIcon(thumbnail)
-            .setContentTitle("${frame.name} is a top match")
+            .setContentTitle(title)
             .setContentText(description)
             .setStyle(NotificationCompat.BigTextStyle().bigText(description))
             .setContentIntent(tap)

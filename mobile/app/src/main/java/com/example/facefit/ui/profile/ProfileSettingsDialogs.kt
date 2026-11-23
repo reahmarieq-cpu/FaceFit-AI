@@ -1,11 +1,11 @@
 package com.example.facefit.ui.profile
 
+import com.example.facefit.ui.components.AppMessages
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -87,6 +87,6 @@ internal fun Context.openProfileSystemSettings(notifications: Boolean = false) {
     try {
         startActivity(intent)
     } catch (_: ActivityNotFoundException) {
-        Toast.makeText(this, "App settings are unavailable on this device.", Toast.LENGTH_SHORT).show()
+        AppMessages.show("App settings are unavailable on this device.")
     }
 }

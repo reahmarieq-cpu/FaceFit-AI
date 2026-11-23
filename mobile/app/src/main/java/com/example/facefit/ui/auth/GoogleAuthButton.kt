@@ -1,6 +1,6 @@
 package com.example.facefit.ui.auth
 
-import android.widget.Toast
+import com.example.facefit.ui.components.AppMessages
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -83,7 +83,7 @@ internal fun GoogleAuthButton(
                                 ?: "Google sign-in could not complete. Please try again."
                             else -> "Google sign-in could not complete. Please try again."
                         }
-                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        AppMessages.show(message, long = true)
                     } finally {
                         launching = false
                         loadingCallback(false)

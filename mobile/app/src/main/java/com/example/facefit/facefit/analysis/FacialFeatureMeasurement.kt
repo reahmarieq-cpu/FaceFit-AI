@@ -211,7 +211,9 @@ object FacialFeatureMeasurement {
         val rejections: Map<Rejection, Int>,
     )
 
-    private val CANONICAL_CHEEK_WIDTH = CANONICAL.getValue(CHEEK.second).x - CANONICAL.getValue(CHEEK.first).x
+    /** Average cheek width (234-454) of MediaPipe's canonical face, in cm. */
+    val CANONICAL_CHEEK_WIDTH_CM = CANONICAL.getValue(CHEEK.second).x - CANONICAL.getValue(CHEEK.first).x
+    private val CANONICAL_CHEEK_WIDTH = CANONICAL_CHEEK_WIDTH_CM
 
     fun nominalFocalLengthPx(imageWidth: Int, imageHeight: Int) =
         NOMINAL_FOCAL_TO_LONG_SIDE * max(imageWidth, imageHeight)

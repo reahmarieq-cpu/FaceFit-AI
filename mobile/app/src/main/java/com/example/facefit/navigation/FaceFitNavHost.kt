@@ -1,5 +1,6 @@
 package com.example.facefit.navigation
 
+import com.example.facefit.ui.components.AppMessages
 import com.example.facefit.ui.auth.RegisterScreen
 import com.example.facefit.ui.auth.SignInScreen
 import com.example.facefit.ui.catalog.FrameDetailsScreen
@@ -8,6 +9,7 @@ import com.example.facefit.ui.catalog.sampleFrames
 import com.example.facefit.ui.dashboard.DashboardScreen
 import com.example.facefit.ui.favorites.FavoritesScreen
 import com.example.facefit.ui.profile.ProfileScreen
+import com.example.facefit.ui.profile.openProfileSystemSettings
 import com.example.facefit.ui.scan.ScanResultsScreen
 import com.example.facefit.ui.scan.ScanScreen
 import android.content.Context
@@ -19,7 +21,6 @@ import com.example.facefit.ui.tryon.VirtualTryOnScreen
 import com.example.facefit.ui.welcome.OnboardingScreen
 import com.example.facefit.ui.welcome.SplashScreen
 
-import android.widget.Toast
 import androidx.compose.runtime.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -62,13 +63,13 @@ fun FaceFitNavHost(
     val favorites by favoritesFlow.collectAsState(FavoritesRepository.Favorites())
     val savedFrameNames = favorites.frames.map { it.name }
     LaunchedEffect(favorites.error) {
-        favorites.error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() }
+        favorites.error?.let { AppMessages.show(it, long = true) }
     }
     val updateFrameFavorite: (String, Boolean) -> Unit = { name, saved ->
         val frame = favorites.frames.firstOrNull { it.name == name }
             ?: sampleFrames.firstOrNull { it.name == name }
         if (frame != null) favoritesRepository.setFavorite(frame, saved) { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            AppMessages.show(message, long = true)
         }
     }
     val startDest = remember {
@@ -195,7 +196,7 @@ fun FaceFitNavHost(
                     if (availableScanMetrics != null) {
                         navController.navigate("scanResults") { launchSingleTop = true }
                     } else {
-                        Toast.makeText(context, "Scan again to restore your full analysis.", Toast.LENGTH_LONG).show()
+                        AppMessages.show("Scan again to restore your full analysis.", long = true)
                         if (hasCameraPermission) navController.navigate("scan") else onRequestCameraPermission()
                     }
                 },
@@ -276,17 +277,9 @@ fun FaceFitNavHost(
                         )
 
                         if (result.isSuccess) {
-                            Toast.makeText(
-                                context,
-                                "Face scan saved",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            AppMessages.show("Face scan saved")
                         } else {
-                            Toast.makeText(
-                                context,
-                                result.exceptionOrNull()?.message ?: "Face scan was not saved",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            AppMessages.show(result.exceptionOrNull()?.message ?: "Face scan was not saved")
                         }
 
                         navController.navigate("scanResults")
@@ -300,10 +293,11 @@ fun FaceFitNavHost(
                     metrics = metrics,
                     onNext = {
                         val accountId = authManager.currentUser?.uid
-                        if (accountId != null && !announcedScan && FrameNotifications.canPost(context)) {
+                        // Recorded in the in-app list even when Android notifications are off.
+                        if (accountId != null && !announcedScan) {
                             announcedScan = true
                             coroutineScope.launch {
-                                FrameNotifications.postTopMatch(context, metrics.faceShape) {
+                                FrameNotifications.postTopMatch(context, metrics.faceShape, accountId) {
                                     authManager.currentUser?.uid == accountId
                                 }
                             }
@@ -343,6 +337,19 @@ fun FaceFitNavHost(
                         popUpTo("scan") { inclusive = true }
                     }
                 }
+            )
+        }
+        composable("notifications") {
+            val openSettings = com.example.facefit.notifications.rememberNotificationSettingsAction {
+                context.openProfileSystemSettings(notifications = true)
+            }
+            com.example.facefit.ui.notifications.NotificationsScreen(
+                accountId = authManager.currentUser?.uid,
+                onBack = { navController.popBackStack() },
+                onOpenFrame = { name ->
+                    navController.navigate("frameDetails/${Uri.encode(name)}") { launchSingleTop = true }
+                },
+                onOpenSettings = openSettings,
             )
         }
         composable("frameDetails/{frameName}") { entry ->

@@ -54,6 +54,8 @@ fun CameraPreview(
     onError: (String) -> Unit = {},
     /** Smoothed live distance hint before capture; null when no single face is visible. */
     onDistanceHint: (ScanDistanceGuide.Hint?) -> Unit = {},
+    /** Outline half-width (screen px) that an average face fills at 45 cm; null until known. */
+    onGuideHalfWidth: (Float?) -> Unit = {},
     onResult: (FaceAnalyzer.FaceMetrics, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
@@ -63,6 +65,7 @@ fun CameraPreview(
     val onReadyCallback by rememberUpdatedState(onReady)
     val onErrorCallback by rememberUpdatedState(onError)
     val onDistanceHintCallback by rememberUpdatedState(onDistanceHint)
+    val onGuideHalfWidthCallback by rememberUpdatedState(onGuideHalfWidth)
     val previewView = remember(context) {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
@@ -108,21 +111,39 @@ fun CameraPreview(
 
                 var receivedFrame = false
                 val distanceGuide = ScanDistanceGuide()  // main thread only
+                var guideHalfWidth: Float? = null  // main thread only
+
+                /** Main thread: outline size so an average face fills it at 45 cm on this camera and screen. */
+                fun updateGuideSize(source: OutputTransform, uprightWidth: Int, uprightHeight: Int, focalPx: Float) {
+                    val target = previewView.outputTransform ?: return
+                    val cx = uprightWidth / 2f
+                    val cy = uprightHeight / 2f
+                    val points = floatArrayOf(cx - 50f, cy, cx + 50f, cy)
+                    CoordinateTransform(source, target).mapPoints(points)
+                    val scale = kotlin.math.hypot(points[2] - points[0], points[3] - points[1]) / 100f
+                    val halfWidth = FaceScanGuide.halfWidthForTargetDistance(focalPx, scale) ?: return
+                    if (guideHalfWidth == null || kotlin.math.abs(halfWidth - guideHalfWidth!!) > 1f) {
+                        guideHalfWidth = halfWidth
+                        onGuideHalfWidthCallback(halfWidth)
+                    }
+                }
                 var lastPreviewMs = 0L  // analysis executor only
-                // Frozen capture: frames grabbed right after the tap, processed afterwards.
+                // Frozen capture: the last frames before the tap, processed afterwards.
                 val isCapturing = AtomicBoolean(false)
-                val grabbed = mutableListOf<FrozenFrame>()  // analysis executor only
-                var captureStartMs = 0L  // analysis executor only
+                val recentFrames = RecentFrames(GRAB_FRAMES + 1)  // analysis executor only
+                var tapMs = 0L  // analysis executor only
 
                 fun logTiming(success: Boolean, timing: CaptureTiming, classifierFrames: Int, featureFrames: Int) {
                     Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
                         .put("type", "capture_timing").put("scan_id", "timing_${System.currentTimeMillis()}")
                         .put("success", success)
                         .put("mode", "frozen_burst")
-                        .put("grab_ms", timing.grabMs)
+                        .put("frames_from", timing.source)
+                        .put("frame_span_ms", timing.grabMs)
+                        .put("wait_after_tap_ms", timing.waitMs)
                         .put("process_ms", timing.processMs)
                         .put("frame_ms", org.json.JSONArray(timing.frameMs))
-                        .put("capture_ms", timing.grabMs + timing.processMs)
+                        .put("capture_ms", timing.waitMs + timing.processMs)
                         .put("classifier_frames", classifierFrames)
                         .put("feature_frames", featureFrames)
                         .toString())
@@ -145,7 +166,7 @@ fun CameraPreview(
                                 points[index * 2 + 1] = point.y * result.imageHeight
                             }
                             CoordinateTransform(source, target).mapPoints(points)
-                            FaceScanGuide.containsFace(previewView.width, previewView.height, points)
+                            FaceScanGuide.containsFace(previewView.width, previewView.height, points, guideHalfWidth)
                         }
                         val readiness = result.getScanReadiness()
                         val framed = readiness.canCapture && insideGuide == true
@@ -217,69 +238,80 @@ fun CameraPreview(
                             if (!disposed) onReadyCallback()
                         }
                     }
+                    val now = SystemClock.elapsedRealtime()
+                    // Keep the most recent frames so Capture uses what was on screen before the tap.
+                    try {
+                        recentFrames.add(image, transformFactory.getOutputTransform(image), now)
+                    } catch (error: Exception) {
+                        Log.w("CameraPreview", "Could not keep camera frame", error)
+                    }
                     if (captureRequested.compareAndSet(true, false)) {
-                        grabbed.forEach { it.bitmap.recycle() }
-                        grabbed.clear()
-                        captureStartMs = SystemClock.elapsedRealtime()
+                        tapMs = now
                         isCapturing.set(true)
                         // Freeze what the person sees at the moment of capture.
                         mainExecutor.execute {
                             if (!disposed) frozenPhoto = previewView.bitmap?.asImageBitmap()
                         }
                     }
-                    if (!isCapturing.get()) {
-                        // Before capture: a few lightweight frames per second for the live guide.
-                        val now = SystemClock.elapsedRealtime()
-                        if (now - lastPreviewMs < PREVIEW_INTERVAL_MS) {
-                            image.close()
-                            return@setAnalyzer
+                    if (isCapturing.get()) {
+                        image.close()
+                        // Normally the frames from just before the tap are enough; right after the
+                        // camera opens there may be fewer, so wait for the next ones.
+                        val frames = recentFrames.since(tapMs - PRE_TAP_WINDOW_MS)
+                        if (frames.size < GRAB_FRAMES && now - tapMs < MAX_WAIT_MS) return@setAnalyzer
+                        val selected = frames.filter { it.timeMs <= tapMs }.takeLast(GRAB_FRAMES)
+                            .takeIf { it.size == GRAB_FRAMES } ?: frames.take(GRAB_FRAMES)
+                        val source = if (selected.all { it.timeMs <= tapMs }) "pre_tap" else "post_tap"
+                        val processStart = SystemClock.elapsedRealtime()
+                        val frameMs = mutableListOf<Long>()
+                        // Frozen: run MediaPipe and the measurements on the kept frames.
+                        val results = selected.map { frame ->
+                            val t = SystemClock.elapsedRealtime()
+                            val metrics = try {
+                                val upright = frame.bitmap.rotated(frame.rotationDegrees)
+                                try {
+                                    faceAnalyzer.analyzeFrozen(upright)
+                                } finally {
+                                    if (upright !== frame.bitmap) upright.recycle()
+                                }
+                            } catch (error: Exception) {
+                                Log.e("CameraPreview", "Frozen frame analysis failed", error)
+                                FaceAnalyzer.FaceMetrics(0f, 0f, 0f, "", isFaceDetected = false)
+                            }
+                            frameMs += SystemClock.elapsedRealtime() - t
+                            metrics to frame.transform
                         }
-                        lastPreviewMs = now
-                        faceAnalyzer.previewOnly = true
-                        try {
-                            faceAnalyzer.analyze(image)
-                        } catch (error: Exception) {
-                            Log.w("CameraPreview", "Preview distance frame failed", error)
+                        val spanMs = if (selected.isEmpty()) 0L else selected.last().timeMs - selected.first().timeMs
+                        val timing = CaptureTiming(spanMs, SystemClock.elapsedRealtime() - processStart, frameMs,
+                            source, waitMs = processStart - tapMs)
+                        recentFrames.clear()
+                        // Back to live preview frames; the result is evaluated on the main thread.
+                        isCapturing.set(false)
+                        mainExecutor.execute {
+                            if (!disposed) evaluateFrozen(results, timing)
                         }
                         return@setAnalyzer
                     }
-                    // Capture: copy consecutive camera frames as fast as they arrive (no analysis yet),
-                    // so movement after this short window cannot affect the result.
+                    // Before capture: a few lightweight frames per second for the live guide.
+                    if (now - lastPreviewMs < PREVIEW_INTERVAL_MS) {
+                        image.close()
+                        return@setAnalyzer
+                    }
+                    lastPreviewMs = now
+                    faceAnalyzer.previewOnly = true
                     try {
                         val transform = transformFactory.getOutputTransform(image)
-                        val source = image.toBitmap()
-                        val upright = source.rotated(image.imageInfo.rotationDegrees)
-                        if (upright !== source) source.recycle()
-                        grabbed += FrozenFrame(upright, transform)
-                    } catch (error: Exception) {
-                        Log.e("CameraPreview", "Could not copy capture frame", error)
-                    } finally {
-                        image.close()
-                    }
-                    if (grabbed.size < GRAB_FRAMES) return@setAnalyzer
-                    val grabMs = SystemClock.elapsedRealtime() - captureStartMs
-                    // Frozen: run MediaPipe and the measurements on the copied frames.
-                    val processStart = SystemClock.elapsedRealtime()
-                    val frameMs = mutableListOf<Long>()
-                    val results = grabbed.map { frame ->
-                        val t = SystemClock.elapsedRealtime()
-                        val metrics = try {
-                            faceAnalyzer.analyzeFrozen(frame.bitmap)
-                        } catch (error: Exception) {
-                            Log.e("CameraPreview", "Frozen frame analysis failed", error)
-                            FaceAnalyzer.FaceMetrics(0f, 0f, 0f, "", isFaceDetected = false)
-                        } finally {
-                            frame.bitmap.recycle()
+                        val turned = image.imageInfo.rotationDegrees % 180 != 0
+                        val uprightWidth = if (turned) image.height else image.width
+                        val uprightHeight = if (turned) image.width else image.height
+                        val focalPx = faceAnalyzer.cameraIntrinsics?.focalLengthPx(uprightWidth, uprightHeight)
+                            ?: FacialFeatureMeasurement.nominalFocalLengthPx(uprightWidth, uprightHeight)
+                        mainExecutor.execute {
+                            if (!disposed) updateGuideSize(transform, uprightWidth, uprightHeight, focalPx)
                         }
-                        frameMs += SystemClock.elapsedRealtime() - t
-                        metrics to frame.transform
-                    }
-                    grabbed.clear()
-                    val timing = CaptureTiming(grabMs, SystemClock.elapsedRealtime() - processStart, frameMs)
-                    // Back to live preview frames; the result is evaluated on the main thread.
-                    isCapturing.set(false)
-                    mainExecutor.execute {
-                        if (!disposed) evaluateFrozen(results, timing)
+                        faceAnalyzer.analyze(image)
+                    } catch (error: Exception) {
+                        Log.w("CameraPreview", "Preview distance frame failed", error)
                     }
                 }
                 boundPreview = preview
@@ -321,14 +353,53 @@ private const val CLASSIFIER_FRAMES = 5
 /** Fewest face-shape frames accepted, as with the old capture's timeout rule. */
 private const val MIN_CLASSIFIER_FRAMES = 4
 /**
- * Consecutive camera frames copied at the tap (about 0.25 s at 30 fps). Seven leaves room for
- * two rejected frames while still giving the feature median its minimum of five.
+ * Camera frames used per capture: the last ones before the tap (about 0.5 s at the test phone's
+ * 13 fps). Seven leaves room for two rejected frames while the feature median gets its five.
  */
 private const val GRAB_FRAMES = 7
 
-private class FrozenFrame(val bitmap: Bitmap, val transform: OutputTransform?)
+/** Frames from up to this long before the tap may be used for the capture. */
+private const val PRE_TAP_WINDOW_MS = 1200L
+/** If too few frames were kept (camera just opened), wait at most this long for new ones. */
+private const val MAX_WAIT_MS = 1500L
 
-private class CaptureTiming(val grabMs: Long, val processMs: Long, val frameMs: List<Long>)
+private class KeptFrame(val bitmap: Bitmap, val transform: OutputTransform?, val rotationDegrees: Int, val timeMs: Long)
+
+/**
+ * Rolling copies of the latest camera frames, so a capture uses what was on screen before the
+ * tap. Analysis executor only; the oldest frame's bitmap is reused for the newest.
+ */
+private class RecentFrames(private val capacity: Int) {
+    private val frames = ArrayDeque<KeptFrame>()
+
+    fun add(image: androidx.camera.core.ImageProxy, transform: OutputTransform?, timeMs: Long) {
+        val plane = image.planes[0]
+        val reuse = if (frames.size >= capacity) frames.removeFirst().bitmap else null
+        val bitmap = if (plane.pixelStride == 4 && plane.rowStride == image.width * 4) {
+            (reuse?.takeIf { it.width == image.width && it.height == image.height && !it.isRecycled }
+                ?: Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888))
+                .also { it.copyPixelsFromBuffer(plane.buffer.duplicate().apply { rewind() }) }
+        } else {
+            image.toBitmap()  // rows are padded: let CameraX repack them
+        }
+        frames.addLast(KeptFrame(bitmap, transform, image.imageInfo.rotationDegrees, timeMs))
+    }
+
+    fun since(timeMs: Long): List<KeptFrame> = frames.filter { it.timeMs >= timeMs }
+
+    fun clear() = frames.clear()
+}
+
+private class CaptureTiming(
+    /** Time between the first and last frame used. */
+    val grabMs: Long,
+    val processMs: Long,
+    val frameMs: List<Long>,
+    /** "pre_tap": frames from before the tap; "post_tap": camera had just opened. */
+    val source: String,
+    /** Time from the tap until processing started (0-ish when pre-tap frames were ready). */
+    val waitMs: Long,
+)
 
 private fun Bitmap.rotated(rotationDegrees: Int): Bitmap {
     if (rotationDegrees == 0) return this

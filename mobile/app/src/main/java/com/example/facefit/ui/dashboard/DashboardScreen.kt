@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,8 +45,11 @@ fun DashboardScreen(
 ) {
     var fullName by remember(userName) { mutableStateOf(userName) }
     val context = LocalContext.current
-    val openNotifications = rememberNotificationSettingsAction {
-        context.openProfileSystemSettings(notifications = true)
+    // Red dot on the bell while there are unread notifications.
+    val inboxVersion by com.example.facefit.notifications.NotificationInbox.changes.collectAsState()
+    val accountId = authManager?.currentUser?.uid
+    val hasUnread = remember(accountId, inboxVersion) {
+        accountId != null && com.example.facefit.notifications.NotificationInbox.hasUnread(context, accountId)
     }
 
     LaunchedEffect(authManager) {
@@ -90,14 +94,20 @@ fun DashboardScreen(
                         .size(48.dp)
                         .softContainerShadow(RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp))
                         .background(Color.White)
-                        .clickable(onClickLabel = "Notification settings", onClick = openNotifications),
+                        .clickable(onClickLabel = "Open notifications") { onNavigate("notifications") },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.NotificationsNone,
-                        contentDescription = "Notifications",
+                        contentDescription = if (hasUnread) "Notifications, new" else "Notifications",
                         tint = FaceFitTextPrimary
                     )
+                    if (hasUnread) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).padding(top = 11.dp, end = 12.dp)
+                                .size(9.dp).clip(CircleShape).background(Color(0xFFE5484D))
+                        )
+                    }
                 }
             }
 

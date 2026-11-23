@@ -27,16 +27,39 @@ internal object FaceScanGuide {
             Point(coordinate(a.x, b.x, c.x, d.x), coordinate(a.y, b.y, c.y, d.y))
         }
 
-    fun points(width: Float, height: Float): List<Point> {
-        val halfWidth = minOf(width * .31f, height * .52f / 2.84f)
+    /**
+     * Room around an average face at the target distance: its cheek points sit about 4 % inside
+     * each side, so a face filling the outline is at 45 cm and a slightly closer one still fits.
+     */
+    const val FIT_MARGIN = 1.08f
+
+    /** Largest half-width that keeps the outline above the bottom controls. */
+    private fun maxHalfWidth(width: Float, height: Float) = minOf(width * .45f, height * .52f / 2.84f)
+
+    /**
+     * Half-width (screen px) of the outline an average face fills at the target distance.
+     * [focalLengthPx] is for the upright analysis image; [analysisToScreenScale] converts its
+     * pixels to screen pixels. Uses the same average face as the distance estimate, so filling
+     * the outline and the chip reading 45 cm coincide for every face width.
+     */
+    fun halfWidthForTargetDistance(focalLengthPx: Float, analysisToScreenScale: Float): Float? {
+        val cheekScreenPx = focalLengthPx * FacialFeatureMeasurement.CANONICAL_CHEEK_WIDTH_CM /
+            FacialFeatureMeasurement.TARGET_DISTANCE_CM * analysisToScreenScale
+        return (cheekScreenPx / 2f * FIT_MARGIN).takeIf { it.isFinite() && it > 0f }
+    }
+
+    /** [halfWidth] null keeps the original fixed size (camera geometry not known yet). */
+    fun points(width: Float, height: Float, halfWidth: Float? = null): List<Point> {
+        val halfWidth = halfWidth?.takeIf { it.isFinite() && it > 0f }?.coerceAtMost(maxHalfWidth(width, height))
+            ?: minOf(width * .31f, height * .52f / 2.84f)
         val halfHeight = halfWidth * 1.42f
         val centerY = height * .22f + halfHeight
         return outline.map { Point(width / 2 + it.x * halfWidth, centerY + it.y * halfHeight) }
     }
 
-    fun containsFace(width: Int, height: Int, landmarks: FloatArray): Boolean {
+    fun containsFace(width: Int, height: Int, landmarks: FloatArray, halfWidth: Float? = null): Boolean {
         if (width <= 0 || height <= 0 || landmarks.isEmpty() || landmarks.size % 2 != 0) return false
-        val boundary = points(width.toFloat(), height.toFloat())
+        val boundary = points(width.toFloat(), height.toFloat(), halfWidth)
         for (index in landmarks.indices step 2) {
             val x = landmarks[index]
             val y = landmarks[index + 1]

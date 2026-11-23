@@ -1,7 +1,9 @@
 package com.example.facefit.ui.auth
 
-import android.widget.Toast
+import com.example.facefit.ui.components.AppMessages
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.outlined.Email
@@ -43,6 +45,9 @@ fun SignInScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            // Shrink above the keyboard and scroll, so the focused field stays visible.
+            .imePadding()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
         Row(
@@ -104,7 +109,7 @@ fun SignInScreen(
                 text = "Sign in",
                 onClick = {
                     if (email.isBlank() || password.isBlank()) {
-                        Toast.makeText(context, "Please enter email and password", Toast.LENGTH_SHORT).show()
+                        AppMessages.show("Please enter email and password")
                         return@FaceFitButton
                     }
                     
@@ -115,7 +120,7 @@ fun SignInScreen(
                         result.onSuccess {
                             onSignInSuccess()
                         }.onFailure { e ->
-                            Toast.makeText(context, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()
+                            AppMessages.show("Login failed: ${e.message}", long = true)
                         }
                     }
                 }
@@ -144,7 +149,7 @@ fun SignInScreen(
             onSuccess = onSignInSuccess
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),

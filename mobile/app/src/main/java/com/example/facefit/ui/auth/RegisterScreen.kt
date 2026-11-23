@@ -1,6 +1,6 @@
 package com.example.facefit.ui.auth
 
-import android.widget.Toast
+import com.example.facefit.ui.components.AppMessages
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.data.auth.AuthManager
+import com.example.facefit.data.auth.PasswordPolicy
 import com.example.facefit.ui.components.FaceFitButton
 import com.example.facefit.ui.components.FaceFitLogo
 import com.example.facefit.ui.components.FaceFitTextField
@@ -50,8 +51,10 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            // Shrink above the keyboard so the focused field scrolls into view.
+            .imePadding()
             .verticalScroll(rememberScrollState())
+            .padding(24.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -115,6 +118,18 @@ fun RegisterScreen(
             isPassword = true
         )
 
+        // Live checklist of the password requirements.
+        Spacer(modifier = Modifier.height(8.dp))
+        Column(modifier = Modifier.padding(start = 4.dp)) {
+            PasswordPolicy.requirements(password).forEach { requirement ->
+                Text(
+                    text = (if (requirement.met) "✓  " else "•  ") + requirement.label,
+                    fontSize = 12.sp,
+                    color = if (requirement.met) Color(0xFF2E7D32) else FaceFitTextSecondary
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         FaceFitTextField(
@@ -149,15 +164,20 @@ fun RegisterScreen(
                 text = "Create account",
                 onClick = {
                     if (!agreeToTerms) {
-                        Toast.makeText(context, "Please agree to the Terms of Service and Privacy Policy", Toast.LENGTH_SHORT).show()
-                        return@FaceFitButton
-                    }
-                    if (password != confirmPassword) {
-                        Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                        AppMessages.show("Please agree to the Terms of Service and Privacy Policy")
                         return@FaceFitButton
                     }
                     if (firstName.isBlank() || lastName.isBlank() || email.isBlank() || password.isBlank()) {
-                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                        AppMessages.show("Please fill in all fields")
+                        return@FaceFitButton
+                    }
+                    if (!PasswordPolicy.isValid(password)) {
+                        AppMessages.show("Password needs at least 8 characters with an uppercase letter, " +
+                            "a lowercase letter, a number and a special symbol.", long = true)
+                        return@FaceFitButton
+                    }
+                    if (password != confirmPassword) {
+                        AppMessages.show("Passwords do not match")
                         return@FaceFitButton
                     }
                     
@@ -168,7 +188,7 @@ fun RegisterScreen(
                         result.onSuccess {
                             onRegisterSuccess()
                         }.onFailure { e ->
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                            AppMessages.show("Error: ${e.message}", long = true)
                         }
                     }
                 }

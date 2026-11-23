@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android's launch screen (Android 12+) cannot be turned off, so it shows no logo: just the
+    splash background colour while the app loads. The app's animated splash then shows the logo.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:width="130dp" android:height="130dp" android:gravity="center">
-        <bitmap android:src="@drawable/facefit_logo" android:gravity="fill"
-            android:filter="true" android:tint="#FFFFFFFF" />
+    <item android:width="288dp" android:height="288dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
     </item>
 </layer-list>

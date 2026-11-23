@@ -62,6 +62,8 @@ fun FaceScanOverlay(
     modifier: Modifier = Modifier,
     /** Live distance guide, shown above the status line before capture. */
     distanceHint: com.example.facefit.facefit.analysis.ScanDistanceGuide.Hint? = null,
+    /** Outline half-width for 45 cm (screen px); null keeps the default size. */
+    guideHalfWidth: Float? = null,
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "GlowTransition")
     val glowAlpha by infiniteTransition.animateFloat(
@@ -87,11 +89,18 @@ fun FaceScanOverlay(
                 )
             )
     ) {
+        // Header, live guide and status sit above the face outline so they never cover the face.
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .statusBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 18.dp),
+                .padding(horizontal = 24.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -110,9 +119,27 @@ fun FaceScanOverlay(
                 Icon(Icons.Outlined.Refresh, contentDescription = "Refresh", tint = Color.White)
             }
         }
+            // Only shown when there is something to say (refusal, error, analysing, starting).
+            if (statusText.isNotBlank()) Box(
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Black.copy(alpha = 0.28f))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = statusText,
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawReferenceScanFrame(glowAlpha)
+            // The outline turns green when the face is at 45 cm, level and neutral.
+            drawReferenceScanFrame(glowAlpha, guideHalfWidth, ready = distanceHint?.inRange == true)
         }
 
         Column(
@@ -126,34 +153,20 @@ fun FaceScanOverlay(
             if (distanceHint != null) {
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(if (distanceHint.inRange) Color(0xE62E7D32) else Color(0xE6B26A00))
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = distanceHint.text,
                         color = Color.White,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color.White.copy(alpha = 0.18f))
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    text = statusText,
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier
@@ -218,11 +231,12 @@ private fun ScanIconButton(
     }
 }
 
-private fun DrawScope.drawReferenceScanFrame(glowAlpha: Float) {
-    val strokeColor = Color.White.copy(alpha = 0.85f)
-    val glowColor = Color.White.copy(alpha = 0.18f * glowAlpha)
+private fun DrawScope.drawReferenceScanFrame(glowAlpha: Float, halfWidth: Float? = null, ready: Boolean = false) {
+    val base = if (ready) Color(0xFF4CD964) else Color.White
+    val strokeColor = base.copy(alpha = 0.85f)
+    val glowColor = base.copy(alpha = (if (ready) 0.35f else 0.18f) * glowAlpha)
     val dash = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 6.dp.toPx()), 0f)
-    val outline = FaceScanGuide.points(size.width, size.height)
+    val outline = FaceScanGuide.points(size.width, size.height, halfWidth)
     val facePath = Path().apply {
         moveTo(outline.first().x, outline.first().y)
         outline.drop(1).forEach { lineTo(it.x, it.y) }
