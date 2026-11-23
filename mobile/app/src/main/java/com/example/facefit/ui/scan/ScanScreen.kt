@@ -242,11 +242,13 @@ private fun AnalysisProgressScreen(
     val progress = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
+        // Short on purpose: the face-shape result is usually ready before this finishes, and the
+        // screen still waits for it if not.
         progress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(durationMillis = 2200)
+            animationSpec = tween(durationMillis = 700)
         )
-        delay(250)
+        delay(100)
         onComplete()
     }
 
@@ -355,6 +357,8 @@ private fun logCaptureTap(hint: com.example.facefit.facefit.analysis.ScanDistanc
             .put("distance_cm", hint?.distanceCm)
             .put("smile_score", hint?.smileScore?.takeIf { it.isFinite() }?.toDouble())
             .put("upper_lip_raise", hint?.upperLipRaise?.takeIf { it.isFinite() }?.toDouble())
+            .put("pitch_deg", hint?.pitchDeg?.takeIf { it.isFinite() }?.toDouble())
+            .put("yaw_deg", hint?.yawDeg?.takeIf { it.isFinite() }?.toDouble())
             .put("smiling", hint?.smiling)
             .put("guidance_shown", if (refused) hint?.refusal else null)
             .toString())

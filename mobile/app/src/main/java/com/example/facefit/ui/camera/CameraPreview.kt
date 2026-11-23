@@ -110,6 +110,13 @@ fun CameraPreview(
 
                 fun finishBurst(result: FaceAnalyzer.FaceMetrics, success: Boolean) {
                     isBurstActive.set(false)
+                    Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
+                        .put("type", "capture_timing").put("scan_id", "timing_${System.currentTimeMillis()}")
+                        .put("success", success)
+                        .put("capture_ms", SystemClock.elapsedRealtime() - burstStartMs)
+                        .put("classifier_frames", classifierFrames.size)
+                        .put("feature_frames", featureCollector.acceptedCount)
+                        .toString())
                     onResultCallback(result, success)
                 }
 
@@ -131,7 +138,8 @@ fun CameraPreview(
                             if (!isBurstActive.get()) {
                                 val frame = result.featureFrame?.takeIf { result.isFaceDetected }
                                 onDistanceHintCallback(distanceGuide.update(frame?.cheekDistanceCm,
-                                    SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise))
+                                    SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise,
+                                    frame?.pitchDeg, frame?.yawDeg))
                             }
                         } else if (!disposed) {
                             val target = previewView.outputTransform

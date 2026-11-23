@@ -54,12 +54,14 @@ object FacialFeatureMeasurement {
     const val UPPER_FACE_PITCH_SLOPE_PER_DEG = 0.0023f
 
     /**
-     * Required camera distance to the cheek plane. The live guide shows the same range, and the
-     * repeated phone scans were most consistent there. The estimate is repeatable to about 1 cm
-     * for one person but may be a few cm off in absolute terms.
+     * Required camera distance to the cheek plane: 45 cm, i.e. anything the guide would show as
+     * "45 cm" (44.5-45.5). The estimate is repeatable to about 1 cm for one person but may be a
+     * few cm off in absolute terms, so this fixes the position, not a true 45 cm.
      */
-    const val TARGET_MIN_CM = 45f
-    const val TARGET_MAX_CM = 50f
+    const val TARGET_DISTANCE_CM = 45f
+    const val DISTANCE_TOLERANCE_CM = 0.5f
+    const val TARGET_MIN_CM = TARGET_DISTANCE_CM - DISTANCE_TOLERANCE_CM
+    const val TARGET_MAX_CM = TARGET_DISTANCE_CM + DISTANCE_TOLERANCE_CM
 
     /**
      * Highest accepted MediaPipe smile score (mean of mouthSmileLeft/Right, 0-1). On the test
@@ -88,8 +90,11 @@ object FacialFeatureMeasurement {
         (smileScore ?: 0f) > MAX_SMILE_SCORE || (upperLipRaise ?: 0f) > MAX_UPPER_LIP_RAISE
 
     const val MIN_FRAMES = 5
-    /** A spread estimated from 5 frames is itself unreliable, so early stopping needs more. */
-    const val EARLY_STOP_FRAMES = 8
+    /**
+     * Earliest stop once the standard-error target is met. The error uses the larger of the MAD
+     * and ordinary spread, so 6 frames is enough to avoid a lucky small spread ending a scan.
+     */
+    const val EARLY_STOP_FRAMES = 6
     const val MAX_FRAMES = 15
 
     /**
