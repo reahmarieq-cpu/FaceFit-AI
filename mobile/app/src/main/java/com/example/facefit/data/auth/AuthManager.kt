@@ -57,8 +57,10 @@ class AuthManager {
         return try {
             require(idToken.isNotBlank()) { "Google sign-in could not be completed." }
             val credential = GoogleAuthProvider.getCredential(idToken, null)
+            GoogleAuthDiagnostics.event("firebaseExchange")
             val user = auth.signInWithCredential(credential).await().user
                 ?: error("Google sign-in could not be completed.")
+            GoogleAuthDiagnostics.event("firebaseSessionCreated")
 
             // Initialize a missing profile without overwriting an existing user's edits.
             // Authentication can succeed even when profile storage is unavailable.
@@ -85,6 +87,7 @@ class AuthManager {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            GoogleAuthDiagnostics.failure("firebaseExchange", e)
             Result.failure(e)
         }
     }

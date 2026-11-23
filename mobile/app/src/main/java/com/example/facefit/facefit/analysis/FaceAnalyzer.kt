@@ -229,12 +229,13 @@ class FaceAnalyzer(
         val burstSampleMeasurements: List<SampleMeasurement> = emptyList(),
         val rejectedSampleCount: Int = 0,
         val rejectedSampleReasons: List<String> = emptyList(),
-        /** Per-frame perspective-corrected feature measurement (scan capture only). */
+        /** Per-frame feature measurement (scan capture only). */
         val featureFrame: FacialFeatureMeasurement.Frame? = null,
         val featureRejection: FacialFeatureMeasurement.Rejection? = null,
         /** Multi-frame result; when present, foreheadWidth/jawline/eyeSpacing are its medians. */
         val featureAggregate: FacialFeatureMeasurement.Aggregate? = null,
         /** Set on a failed capture to tell the person what to change. */
         val captureGuidance: String? = null,
+        val snrFactor: Float = 1f,
     )
 }

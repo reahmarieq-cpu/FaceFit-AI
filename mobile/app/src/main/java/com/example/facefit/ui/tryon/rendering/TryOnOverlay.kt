@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.facefit.tryon.geometry.TryOnGeometry
 import com.example.facefit.facefit.tryon.geometry.TryOnPoint
+import com.example.facefit.facefit.tryon.tracking.VtoHeadPose
 import com.example.facefit.ui.catalog.FrameLensAnchors
 import kotlin.math.hypot
 
@@ -38,12 +39,8 @@ fun TryOnOverlay(
             val p = face.landmarks[index]
             return TryOnPoint(p.x * size.width, p.y * size.height, p.z * size.width)
         }
-        fun eye(outer: Int, inner: Int): TryOnPoint {
-            val a = point(outer)
-            val b = point(inner)
-            return TryOnPoint((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2)
-        }
-        val pose = TryOnGeometry.pose(eye(33, 133), eye(263, 362), scale, heightOffset) ?: return@Canvas
+        val rig = VtoHeadPose.rig(face, size.width.toInt(), size.height.toInt(), scale, heightOffset) ?: return@Canvas
+        val pose = TryOnGeometry.pose(rig) ?: return@Canvas
         val sourceWidth = (anchors.rightX - anchors.leftX) * front.width
         if (sourceWidth <= 0f || anchors.leftY != anchors.rightY) return@Canvas
         val verticalScale = pose.depthAwareDistance / sourceWidth
@@ -75,7 +72,7 @@ fun TryOnOverlay(
                     val earX = side.x - pose.downX * pose.depthAwareDistance * 0.30f
                     val earY = side.y - pose.downY * pose.depthAwareDistance * 0.30f
                     val horizontal = (earX - hingeX) * pose.downY - (earY - hingeY) * pose.downX
-                    if ((leftSide && horizontal >= -2f) || (!leftSide && horizontal <= 2f)) return
+                    if ((leftSide && horizontal >= 0f) || (!leftSide && horizontal <= 0f)) return
                     if (hypot(earX - hingeX, earY - hingeY) > pose.depthAwareDistance * 1.3f) return
                     val armSource = floatArrayOf(temple.width * 0.025f, temple.height * 0.435f,
                         temple.width * 0.94f, temple.height * 0.435f,

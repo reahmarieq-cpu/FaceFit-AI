@@ -1,9 +1,13 @@
 package com.example.facefit.ui.tryon.rendering
 
 import com.example.facefit.ui.tryon.tracking.VtoDiagnostics
+import com.example.facefit.ui.camera.VtoThermalMonitor
+import com.example.facefit.ui.tryon.tracking.VtoMotionFeed
 import com.example.facefit.ui.tryon.tracking.VtoTrackingFeed
 
 import android.content.Context
+import android.opengl.Matrix as GlMatrix
+import com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics
 import android.view.Choreographer
 import android.view.Surface
 import android.view.TextureView
@@ -16,7 +20,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import android.os.SystemClock
+import com.example.facefit.facefit.tryon.geometry.TryOnGeometry
+import com.example.facefit.facefit.tryon.geometry.Vector3
+import com.example.facefit.facefit.tryon.tracking.VtoDisplayFollower
 import com.example.facefit.facefit.tryon.tracking.VtoHeadPose
+import com.example.facefit.facefit.tryon.tracking.VtoRigResolver
 import com.example.facefit.facefit.tryon.geometry.GlbFaceTransform
 import com.example.facefit.facefit.tryon.geometry.VtoAutomaticFit
 import com.google.android.filament.*
@@ -30,7 +39,8 @@ import java.nio.ByteBuffer
 
 @Composable
 fun FilamentGlassesOverlay(assetPath: String, state: Glasses3DState,
-    onReady: () -> Unit, onError: (String) -> Unit, trackingFeed: VtoTrackingFeed? = null) {
+    onReady: () -> Unit, onError: (String) -> Unit, trackingFeed: VtoTrackingFeed? = null,
+    motionFeed: VtoMotionFeed? = null) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val readyCallback by rememberUpdatedState(onReady)
@@ -53,9 +63,14 @@ fun FilamentGlassesOverlay(assetPath: String, state: Glasses3DState,
     }
     bytes?.let { modelBytes ->
         key(assetPath, owner) {
-            AndroidView(factory = { ctx ->
-                TrackedGlassesView(ctx, owner, modelBytes, requireNotNull(triangles), VtoAutomaticFit.forAsset(assetPath), { readyCallback() }, { errorCallback(it) })
-            }, modifier = Modifier.fillMaxSize(), update = { it.trackingState = state; it.trackingFeed = trackingFeed })
+            fun glassesView(ctx: Context) = TrackedGlassesView(ctx, owner, modelBytes,
+                requireNotNull(triangles), VtoAutomaticFit.forAsset(assetPath),
+                { readyCallback() }, { errorCallback(it) })
+            AndroidView(factory = { glassesView(it) }, modifier = Modifier.fillMaxSize(), update = {
+                it.trackingState = state
+                it.trackingFeed = trackingFeed
+                it.motionFeed = motionFeed
+            })
         }
     }
 }
@@ -66,10 +81,15 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
     private val onError: (String) -> Unit) : TextureView(context), Choreographer.FrameCallback {
     var trackingState = Glasses3DState(null)
     var trackingFeed: VtoTrackingFeed? = null
+    var motionFeed: VtoMotionFeed? = null
     private var session: TrackedGlassesSession? = null
     private var running = false
+    private val follower = VtoDisplayFollower()
+    private val thermal = VtoThermalMonitor.create(context)
     private val choreographer = Choreographer.getInstance()
     private val observer = LifecycleEventObserver { _, _ -> updateRunning() }
+
+    init { isOpaque = false }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -93,20 +113,60 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
             owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
         if (running == next) return
         running = next
-        if (running) choreographer.postFrameCallback(this) else choreographer.removeFrameCallback(this)
+        if (running) {
+            thermal.start()
+            choreographer.postFrameCallback(this)
+        } else {
+            thermal.close()
+            choreographer.removeFrameCallback(this)
+            follower.reset()
+            session?.resetPoseStabilizer()
+        }
     }
 
     override fun doFrame(frameTimeNanos: Long) {
         if (!running) return
         try {
-            val face=if(trackingFeed!=null) trackingFeed?.latest else trackingState.metrics
-            session?.render(frameTimeNanos, trackingState.copy(metrics=face,
-                scale = 1f, heightOffset = 0f))
-            choreographer.postFrameCallback(this)
+            val trackingNow = SystemClock.elapsedRealtimeNanos()
+            val budget = thermal.budget
+            session?.setSecondaryPasses(budget.secondaryPasses)
+            val cameraMotion = motionFeed
+            val feed = trackingFeed
+            val holdingAnchor = cameraMotion?.holdingAnchor == true
+            val freshMesh = feed?.latestAt(frameTimeNanos)
+            val frame = cameraMotion?.latest?.takeIf {
+                    it.face.imageWidth == width && it.face.imageHeight == height
+            }
+            val face = if (cameraMotion != null) frame?.face?.takeIf { feed == null || it === freshMesh || holdingAnchor }
+                else if (feed != null) freshMesh else trackingState.metrics
+            val displayed = if (frame != null && face?.isFaceDetected == true) {
+                VtoDisplayFollower.Display(face, 1f)
+            } else {
+                follower.sample(face, trackingNow)
+            }
+            if (alpha < 1f && displayed.opacity == 1f) session?.resetPoseStabilizer()
+            if (alpha != displayed.opacity) alpha=displayed.opacity
+            if (frame != null && face?.isFaceDetected == true && displayed.face != null) {
+                renderTrackedPose(frame, frameTimeNanos, trackingNow)
+            } else {
+                session?.render(frameTimeNanos, trackingState.copy(metrics = displayed.face,
+                    scale = 1f, heightOffset = 0f), face,
+                    trackingNow = trackingNow, forceSubmit = displayed.face != null)
+            }
         } catch (error: Exception) {
             release()
             report(error)
+        } finally {
+            if (running) choreographer.postFrameCallback(this)
         }
+    }
+
+    private fun renderTrackedPose(frame: VtoMotionFeed.Frame, frameNanos: Long,
+        trackingNow: Long) {
+        session?.render(frameNanos,
+            trackingState.copy(metrics = frame.face, scale = 1f, heightOffset = 0f), frame.face,
+            trackingNow = trackingNow, forceSubmit = true, trackedFrame = frame,
+            )
     }
 
     private fun report(error: Exception) {
@@ -116,6 +176,8 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
 
     private fun release() {
         running = false
+        thermal.close()
+        follower.reset()
         choreographer.removeFrameCallback(this)
         owner.lifecycle.removeObserver(observer)
         session?.close()
@@ -149,19 +211,52 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
     private var height = 0
     private var visible = false
     private var occluder: VtoFaceOccluder? = null
+    private var cachedMesh: VtoMotionFeed.Frame? = null
+    private var cachedMeshMatrix: FloatArray? = null
+    private var cachedMeshRig: com.example.facefit.facefit.tryon.geometry.GlassesRig? = null
+    private var cachedMeshWidth = 0
+    private var cachedMeshHeight = 0
+    private val inverseMeshMatrix = FloatArray(16)
+    private var hasMeshInverse = false
+    private val maskTransform = FloatArray(16)
     private var poseFace: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = null
     private var poseWidth=0
     private var poseHeight=0
     private var poseScale=Float.NaN
     private var poseOffset=Float.NaN
+    private var modelAnchor: com.example.facefit.facefit.tryon.geometry.Vector3? = null
+    private var rawPoseMatrix: FloatArray? = null
     private var poseMatrix: FloatArray? = null
+    private val displayPose = VtoDisplayPose()
+
+    fun resetPoseStabilizer() {
+        displayPose.reset()
+    }
     private var pendingFrame=true
+    private var secondaryPasses: Boolean? = null
+    private var poseRig: com.example.facefit.facefit.tryon.geometry.GlassesRig? = null
+    private var lastMeasurement: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = null
+    private val rigResolver=VtoRigResolver()
+    private val gpuTiming=VtoGpuTiming(engine)
+
+    fun setSecondaryPasses(enabled: Boolean) {
+        if (secondaryPasses == enabled) return
+        secondaryPasses = enabled
+        view.setPostProcessingEnabled(enabled)
+        view.setAntiAliasing(if (enabled) View.AntiAliasing.FXAA else View.AntiAliasing.NONE)
+        view.setShadowingEnabled(enabled)
+        engine.lightManager.setShadowCaster(engine.lightManager.getInstance(light), enabled)
+        pendingFrame = true
+    }
 
     fun load(texture: TextureView, bytes: ByteArray, triangles: ByteArray) {
         view.scene = scene
         view.camera = camera
         view.blendMode = View.BlendMode.TRANSLUCENT
-        renderer.clearOptions = Renderer.ClearOptions().apply { clear = true }
+        renderer.clearOptions = Renderer.ClearOptions().apply {
+            clear = true
+            clearColor = floatArrayOf(0f, 0f, 0f, 0f)
+        }
         camera.setExposure(16f, 1f / 125f, 100f)
         // The identity camera looks down -Z; the orthographic projection matches CameraX pixels.
         camera.lookAt(0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0)
@@ -171,6 +266,7 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         LightManager.Builder(LightManager.Type.DIRECTIONAL).color(1f, 1f, 1f)
             .intensity(100_000f).direction(-0.5f, -0.8f, -1f).castShadows(false).build(engine, light)
         scene.addEntity(light)
+        setSecondaryPasses(true)
         val buffer = ByteBuffer.allocateDirect(bytes.size).apply { put(bytes); flip() }
         val model = requireNotNull(loader.createAsset(buffer)) { "Invalid GLB" }
         asset = model
@@ -186,6 +282,7 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
             override fun onNativeWindowChanged(surface: Surface) {
                 swapChain?.let { engine.destroySwapChain(it) }
                 swapChain = engine.createSwapChain(surface, helper.swapChainFlags)
+                pendingFrame = true
             }
             override fun onDetachedFromSurface() {
                 swapChain?.let { engine.destroySwapChain(it) }
@@ -204,44 +301,126 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         helper.attachTo(texture)
     }
 
-    fun render(time: Long, state: Glasses3DState) {
-        if (!helper.isReadyToRender || width <= 0 || height <= 0) return
-        val model = asset ?: return
-        val diagnosticStart=android.os.SystemClock.uptimeMillis()
-        val changed=state.metrics !== poseFace || width!=poseWidth || height!=poseHeight ||
-            state.scale!=poseScale || state.heightOffset!=poseOffset
-        if(changed) {
-            pendingFrame=true
-            val rig=state.metrics?.takeIf { it.isFaceDetected }?.let {
-                VtoHeadPose.rig(it,width,height,state.scale,state.heightOffset)
-            }
-            poseMatrix=GlbFaceTransform.matrix(state.metrics,width,height,
-                model.boundingBox.center,model.boundingBox.halfExtent,state.scale,state.heightOffset,calibration,rig)
-            poseMatrix?.let { engine.transformManager.setTransform(engine.transformManager.getInstance(model.root),it) }
-            occluder?.update(state.metrics,width,height,poseMatrix!=null,rig)
-            poseFace=state.metrics;poseWidth=width;poseHeight=height
-            poseScale=state.scale;poseOffset=state.heightOffset
+    fun render(time: Long, state: Glasses3DState,
+        diagnosticFace: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = state.metrics,
+        trackingNow: Long = SystemClock.elapsedRealtimeNanos(),
+        forceSubmit: Boolean = false,
+        trackedFrame: VtoMotionFeed.Frame? = null): Boolean {
+        if (com.example.facefit.BuildConfig.DEBUG &&
+            android.util.Log.isLoggable("FaceFitBenchHide", android.util.Log.VERBOSE)) {
+            return false
         }
-        val diagnosticPoseDone=android.os.SystemClock.uptimeMillis()
-        if(!pendingFrame) return
-        val show=poseMatrix!=null
+        gpuTiming.poll()
+        if (!helper.isReadyToRender || width <= 0 || height <= 0) return false
+        val model = asset ?: return false
+        val diagnosticStart=android.os.SystemClock.uptimeMillis()
+        // Follower runs at display rate, with stable identity once converged.
+        // Model and mask share the followed landmarks and fit used to build the target pose.
+        val cachedChanged = trackedFrame != null &&
+            (trackedFrame !== cachedMesh || width != cachedMeshWidth || height != cachedMeshHeight)
+        if (trackedFrame != null) {
+            if (cachedChanged) {
+                if (width != cachedMeshWidth || height != cachedMeshHeight) {
+                    cachedMeshRig = null
+                    displayPose.reset()
+                }
+                val mesh = trackedFrame.face
+                cachedMesh = trackedFrame
+                cachedMeshWidth = width
+                cachedMeshHeight = height
+                val candidates = VtoHeadPose.candidates(mesh, width, height, state.scale, state.heightOffset)
+                val heldAxes = cachedMeshRig?.let { VtoHeadPose.Axes(it.xAxis, it.yAxis, it.zAxis) }
+                cachedMeshRig = candidates?.let {
+                    it.fitted ?: heldAxes?.let { axes ->
+                        VtoHeadPose.withAxes(mesh, width, height, state.scale, state.heightOffset, axes)
+                    } ?: it.fallback
+                }
+                val box = model.boundingBox
+                modelAnchor = GlbFaceTransform.frontAnchor(box.center, box.halfExtent, calibration)
+                cachedMeshMatrix = GlbFaceTransform.matrix(mesh, width, height, box.center, box.halfExtent,
+                    state.scale, state.heightOffset, calibration, cachedMeshRig)
+                val matrix = cachedMeshMatrix
+                hasMeshInverse = matrix != null && GlMatrix.invertM(inverseMeshMatrix, 0, matrix, 0)
+                occluder?.requestMesh(mesh, width, height, cachedMeshRig, inverseMeshMatrix.takeIf { hasMeshInverse })
+            }
+            rawPoseMatrix = cachedMeshMatrix
+            poseFace = state.metrics
+        } else {
+            if (cachedMesh != null) {
+                cachedMesh = null
+                cachedMeshRig = null
+                displayPose.reset()
+                hasMeshInverse = false
+                occluder?.clearPreparedMesh()
+                GlMatrix.setIdentityM(maskTransform, 0)
+                occluder?.setTransform(maskTransform)
+                poseFace = null
+            }
+            val poseMetrics = state.metrics
+            val geometryChanged=poseMetrics !== poseFace || width!=poseWidth || height!=poseHeight ||
+                state.scale!=poseScale || state.heightOffset!=poseOffset
+            val resolvedRig = if (geometryChanged || diagnosticFace !== lastMeasurement) {
+                rigResolver.resolve(poseMetrics, width, height, state.scale, state.heightOffset, trackingNow, diagnosticFace)
+            } else poseRig
+            lastMeasurement=diagnosticFace
+            val changed=geometryChanged || resolvedRig != poseRig
+            if(changed) {
+                pendingFrame=true
+                poseRig=resolvedRig
+                if (width != poseWidth || height != poseHeight) displayPose.reset()
+                rawPoseMatrix=GlbFaceTransform.matrix(poseMetrics,width,height,
+                    model.boundingBox.center,model.boundingBox.halfExtent,state.scale,state.heightOffset,calibration,resolvedRig)
+                if (modelAnchor == null && rawPoseMatrix != null) {
+                    val box = model.boundingBox
+                    modelAnchor = GlbFaceTransform.frontAnchor(box.center, box.halfExtent, calibration)
+                }
+                occluder?.update(poseMetrics,width,height,rawPoseMatrix!=null,resolvedRig)
+                poseFace=poseMetrics;poseWidth=width;poseHeight=height
+                poseScale=state.scale;poseOffset=state.heightOffset
+            }
+        }
+        val rawMatrix = rawPoseMatrix
+        fun applyStabilizedPose() {
+            val shown = if (rawMatrix == null) {
+                displayPose.reset()
+                null
+            } else displayPose.sample(rawMatrix, requireNotNull(modelAnchor), trackingNow)
+            if (trackedFrame != null) occluder?.presentPreparedMesh(shown)
+            if (shown !== poseMatrix && (shown == null || poseMatrix?.contentEquals(shown) != true)) {
+                poseMatrix = shown
+                pendingFrame = true
+                shown?.let { engine.transformManager.setTransform(engine.transformManager.getInstance(model.root), it) }
+            }
+        }
+        applyStabilizedPose()
+        if (!pendingFrame && !forceSubmit) return false
+        val show = poseMatrix != null
         if (show != visible) {
             if (show) scene.addEntities(model.entities) else scene.removeEntities(model.entities)
             visible = show
         }
         // Clear transparent pixels even after tracking is lost, so the last pose cannot linger.
-        val target = swapChain ?: return
-        val submitted=renderer.beginFrame(target,time)
-        if (submitted) {
-            renderer.render(view)
-            renderer.endFrame()
-            pendingFrame=false
-        }
-        VtoDiagnostics.render(state.metrics,diagnosticStart,diagnosticPoseDone,
-            android.os.SystemClock.uptimeMillis(),submitted,show)
+        val target = swapChain ?: return false
+        val marked=gpuTiming.submitMarker(diagnosticFace)
+        val diagnosticPoseDone = android.os.SystemClock.uptimeMillis()
+        val submitted: Boolean
+        try {
+            submitted=renderer.beginFrame(target,time)
+            if (submitted) {
+                renderer.render(view)
+                renderer.endFrame()
+                com.example.facefit.ui.tryon.tracking.VtoBench.submitted(poseMatrix, (if (trackedFrame != null) cachedMeshRig else poseRig)?.size ?: 0f, trackedFrame?.sampledAtNanos, System.nanoTime(), modelAnchor ?: Vector3(0f, 0f, 0f))
+                pendingFrame=false
+                gpuTiming.submitted(diagnosticFace)
+            }
+        } finally { gpuTiming.endMarker(marked) }
+        VtoDiagnostics.render(diagnosticFace,diagnosticStart,diagnosticPoseDone,
+            android.os.SystemClock.uptimeMillis(), submitted, show, trackedFrame?.timing?.meshIntervalNanos ?: 0L)
+        return submitted
     }
 
     fun close() {
+        gpuTiming.close()
         helper.detach()
         occluder?.close()
         occluder = null

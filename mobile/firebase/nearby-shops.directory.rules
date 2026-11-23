@@ -1,0 +1,7 @@
+// Add INSIDE the existing /databases/{database}/documents block in live rules.
+// This is a fragment, not a replacement for the complete rules file.
+// Skip this addition if an identical publicShops match is already published.
+match /publicShops/{retailerId} {
+  allow read: if request.auth != null && resource.data.status == "approved";
+  allow write: if false;
+}

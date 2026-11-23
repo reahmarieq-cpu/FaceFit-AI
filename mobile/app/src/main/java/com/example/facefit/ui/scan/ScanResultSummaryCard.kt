@@ -131,7 +131,7 @@ private fun ResultMetricCard(value: String, label: String, modifier: Modifier = 
 }
 
 @Composable
-private fun FaceShapePortrait(faceShape: String) {
+internal fun FaceShapePortrait(faceShape: String) {
     val context = LocalContext.current
     val key = faceShape.trim().lowercase(Locale.ROOT)
     val picture by produceState<Bitmap?>(initialValue = null, key1 = key, key2 = context) {

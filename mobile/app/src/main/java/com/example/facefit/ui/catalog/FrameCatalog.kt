@@ -33,7 +33,8 @@ data class SampleFrame(
     val rightArmAssetPath: String? = null,
     val leftArmAnchors: FrameArmAnchors? = null,
     val compatibilityAssessment: FrameCompatibility.Assessment? = null,
-    val rightArmAnchors: FrameArmAnchors? = null
+    val rightArmAnchors: FrameArmAnchors? = null,
+    val id: String = android.net.Uri.encode(name),
 ) {
     val compatibilityScore: Double? get() = compatibilityAssessment?.score
 }

@@ -10,7 +10,7 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** Low-resolution readback, validated against the working CameraX screenshot before use. */
-internal class VtoPreviewCapture : AutoCloseable {
+internal class VtoPreviewCapture(private val maxDimension: Int) : AutoCloseable {
     private var raw: Bitmap? = null
     private var key: String? = null
     private var validated = false
@@ -30,10 +30,10 @@ internal class VtoPreviewCapture : AutoCloseable {
         val current = "${preview.width},${preview.height},${texture.width},${texture.height},$rotationKey,${values.contentHashCode()},${texture.left},${texture.top}"
         if (current != key) { key = current; validated = false; retry = 0 }
         if (!validated && retry++ % 20 != 0) return preview.bitmap
-        val ratio = (512f / maxOf(preview.width, preview.height)).coerceAtMost(1f)
+        val ratio = (maxDimension.toFloat() / maxOf(preview.width, preview.height)).coerceAtMost(1f)
         val width = (preview.width * ratio).roundToInt().coerceAtLeast(1)
         val height = (preview.height * ratio).roundToInt().coerceAtLeast(1)
-        val sourceRatio = (512f / maxOf(texture.width, texture.height)).coerceAtMost(1f)
+        val sourceRatio = (maxDimension.toFloat() / maxOf(texture.width, texture.height)).coerceAtMost(1f)
         val sourceWidth = (texture.width * sourceRatio).roundToInt().coerceAtLeast(1)
         val sourceHeight = (texture.height * sourceRatio).roundToInt().coerceAtLeast(1)
         var source = raw

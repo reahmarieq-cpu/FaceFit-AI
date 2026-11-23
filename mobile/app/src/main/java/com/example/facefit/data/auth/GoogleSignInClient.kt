@@ -1,13 +1,16 @@
 package com.example.facefit.data.auth
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.ClearCredentialException
+import kotlinx.coroutines.CancellationException
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
@@ -16,14 +19,31 @@ class GoogleSignInClient(private val context: Context) {
     private val credentialManager = CredentialManager.create(context)
 
     suspend fun getIdToken(): String {
-        val option = GetSignInWithGoogleOption.Builder(serverClientId()).build()
-        val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
-        val credential = credentialManager.getCredential(context, request).credential
-        check(credential is CustomCredential &&
-            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            "Google sign-in could not be completed. Please try again."
+        val activity = generateSequence(context) { (it as? ContextWrapper)?.baseContext }
+            .take(12).filterIsInstance<Activity>().firstOrNull()
+            ?: error("Google sign-in needs an active app screen. Reopen sign-in and try again.")
+        check(!activity.isFinishing && !activity.isDestroyed) {
+            "The sign-in screen has closed. Reopen it and try again."
         }
-        return GoogleIdTokenCredential.createFrom(credential.data).idToken
+        try {
+            val option = GetSignInWithGoogleOption.Builder(serverClientId()).build()
+            val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+            GoogleAuthDiagnostics.event("credentialRequest")
+            val credential = credentialManager.getCredential(activity, request).credential
+            check(credential is CustomCredential &&
+                credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                "Google returned an unsupported credential. Please try again."
+            }
+            return GoogleIdTokenCredential.createFrom(credential.data).idToken.also {
+                check(it.isNotBlank()) { "Google did not return a sign-in token. Please try again." }
+                GoogleAuthDiagnostics.event("credentialReceived")
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            GoogleAuthDiagnostics.failure("credentialRequest", error)
+            throw error
+        }
     }
 
     // The Google services plugin only generates this resource when a Web OAuth client is configured.

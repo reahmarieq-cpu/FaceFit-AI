@@ -14,7 +14,8 @@ data class OpticalShop(
     val phone: String = "",
     val website: String? = null,
     val openingHours: String = "",
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val logoUrl: String? = null
 ) {
     val hasCoordinates: Boolean
         get() = latitude != null && longitude != null && latitude.isFinite() && longitude.isFinite() &&
@@ -42,13 +43,14 @@ data class OpticalShop(
                 rating = (data["rating"] as? Number)?.toDouble()?.takeIf { it.isFinite() && it in 0.0..5.0 },
                 description = data.text("description"), phone = data.text("phone"),
                 website = publishedHttpsUrl(data["website"]), openingHours = data.text("openingHours"),
-                imageUrl = publishedHttpsUrl(data["imageUrl"])
+                imageUrl = publishedHttpsUrl(data["imageUrl"]),
+                logoUrl = publishedHttpsUrl(data["logoUrl"])
             )
         }
     }
 }
 
-/** A Firebase retailer listing, separate from the app's sample recommendation catalog. */
+/** A published retailer product, separate from the sample recommendation catalog. */
 data class ShopFrame(
     val id: String,
     val retailId: String,
@@ -59,19 +61,66 @@ data class ShopFrame(
     val material: String,
     val color: String,
     val description: String,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val displayName: String = "",
+    val price: Double? = null,
+    val currency: String? = null,
+    val sizeLabel: String = "",
+    val measurementsMm: Map<String, Double> = emptyMap()
 ) {
-    val name: String get() = listOf(brand, model).filter { it.isNotBlank() }.joinToString(" ").ifBlank { "Eyeglass frame" }
+    val name: String get() = displayName.ifBlank {
+        listOf(brand, model).filter { it.isNotBlank() }.joinToString(" ").ifBlank { "Eyeglass frame" }
+    }
 
     companion object {
-        internal fun fromData(id: String, data: Map<String, Any?>, shopId: String): ShopFrame? {
-            if (shopId.isBlank() || data.text("status") != "approved" || data.text("retailId") != shopId) return null
-            return ShopFrame(id, shopId, data.text("brand"), data.text("model"), data.text("type"),
-                data.text("shape"), data.text("material"), data.text("color"), data.text("description"),
-                publishedHttpsUrl(data["frameImage"]))
+        internal fun fromData(id: String, data: Map<String, Any?>, shopId: String): ShopFrame? =
+            parse(id, data, shopId, setOf("approved"))
+
+        internal fun fromRetailerData(id: String, data: Map<String, Any?>, shopId: String): ShopFrame? =
+            parse(id, data, shopId, setOf("live", "approved"))
+
+        private fun parse(id: String, data: Map<String, Any?>, shopId: String, visible: Set<String>): ShopFrame? {
+            val owners = listOf(data.text("retailerId"), data.text("retailId")).filter { it.isNotBlank() }
+            if (shopId.isBlank() || data.text("status") !in visible || owners.isEmpty() || owners.any { it != shopId }) return null
+            return ShopFrame(id, shopId, data.text("brand"), data.text("model"),
+                data.text("type").ifBlank { data.text("frameType") }, data.text("shape"),
+                data.text("material").ifBlank { data.text("frameMaterial") },
+                data.text("color").ifBlank { data.text("frameColor") }, data.text("description"),
+                listOf("productImageUrl", "frameImage", "imageURL", "imageUrl")
+                    .firstNotNullOfOrNull { publishedHttpsUrl(data[it]) },
+                data.text("name").ifBlank { data.text("frameName") },
+                data["price"].number()?.takeIf { it >= 0.0 },
+                data.text("currency").uppercase(java.util.Locale.ROOT).takeIf {
+                    it.length == 3 && runCatching { java.util.Currency.getInstance(it) }.isSuccess
+                }, data.text("size"), frameMeasurements(data["measurements"]))
         }
     }
 }
+
+/** Route keys only address product documents in the two supported catalogs. */
+internal fun parseShopFrameKey(key: String): Pair<String, String>? {
+    val parts = key.split('/', limit = 2)
+    if (parts.size != 2 || parts[0] !in setOf("retailer", "catalog") ||
+        parts[1].isBlank() || '/' in parts[1] || parts[1] in setOf(".", "..")) return null
+    return parts[0] to parts[1]
+}
+
+private fun Any?.number(): Double? = when (this) {
+    is Number -> toDouble()
+    is String -> trim().toDoubleOrNull()
+    else -> null
+}?.takeIf { it.isFinite() }
+
+private fun frameMeasurements(value: Any?): Map<String, Double> {
+    val data = value as? Map<*, *> ?: return emptyMap()
+    return linkedMapOf("frameWidthMm" to "Frame width", "lensWidthMm" to "Lens width",
+        "lensHeightMm" to "Lens height", "bridgeWidthMm" to "Bridge width", "templeLengthMm" to "Temple length")
+        .mapNotNull { (key, label) -> data[key].number()?.takeIf { it > 0.0 }?.let { label to it } }.toMap()
+}
+
+internal fun mergeShopFrames(vararg sources: List<ShopFrame>): List<ShopFrame> = sources.flatMap { it }
+    .distinctBy { it.id }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
+
 
 private fun Map<String, Any?>.text(key: String): String = (this[key] as? String)?.trim().orEmpty()
 
