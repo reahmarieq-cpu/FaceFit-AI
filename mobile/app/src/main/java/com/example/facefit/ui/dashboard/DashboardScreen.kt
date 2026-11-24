@@ -3,10 +3,8 @@ package com.example.facefit.ui.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -72,8 +70,8 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp)
+                // Everything fits on one screen: no scrolling. The card grid takes the space left.
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             // Header
             Row(
@@ -111,11 +109,11 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Scan banner: text and CTA stay readable beside the decorative glasses.
             Box(
-                modifier = Modifier.fillMaxWidth().height(200.dp)
+                modifier = Modifier.fillMaxWidth().height(176.dp)
                     .softContainerShadow(RoundedCornerShape(24.dp))
                     .clip(RoundedCornerShape(24.dp))
                     .background(Brush.horizontalGradient(
@@ -161,7 +159,7 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Explore",
@@ -170,47 +168,42 @@ fun DashboardScreen(
                 color = FaceFitTextPrimary
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Grid
-            Row(modifier = Modifier.fillMaxWidth()) {
-                FaceFitCard(
-                    title = "Frame Catalog",
-                    description = "Browse & try on",
-                    icon = Icons.Outlined.AutoAwesome,
-                    iconBackgroundColor = FaceFitTeal,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onNavigate("frameMatches") }
-                )
-                FaceFitCard(
-                    title = "Favorites",
-                    description = "Saved frames",
-                    icon = Icons.Outlined.Favorite,
-                    iconBackgroundColor = FaceFitPink,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onNavigate("favorites") }
-                )
-            }
             Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                FaceFitCard(
-                    title = "Nearby Shops",
-                    description = "Optical stores",
-                    icon = Icons.Outlined.LocationOn,
-                    iconBackgroundColor = FaceFitBlue,
-                    modifier = Modifier.weight(1f).clickable { onNavigate("nearbyShops") }
-                )
-                FaceFitCard(
-                    title = "My Profile",
-                    description = "Manage account",
-                    icon = Icons.Outlined.Person,
-                    iconBackgroundColor = FaceFitOrange,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onNavigate("profile") }
-                )
+
+            // Grid: two rows share the remaining height, so the page never needs scrolling.
+            // Each card fills its row (capped on tall phones) and shows only what fits.
+            Column(Modifier.fillMaxWidth().weight(1f).padding(bottom = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                listOf(
+                    listOf(Triple("Frame Catalog", "Browse & try on", "frameMatches"),
+                        Triple("Favorites", "Saved frames", "favorites")),
+                    listOf(Triple("Nearby Shops", "Optical stores", "nearbyShops"),
+                        Triple("My Profile", "Manage account", "profile"))
+                ).forEach { row ->
+                    Row(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 150.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        row.forEach { (title, description, route) ->
+                            FaceFitCard(
+                                title = title,
+                                description = description,
+                                icon = when (route) {
+                                    "frameMatches" -> Icons.Outlined.AutoAwesome
+                                    "favorites" -> Icons.Outlined.Favorite
+                                    "nearbyShops" -> Icons.Outlined.LocationOn
+                                    else -> Icons.Outlined.Person
+                                },
+                                iconBackgroundColor = when (route) {
+                                    "frameMatches" -> FaceFitTeal
+                                    "favorites" -> FaceFitPink
+                                    "nearbyShops" -> FaceFitBlue
+                                    else -> FaceFitOrange
+                                },
+                                modifier = Modifier.weight(1f).fillMaxHeight(),
+                                onClick = { onNavigate(route) }
+                            )
+                        }
+                    }
+                }
             }
         }
     }

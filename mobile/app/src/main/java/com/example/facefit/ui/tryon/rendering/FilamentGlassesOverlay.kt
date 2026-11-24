@@ -149,6 +149,7 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
             if (frame != null && face?.isFaceDetected == true && displayed.face != null) {
                 renderTrackedPose(frame, frameTimeNanos, trackingNow)
             } else {
+                clearShownMesh()
                 session?.render(frameTimeNanos, trackingState.copy(metrics = displayed.face,
                     scale = 1f, heightOffset = 0f), face,
                     trackingNow = trackingNow, forceSubmit = displayed.face != null)
@@ -161,12 +162,59 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
         }
     }
 
-    private fun renderTrackedPose(frame: VtoMotionFeed.Frame, frameNanos: Long,
+    private var shiftsApplied = 0
+    private var shiftAgeNanos = 0L
+    private var shiftFramesRendered = 0
+    private var shiftLogAt = 0L
+
+    private var shownFrame: VtoMotionFeed.Frame? = null
+    private var shownShift: VtoMotionFeed.ShiftSample? = null
+
+    internal fun clearShownMesh() { shownFrame = null; shownShift = null }
+
+    private fun renderTrackedPose(latest: VtoMotionFeed.Frame, frameNanos: Long,
         trackingNow: Long) {
+        // Only a shift measured against this exact mesh frame may move it.
+        val sample = motionFeed?.shift
+        val matching = sample?.takeIf { latest.referenceId != 0L && it.shift.referenceId == latest.referenceId }
+        val previous = shownFrame
+        val frame: VtoMotionFeed.Frame
+        val shift: VtoMotionFeed.ShiftSample?
+        when (VtoMeshChoice.pick(latestIsShown = previous === latest, latestHasMatch = matching != null,
+            latestTracked = latest.referenceId != 0L, hasShown = previous != null,
+            waitedNanos = System.nanoTime() - latest.deliveredAtNanos)) {
+            VtoMeshChoice.Pick.LATEST_WITH_NEW_SHIFT -> {
+                frame = latest; shift = matching
+                shownFrame = latest; shownShift = matching
+            }
+            // The next mesh's first match is published just before that mesh reaches the screen.
+            // Dropping the correction for that frame flicked the glasses ~300 ms back.
+            VtoMeshChoice.Pick.LATEST_WITH_LAST_SHIFT -> { frame = latest; shift = shownShift }
+            // A new mesh without its first match yet: keep the tracked previous mesh briefly.
+            VtoMeshChoice.Pick.SHOWN_WITH_LAST_SHIFT -> { frame = previous!!; shift = shownShift }
+            VtoMeshChoice.Pick.LATEST_UNTRACKED -> {
+                frame = latest; shift = null
+                shownFrame = latest; shownShift = null
+            }
+        }
         session?.render(frameNanos,
             trackingState.copy(metrics = frame.face, scale = 1f, heightOffset = 0f), frame.face,
             trackingNow = trackingNow, forceSubmit = true, trackedFrame = frame,
+            frameShift = shift?.shift,
+            sampleNanos = shift?.capturedElapsedNanos,
             )
+        if (com.example.facefit.BuildConfig.DEBUG && android.util.Log.isLoggable("FaceFitVTOTiming", android.util.Log.VERBOSE)) {
+            shiftFramesRendered++
+            if (shift != null) { shiftsApplied++; shiftAgeNanos += trackingNow - shift.capturedElapsedNanos }
+            if (shiftLogAt == 0L) shiftLogAt = trackingNow
+            if (trackingNow - shiftLogAt >= 1_000_000_000L) {
+                android.util.Log.i("FaceFitVTODiag", "event=shiftRender renderedFrames=$shiftFramesRendered " +
+                    "shiftedPercent=${shiftsApplied * 100 / shiftFramesRendered} " +
+                    "meanShiftAgeMs=${if (shiftsApplied > 0) shiftAgeNanos / 1e6 / shiftsApplied else Double.NaN} " +
+                    "meshAgeMs=${frame.measuredLatencyNanos / 1e6}")
+                shiftFramesRendered = 0; shiftsApplied = 0; shiftAgeNanos = 0L; shiftLogAt = trackingNow
+            }
+        }
     }
 
     private fun report(error: Exception) {
@@ -175,6 +223,7 @@ internal class TrackedGlassesView(context: Context, private val owner: Lifecycle
     }
 
     private fun release() {
+        clearShownMesh()
         running = false
         thermal.close()
         follower.reset()
@@ -228,6 +277,14 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
     private var rawPoseMatrix: FloatArray? = null
     private var poseMatrix: FloatArray? = null
     private val displayPose = VtoDisplayPose()
+    private val eyePoints = FloatArray(8)
+    private val shiftedMatrix = FloatArray(16)
+    private val meshCorrection = VtoMeshCorrection()
+    private var loggedPlacement: VtoMotionFeed.Frame? = null
+    private val motionLead = VtoMotionLead()
+    private val lead = FloatArray(2)
+    private val correction = FloatArray(2)
+    private val correctedMatrix = FloatArray(16)
 
     fun resetPoseStabilizer() {
         displayPose.reset()
@@ -305,7 +362,9 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         diagnosticFace: com.example.facefit.facefit.analysis.FaceAnalyzer.FaceMetrics? = state.metrics,
         trackingNow: Long = SystemClock.elapsedRealtimeNanos(),
         forceSubmit: Boolean = false,
-        trackedFrame: VtoMotionFeed.Frame? = null): Boolean {
+        trackedFrame: VtoMotionFeed.Frame? = null,
+        frameShift: com.example.facefit.facefit.tryon.tracking.VtoFrameShiftTracker.Shift? = null,
+        sampleNanos: Long? = null): Boolean {
         if (com.example.facefit.BuildConfig.DEBUG &&
             android.util.Log.isLoggable("FaceFitBenchHide", android.util.Log.VERBOSE)) {
             return false
@@ -343,7 +402,12 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
                 hasMeshInverse = matrix != null && GlMatrix.invertM(inverseMeshMatrix, 0, matrix, 0)
                 occluder?.requestMesh(mesh, width, height, cachedMeshRig, inverseMeshMatrix.takeIf { hasMeshInverse })
             }
-            rawPoseMatrix = cachedMeshMatrix
+            val meshMatrix = cachedMeshMatrix
+            rawPoseMatrix = if (frameShift != null && meshMatrix != null &&
+                VtoShiftedPose.apply(meshMatrix, frameShift, trackedFrame.toPreview, height.toFloat(), eyePoints, shiftedMatrix)) {
+                // Moved, tilted and resized by how both eyes moved since the mesh's frame.
+                shiftedMatrix
+            } else meshMatrix
             poseFace = state.metrics
         } else {
             if (cachedMesh != null) {
@@ -379,12 +443,31 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
                 poseScale=state.scale;poseOffset=state.heightOffset
             }
         }
-        val rawMatrix = rawPoseMatrix
+        val baseMatrix = rawPoseMatrix
+        val anchorForCorrection = modelAnchor
+        val rawMatrix = if (trackedFrame != null && baseMatrix != null && anchorForCorrection != null) {
+            val at = com.example.facefit.ui.tryon.tracking.benchAnchor(baseMatrix, anchorForCorrection)
+            // Steps under ~8% of the view are tracking disagreement to blend; larger ones are real.
+            meshCorrection.apply(trackedFrame.referenceId, at.x, at.y, trackingNow, width * .08f, correction)
+            // Fill in display frames between ~29 Hz positions and hide part of their age.
+            if (sampleNanos != null) motionLead.apply(sampleNanos, at.x + correction[0], at.y + correction[1], trackingNow, lead)
+            else { motionLead.reset(); lead[0] = 0f; lead[1] = 0f }
+            baseMatrix.copyInto(correctedMatrix)
+            correctedMatrix[12] += correction[0] + lead[0]
+            correctedMatrix[13] += correction[1] + lead[1]
+            correctedMatrix
+        } else {
+            meshCorrection.reset()
+            motionLead.reset()
+            baseMatrix
+        }
         fun applyStabilizedPose() {
             val shown = if (rawMatrix == null) {
                 displayPose.reset()
                 null
-            } else displayPose.sample(rawMatrix, requireNotNull(modelAnchor), trackingNow)
+            } else displayPose.sample(rawMatrix, requireNotNull(modelAnchor), trackingNow,
+                // Eye span on screen sets how much motion counts as "still" for smoothing.
+                ((if (trackedFrame != null) cachedMeshRig else poseRig)?.size ?: 0f))
             if (trackedFrame != null) occluder?.presentPreparedMesh(shown)
             if (shown !== poseMatrix && (shown == null || poseMatrix?.contentEquals(shown) != true)) {
                 poseMatrix = shown
@@ -393,6 +476,34 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
             }
         }
         applyStabilizedPose()
+        if (com.example.facefit.BuildConfig.DEBUG && android.util.Log.isLoggable("FaceFitVTOPose", android.util.Log.VERBOSE)) {
+            // One line per display frame: shown bridge point, target bridge point, size and tilt.
+            val shown = poseMatrix
+            val anchor = modelAnchor
+            if (shown != null && anchor != null && rawMatrix != null) {
+                val s = com.example.facefit.ui.tryon.tracking.benchAnchor(shown, anchor)
+                val t = com.example.facefit.ui.tryon.tracking.benchAnchor(rawMatrix, anchor)
+                val zLength = kotlin.math.sqrt(shown[8] * shown[8] + shown[9] * shown[9] + shown[10] * shown[10])
+                android.util.Log.v("FaceFitVTOPose", "t=${trackingNow / 1_000_000} mesh=${trackedFrame?.referenceId ?: 0} " +
+                    "eyes=${frameShift != null} sx=${s.x} sy=${s.y} tx=${t.x} ty=${t.y} " +
+                    "scale=${kotlin.math.hypot(shown[0], shown[1])} roll=${kotlin.math.atan2(shown[1], shown[0])} " +
+                    "yaw=${kotlin.math.asin((shown[8] / zLength).coerceIn(-1f, 1f))} pitch=${kotlin.math.asin((shown[9] / zLength).coerceIn(-1f, 1f))}")
+                // Once per mesh: where the glasses' centre lands vs the nose-bridge points of that same mesh.
+                val mesh = trackedFrame
+                val meshMatrix = cachedMeshMatrix
+                if (mesh != null && meshMatrix != null && mesh !== loggedPlacement && mesh.face.landmarks.size >= 468) {
+                    loggedPlacement = mesh
+                    val m = com.example.facefit.ui.tryon.tracking.benchAnchor(meshMatrix, anchor)
+                    fun world(i: Int) = mesh.face.landmarks[i].let { it.x * width to height - it.y * height }
+                    val (b168x, b168y) = world(168); val (b6x, b6y) = world(6)
+                    val (ax, ay) = world(33); val (bx, by) = world(263)
+                    val zl = kotlin.math.sqrt(meshMatrix[8] * meshMatrix[8] + meshMatrix[9] * meshMatrix[9] + meshMatrix[10] * meshMatrix[10])
+                    android.util.Log.v("FaceFitVTOPose", "placement mesh=${mesh.referenceId} ax=${m.x} ay=${m.y} " +
+                        "b168x=$b168x b168y=$b168y b6x=$b6x b6y=$b6y eyeSpan=${kotlin.math.hypot(bx - ax, by - ay)} " +
+                        "myaw=${kotlin.math.asin((meshMatrix[8] / zl).coerceIn(-1f, 1f))} mpitch=${kotlin.math.asin((meshMatrix[9] / zl).coerceIn(-1f, 1f))}")
+                }
+            }
+        }
         if (!pendingFrame && !forceSubmit) return false
         val show = poseMatrix != null
         if (show != visible) {
@@ -440,5 +551,21 @@ internal class TrackedGlassesSession(private val calibration: VtoAutomaticFit.Mo
         entities.destroy(cameraEntity)
         engine.destroyRenderer(renderer)
         engine.destroy()
+    }
+}
+
+/** How long the previous tracked mesh may stay on screen while a new mesh waits for its first match. */
+private const val MESH_HOLD_NANOS = 350_000_000L
+
+/** Which mesh and eye correction to draw on a display frame. Pure, so it can be unit-tested. */
+internal object VtoMeshChoice {
+    enum class Pick { LATEST_WITH_NEW_SHIFT, LATEST_WITH_LAST_SHIFT, SHOWN_WITH_LAST_SHIFT, LATEST_UNTRACKED }
+
+    fun pick(latestIsShown: Boolean, latestHasMatch: Boolean, latestTracked: Boolean, hasShown: Boolean,
+        waitedNanos: Long): Pick = when {
+        latestHasMatch -> Pick.LATEST_WITH_NEW_SHIFT
+        latestIsShown -> Pick.LATEST_WITH_LAST_SHIFT
+        hasShown && latestTracked && waitedNanos <= MESH_HOLD_NANOS -> Pick.SHOWN_WITH_LAST_SHIFT
+        else -> Pick.LATEST_UNTRACKED
     }
 }

@@ -80,6 +80,9 @@ dependencies {
     // MediaPipe
     implementation(libs.mediapipe.tasks.vision)
     implementation("com.google.ai.edge.litert:litert:1.4.2")
+    // Try-on only: GPU option for the light face mesh (VtoLightFaceMesh); used when measured faster.
+    implementation("com.google.ai.edge.litert:litert-gpu:1.4.2")
+    implementation("com.google.ai.edge.litert:litert-gpu-api:1.4.2")
     implementation("org.opencv:opencv:4.12.0")
 
     // Google account chooser and secure ID-token exchange with Firebase Auth.

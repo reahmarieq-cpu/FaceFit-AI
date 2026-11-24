@@ -15,8 +15,15 @@ data class OpticalShop(
     val website: String? = null,
     val openingHours: String = "",
     val imageUrl: String? = null,
-    val logoUrl: String? = null
+    val logoUrl: String? = null,
+    /** Shop had an active FaceFit subscription when the website's shop sync last ran. */
+    val subscribed: Boolean = false,
+    /** When that subscription ends (epoch ms), or null when no end date was published. */
+    val subscribedUntilMs: Long? = null
 ) {
+    /** Subscribed right now: published as subscribed and its end date has not passed. */
+    fun isSubscribedAt(nowMs: Long): Boolean = subscribed && (subscribedUntilMs == null || subscribedUntilMs > nowMs)
+
     val hasCoordinates: Boolean
         get() = latitude != null && longitude != null && latitude.isFinite() && longitude.isFinite() &&
             latitude in -90.0..90.0 && longitude in -180.0..180.0
@@ -44,7 +51,9 @@ data class OpticalShop(
                 description = data.text("description"), phone = data.text("phone"),
                 website = publishedHttpsUrl(data["website"]), openingHours = data.text("openingHours"),
                 imageUrl = publishedHttpsUrl(data["imageUrl"]),
-                logoUrl = publishedHttpsUrl(data["logoUrl"])
+                logoUrl = publishedHttpsUrl(data["logoUrl"]),
+                subscribed = data["subscribed"] == true,
+                subscribedUntilMs = epochMillis(data["subscribedUntil"])
             )
         }
     }
@@ -121,6 +130,13 @@ private fun frameMeasurements(value: Any?): Map<String, Double> {
 internal fun mergeShopFrames(vararg sources: List<ShopFrame>): List<ShopFrame> = sources.flatMap { it }
     .distinctBy { it.id }.sortedBy { it.name.lowercase(java.util.Locale.ROOT) }
 
+
+/** Firestore Timestamp or Date to epoch ms; anything else is treated as no end date. */
+private fun epochMillis(value: Any?): Long? = when (value) {
+    is com.google.firebase.Timestamp -> value.toDate().time
+    is java.util.Date -> value.time
+    else -> null
+}
 
 private fun Map<String, Any?>.text(key: String): String = (this[key] as? String)?.trim().orEmpty()
 

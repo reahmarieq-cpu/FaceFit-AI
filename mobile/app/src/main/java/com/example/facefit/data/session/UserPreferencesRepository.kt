@@ -121,6 +121,18 @@ class UserPreferencesRepository(
         preferences.edit().putBoolean("historyEnabled", enabled).apply()
     }
 
+    /**
+     * Offload: removes this account's scan from the phone but keeps it restorable. Unlike
+     * [clearScan] there is no tombstone, so the latest cloud scan comes back after the next sign-in.
+     */
+    @Synchronized
+    fun clearLocalCopy() {
+        diagnosticsFile.delete()
+        val prefix = accountPrefix()
+        preferences.edit().remove(prefix + ".shape").remove(prefix + ".result").remove(prefix + ".time")
+            .putBoolean(prefix + ".restoreCloud", true).remove(prefix + ".clearedAt").apply()
+    }
+
     /** Tombstones prevent the cloud listener from restoring an intentionally cleared scan. */
     @Synchronized
     fun clearScan() {

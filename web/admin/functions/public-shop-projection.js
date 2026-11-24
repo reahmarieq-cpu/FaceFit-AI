@@ -1,12 +1,28 @@
 "use strict";
 
 // Public shop data only. Retailer permits, owners and application contacts stay private.
-function projectPublicShop(retailer) {
+// From the subscription only "subscribed" (yes/no) and its end date "subscribedUntil" are
+// published; the app ranks shops by them. Subscribed means status "demo_active" and not expired.
+// subscribedUntil lets the app stop treating a shop as subscribed once that date passes,
+// even though no document changes at that moment.
+function projectPublicShop(retailer, subscription = null, nowMs = Date.now()) {
   if (!retailer || retailer.status !== "approved") return null;
   const text = value => typeof value === "string" ? value.trim().slice(0, 500) : "";
   const name = text(retailer.retailName);
   if (!name) return null;
-  const shop = {name, address: text(retailer.retailAddress), status: "approved"};
+  const shop = {name, address: text(retailer.retailAddress), status: "approved", subscribed: false};
+  if (subscription?.status === "demo_active") {
+    const expiresAt = subscription.expiresAt;
+    if (expiresAt == null) shop.subscribed = true; // No end date recorded.
+    else {
+      const expiresMs = timestampMillis(expiresAt);
+      // An unreadable end date never counts as subscribed.
+      if (expiresMs !== null && expiresMs > nowMs) {
+        shop.subscribed = true;
+        shop.subscribedUntil = expiresAt;
+      }
+    }
+  }
   const logoUrl = [retailer.logoUrl, retailer.logo, retailer.profileImageUrl, retailer.profileImage]
     .map(publicLogoUrl).find(Boolean);
   if (logoUrl) shop.logoUrl = logoUrl;
@@ -25,6 +41,13 @@ function projectPublicShop(retailer) {
       retailer.rating >= 0 && retailer.rating <= 5 &&
       Number.isInteger(retailer.ratingCount) && retailer.ratingCount > 0) shop.rating = retailer.rating;
   return shop;
+}
+
+// Firestore Timestamp (or Date) to milliseconds; anything else is unreadable.
+function timestampMillis(value) {
+  const ms = typeof value?.toMillis === "function" ? value.toMillis()
+    : value instanceof Date ? value.getTime() : NaN;
+  return Number.isFinite(ms) ? ms : null;
 }
 
 // Accept published business image URLs, never local paths or embedded data.

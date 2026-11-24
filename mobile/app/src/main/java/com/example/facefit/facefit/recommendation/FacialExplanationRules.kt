@@ -9,7 +9,9 @@ internal class FacialExplanationRules private constructor(
     private val rules: JSONObject,
     private val suggestedStyles: JSONObject
 ) {
-    data class Copy(val headline: String, val explanation: String, val suggestedStyle: String)
+    /** [noticed] = "What we noticed", [styles] = "Styles to explore" (FaceFitAI_ExplanationAnalysis.csv). */
+    data class Copy(val headline: String, val explanation: String, val suggestedStyle: String,
+        val noticed: String = explanation, val styles: String? = null)
 
     fun find(shape: String?, jawline: String?, upperFace: String?, eyeSpacing: String?): Copy? {
         if (shape == null || jawline == null || upperFace == null || eyeSpacing == null) return null
@@ -17,10 +19,13 @@ internal class FacialExplanationRules private constructor(
             .joinToString("_").lowercase(Locale.ROOT).replace('-', '_')
         val entry = rules.optJSONObject(key) ?: return null
         val headline = entry.optString("headline")
-        val explanation = entry.optString("explanation")
+        val noticed = entry.optString("noticed")
+        val styles = entry.optString("styles").takeIf { it.isNotBlank() }
         val style = suggestedStyles.optString(shape)
-        if (headline.isBlank() || explanation.isBlank() || style.isBlank()) return null
-        return Copy(headline, explanation, style)
+        if (headline.isBlank() || noticed.isBlank() || style.isBlank()) return null
+        // Full text (sharing, fallbacks) = "What we noticed" + "Styles to explore".
+        val explanation = listOfNotNull(noticed, styles).joinToString("\n\n")
+        return Copy(headline, explanation, style, noticed, styles)
     }
 
     companion object {

@@ -4,10 +4,13 @@ const assert = require("node:assert/strict");
 const {publishCurrentShop} = require("./public-shop-sync");
 const {main} = require("./backfill-public-shops");
 
-function fixture(data) {
+function fixture(data, subscription = null) {
   const actions = [];
   const transaction = {
-    get: async source => { assert.equal(source,"retailers/shop-a"); return {exists:data !== null,data:() => data}; },
+    get: async source => {
+      if (source === "subscriptions/shop-a") return {exists:subscription !== null,data:() => subscription};
+      assert.equal(source,"retailers/shop-a"); return {exists:data !== null,data:() => data};
+    },
     set: (target,value) => actions.push(["set",target,value]),
     delete: target => actions.push(["delete",target])
   };
@@ -16,7 +19,13 @@ function fixture(data) {
 test("sync uses the latest retailer and same ID, replacing stale public data", async () => {
   const {db,actions} = fixture({status:"approved",retailName:"Current",shopLocation:{lat:10,lng:123},permit:"private"});
   assert.equal(await publishCurrentShop(db,"shop-a",() => "server-time"),true);
-  assert.deepEqual(actions,[["set","publicShops/shop-a",{name:"Current",address:"",status:"approved",latitude:10,longitude:123,updatedAt:"server-time"}]]);
+  assert.deepEqual(actions,[["set","publicShops/shop-a",{name:"Current",address:"",status:"approved",subscribed:false,latitude:10,longitude:123,updatedAt:"server-time"}]]);
+});
+test("sync reads the shop's subscription and publishes only the yes/no flag", async () => {
+  const {db,actions} = fixture({status:"approved",retailName:"Current"},{status:"demo_active",planType:"bundle"});
+  assert.equal(await publishCurrentShop(db,"shop-a",() => "server-time"),true);
+  assert.equal(actions[0][2].subscribed,true);
+  assert.equal(actions[0][2].planType,undefined);
 });
 test("delayed sync cannot resurrect a deleted or unapproved retailer", async () => {
   for (const value of [null,{status:"rejected",retailName:"A"},{status:"pending",retailName:"A"}]) {

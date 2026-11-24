@@ -40,7 +40,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.facefit.facefit.analysis.FaceAnalyzer
 import com.example.facefit.facefit.camera.TrackingBackend
+import com.example.facefit.facefit.camera.VtoBackendProbe
+import com.example.facefit.facefit.tryon.tracking.VtoFrameShiftTracker
 import com.example.facefit.facefit.tryon.tracking.VtoLandmarkStabilizer
+import com.example.facefit.facefit.tryon.tracking.VtoThumbnail
 import com.example.facefit.ui.tryon.tracking.VtoDiagnostics
 import com.example.facefit.ui.tryon.tracking.VtoMotionFeed
 import com.google.mediapipe.framework.image.BitmapImageBuilder
@@ -101,11 +104,27 @@ fun TryOnCameraPreview(
         var cameraPreview: Preview?=null
         var cameraAnalysis: ImageAnalysis?=null
         var tracker: VtoPreviewFaceTracker?=null // All native tracker access stays on executor.
-        var activeBackend=backend ?: preferredVtoBackend()
+        // The faster backend measured on this phone is remembered; until then, measure it.
+        val backendPrefs=context.getSharedPreferences(VTO_PREFS, Context.MODE_PRIVATE)
+        val backendKey="trackingBackend:${Build.FINGERPRINT}"
+        val measuredBackend=backendPrefs.getString(backendKey,null)
+            ?.let { saved -> TrackingBackend.entries.firstOrNull { it.name==saved } }
+        var activeBackend=backend ?: measuredBackend ?: preferredVtoBackend()
+        var probe=if(backend==null && measuredBackend==null) VtoBackendProbe(activeBackend) else null
         val rgba=VtoRgbaBuffer()
         val previewCapture=VtoPreviewCapture(maxOf(maxInputDimension, VtoHardwareBudget.DEFAULT_ANALYSIS_DIMENSION))
         val validator=VtoLandmarkStabilizer()
         val busy=AtomicBoolean(false)
+        // Camera-rate eye-region tracking fills the gaps between slow face-mesh results.
+        val shiftTracker=VtoFrameShiftTracker()
+        var lastMeshThumbId=0L // Tracking worker only.
+        var handoverCount=0
+        var handoverAlongSum=0f
+        var handoverAbsSum=0f
+        var handoverLogAt=0L
+        val latestThumb=AtomicReference<VtoThumbnail?>(null)
+        val latestThumbAt=java.util.concurrent.atomic.AtomicLong(0L) // Capture-side clock of latestThumb.
+        val thumbIds=java.util.concurrent.atomic.AtomicLong(0L)
 
         val deviceName = "${Build.MANUFACTURER} ${Build.MODEL}"
         fun report(error: Throwable) {
@@ -127,11 +146,42 @@ fun TryOnCameraPreview(
             val old=tracker; tracker=null
             runCatching { old?.close() }.onFailure { Log.w("FaceFitVTO","GPU tracker cleanup failed",it) }
             activeBackend=TrackingBackend.CPU
+            probe=null // GPU failed outright; nothing left to compare.
             main.post { if(!disposed.get()) fallbackCallback("Using compatible face tracking") }
             tracker=createTracker(TrackingBackend.CPU)
         }
-        fun detect(bitmap: Bitmap, stamp: Long, crop: Rect?=null, mirror: Boolean=false): FaceAnalyzer.FaceMetrics {
-            try { return requireNotNull(tracker).detect(bitmap,stamp,crop,mirror) }
+        fun switchBackend(to: TrackingBackend) {
+            val old=tracker; tracker=null
+            runCatching { old?.close() }.onFailure { Log.w("FaceFitVTO","Tracker cleanup failed",it) }
+            val previous=activeBackend
+            activeBackend=to
+            tracker=try { createTracker(to) } catch(error: Exception) {
+                Log.w("FaceFitVTO","Could not start $to tracking; staying on $previous",error)
+                probe=null
+                activeBackend=previous
+                createTracker(previous)
+            }
+        }
+        /** Worker thread: feeds the probe and swaps detectors when the other backend is worth trying. */
+        fun probeAfter(result: FaceAnalyzer.FaceMetrics) {
+            val current=probe ?: return
+            val modelMs=tracker?.lastTiming?.modelMs ?: return
+            when(val decision=current.sample(activeBackend,modelMs,result.isFaceDetected)) {
+                VtoBackendProbe.Decision.Continue -> Unit
+                is VtoBackendProbe.Decision.Switch -> {
+                    Log.i("FaceFitVTODiag","event=backendProbe from=$activeBackend to=${decision.to} reason=slowLandmarkModel")
+                    switchBackend(decision.to)
+                }
+                is VtoBackendProbe.Decision.Settled -> {
+                    probe=null
+                    Log.i("FaceFitVTODiag","event=backendSettled backend=${decision.backend} medianModelMs=${decision.medians}")
+                    if(decision.backend!=activeBackend) switchBackend(decision.backend)
+                    backendPrefs.edit().putString(backendKey,activeBackend.name).apply()
+                }
+            }
+        }
+        fun detect(bitmap: Bitmap, stamp: Long, crop: Rect?=null, mirror: Boolean=false, motion: FloatArray?=null): FaceAnalyzer.FaceMetrics {
+            try { return requireNotNull(tracker).detect(bitmap,stamp,crop,mirror,motion) }
             catch(error: Exception) {
                 if(activeBackend!=TrackingBackend.GPU) throw error
                 cpuFallback(error)
@@ -144,7 +194,8 @@ fun TryOnCameraPreview(
             val started: Long,val captured: Long,val inferenceStart: Long,val finished: Long,
             val backend: TrackingBackend,val timing: VtoDiagnostics.Detection?,
             val width: Int,val height: Int,val sourceMode: Int,
-            val captureElapsedNs: Long,val sensorTimestampNs: Long?,val sensorAgeMs: Double?)
+            val captureElapsedNs: Long,val sensorTimestampNs: Long?,val sensorAgeMs: Double?,
+            val referenceId: Long = 0L)
         val pending=AtomicReference<Completed?>(null)
         val deliveryScheduled=AtomicBoolean(false)
         lateinit var fallback: (String)->Unit
@@ -194,7 +245,7 @@ fun TryOnCameraPreview(
                         val estimate = motionFeed.measure(inferenceMs.coerceAtLeast(0L) * 1_000_000L, sampleNanos, ageNanos, validated.isFaceDetected)
                         publishResult = motionFeed.publish(VtoMotionFeed.Frame(validated,
                             data.result.imageWidth, data.result.imageHeight,
-                            transform, ageNanos, deliveryNanos, estimate))
+                            transform, ageNanos, deliveryNanos, estimate, referenceId = data.referenceId))
                         VtoDiagnostics.faceState(validated.isFaceDetected, publishResult, motionFeed.faceState.name, estimate.slowed)
                     }
                     if (publishResult) {
@@ -227,6 +278,7 @@ fun TryOnCameraPreview(
                             enqueue(Completed(result,null,started,captured,inferenceStart,SystemClock.uptimeMillis(),
                                 activeBackend,tracker?.lastTiming,tracker?.inputWidth ?: 0, tracker?.inputHeight ?: 0,
                                 2,elapsed,null,null))
+                            probeAfter(result)
                         }
                     } catch(error: Exception) { report(error) }
                     catch(error: LinkageError) { report(error) }
@@ -320,9 +372,39 @@ fun TryOnCameraPreview(
         data class AnalysisFrame(
             val bitmap: Bitmap,
             val crop: Rect,
+            val thumb: VtoThumbnail?,
         )
 
-        fun copyAnalysisFrame(image: ImageProxy): AnalysisFrame? = try {
+        /** Worker thread: the new mesh's eye region becomes the reference for camera-rate tracking. */
+        fun updateShiftReference(result: FaceAnalyzer.FaceMetrics, thumb: VtoThumbnail?) {
+            val feed=motionFeed ?: return
+            val points=result.landmarks
+            if(thumb==null || !result.isFaceDetected || points.size<468 || result.imageWidth<=0) {
+                shiftTracker.clear(); feed.publishShift(null,0L); return
+            }
+            // Eye centres: midpoints of each eye's outer and inner corners.
+            val first=points[33]; val firstInner=points[133]
+            val second=points[263]; val secondInner=points[362]
+            if(shiftTracker.setReference(thumb,(first.x+firstInner.x)*.5f,(first.y+firstInner.y)*.5f,
+                    (second.x+secondInner.x)*.5f,(second.y+secondInner.y)*.5f)) {
+                if(logCadence) {
+                    val along=shiftTracker.lastHandoverAlongPx
+                    val error=shiftTracker.lastHandoverErrorPx
+                    if(along.isFinite()) { handoverCount++; handoverAlongSum+=along; handoverAbsSum+=error }
+                    val now=SystemClock.uptimeMillis()
+                    if(now-handoverLogAt>=1000L && handoverCount>0) {
+                        Log.i("FaceFitVTODiag","event=meshHandover movingSamples=$handoverCount " +
+                            "meanAlongMotionPx=${handoverAlongSum/handoverCount} meanErrorPx=${handoverAbsSum/handoverCount}")
+                        handoverCount=0; handoverAlongSum=0f; handoverAbsSum=0f; handoverLogAt=now
+                    }
+                }
+                // Catch up immediately with the newest camera frame, before the mesh is shown.
+                val newest=latestThumb.get(); val newestAt=latestThumbAt.get()
+                newest?.let { shiftTracker.track(it) }?.let { feed.publishShift(it,newestAt) }
+            } else feed.publishShift(null,0L)
+        }
+
+        fun copyAnalysisFrame(image: ImageProxy, thumb: VtoThumbnail?): AnalysisFrame? = try {
             if (disposed.get() || unavailable.get() || !resumed.get() || mode.get() != 1) {
                 null
 
@@ -330,7 +412,7 @@ fun TryOnCameraPreview(
                 main.post { fallback("unsupportedAnalysisBuffer") }
                 null
             } else {
-                AnalysisFrame(rgba.copy(image), Rect(image.cropRect))
+                AnalysisFrame(rgba.copy(image), Rect(image.cropRect), thumb)
             }
         } finally {
             // The inference worker only sees the copied bitmap and metadata.
@@ -342,6 +424,10 @@ fun TryOnCameraPreview(
         var acceptedInWindow = 0
         var lastAcceptedNs: Long? = null
         var lastIntakeLogNs = 0L
+        var shiftFrames = 0
+        var shiftAccepted = 0
+        var shiftNanos = 0L
+        var shiftLogNs = 0L
         val analyzer = ImageAnalysis.Analyzer { image ->
             if (disposed.get() || unavailable.get() || !resumed.get() || mode.get() != 1 || !trackerReady.get()) {
                 image.close()
@@ -354,6 +440,33 @@ fun TryOnCameraPreview(
                 (elapsed - timestamp) / 1_000_000.0
             } else null
 
+            // Every frame, including those the busy tracker skips: follow the eye region.
+            val thumb = if (motionFeed != null && image.imageInfo.rotationDegrees == 0 &&
+                image.planes.firstOrNull()?.pixelStride == 4) try {
+                val shiftStart = System.nanoTime()
+                val plane = image.planes[0]
+                VtoThumbnail.fromRgba(thumbIds.incrementAndGet(), plane.buffer, plane.rowStride,
+                    image.width, image.height, VtoFrameShiftTracker.THUMBNAIL_STEP).also { frameThumb ->
+                    latestThumbAt.set(elapsed)
+                    latestThumb.set(frameThumb)
+                    val shift = shiftTracker.track(frameThumb)
+                    if (shift != null) motionFeed.publishShift(shift, elapsed)
+                    if (logCadence) {
+                        shiftFrames++
+                        if (shift != null) shiftAccepted++
+                        shiftNanos += System.nanoTime() - shiftStart
+                        if (shiftLogNs == 0L) shiftLogNs = elapsed
+                        if (elapsed - shiftLogNs >= 1_000_000_000L) {
+                            Log.i("FaceFitVTODiag", "event=frameShift framesPerSec=${shiftFrames * 1e9 / (elapsed - shiftLogNs)} " +
+                                "acceptedPercent=${shiftAccepted * 100 / shiftFrames} meanCostMs=${shiftNanos / 1e6 / shiftFrames}")
+                            shiftFrames = 0; shiftAccepted = 0; shiftNanos = 0L; shiftLogNs = elapsed
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                Log.w("FaceFitVTO", "Frame shift tracking skipped", error); null
+            } else null
+
             // Reserve the reusable bitmap before copying. There is no queue of inference inputs.
             if (!busy.compareAndSet(false, true)) {
                 image.close()
@@ -364,18 +477,27 @@ fun TryOnCameraPreview(
 
             var handedOff = false
             try {
-                val frame = copyAnalysisFrame(image) ?: return@Analyzer
+                val frame = copyAnalysisFrame(image, thumb) ?: return@Analyzer
                 val captured = SystemClock.uptimeMillis()
 
                 executor.execute {
                     try {
                         if (disposed.get() || unavailable.get() || !resumed.get() || mode.get() != 1) return@execute
                         val inferenceStart = SystemClock.uptimeMillis()
-                        val result = detect(frame.bitmap, started, mirror = true)
+                        // How far the eyes moved since the previous mesh's frame, to aim the face-mesh crop.
+                        val motion = frame.thumb?.let { thumb ->
+                            val from = shiftTracker.eyeMidpoint(lastMeshThumbId)
+                            val to = shiftTracker.eyeMidpoint(thumb.id)
+                            if (lastMeshThumbId != 0L && from != null && to != null) floatArrayOf(to[0] - from[0], to[1] - from[1]) else null
+                        }
+                        val result = detect(frame.bitmap, started, mirror = true, motion = motion)
+                        lastMeshThumbId = if (result.isFaceDetected) frame.thumb?.id ?: 0L else 0L
+                        updateShiftReference(result, frame.thumb)
                         enqueue(Completed(result, frame.crop, started, captured, inferenceStart,
                             SystemClock.uptimeMillis(), activeBackend, tracker?.lastTiming,
                             tracker?.inputWidth ?: 0, tracker?.inputHeight ?: 0,
-                            1, elapsed, timestamp, age))
+                            1, elapsed, timestamp, age, frame.thumb?.id ?: 0L))
+                        probeAfter(result)
                     } catch (error: Exception) {
                         report(error)
                     } catch (error: LinkageError) {
@@ -498,12 +620,20 @@ internal class VtoPreviewFaceTracker(
     private val detector=FaceLandmarker.createFromOptions(context,FaceLandmarker.FaceLandmarkerOptions.builder()
         .setBaseOptions(BaseOptions.builder().setModelAssetPath("face_landmarker.task")
             .setDelegate(if(backend==TrackingBackend.GPU) Delegate.GPU else Delegate.CPU).build())
-        .setRunningMode(RunningMode.VIDEO).setNumFaces(1)
+        // IMAGE mode: this heavy landmarker now only finds the face (start, or after the light mesh
+        // loses it), often after a long gap, so it must not rely on a stale tracked position.
+        .setRunningMode(RunningMode.IMAGE).setNumFaces(1)
         .setOutputFaceBlendshapes(false)
         .setOutputFacialTransformationMatrixes(false)
         .setMinFaceDetectionConfidence(.5f).setMinFacePresenceConfidence(.5f)
         .setMinTrackingConfidence(.25f).build())
-    private var lastTimestamp=-1L
+    /** Light 468-point mesh that follows the face between heavy-model finds; null if it cannot load. */
+    private val light: VtoLightFaceMesh? = try { VtoLightFaceMesh.open(context) } catch (error: Throwable) {
+        Log.w("FaceFitVTO", "Light face mesh unavailable; using the full face landmarker every frame", error); null
+    }
+    private var lightFrames=0
+    private var heavyFrames=0
+    private var lightLogAt=0L
     private var input: Bitmap?=null
     private var image: MPImage?=null
     private var canvas: Canvas?=null
@@ -516,10 +646,15 @@ internal class VtoPreviewFaceTracker(
     fun warmUp() {
         val blank=Bitmap.createBitmap(maxOf(maxInputDimension, VtoHardwareBudget.MIN_ANALYSIS_DIMENSION),
             maxOf(maxInputDimension, VtoHardwareBudget.MIN_ANALYSIS_DIMENSION), Bitmap.Config.ARGB_8888)
-        try { detect(blank,SystemClock.uptimeMillis()) } finally { blank.recycle() }
+        try {
+            detect(blank,SystemClock.uptimeMillis())
+            light?.let { mesh -> requireNotNull(input).let { mesh.warmUp(it) }
+                Log.i("FaceFitVTODiag","event=lightMeshBackend chosen=${mesh.backend} medianMs=${mesh.benchmark}") }
+        } finally { blank.recycle() }
     }
 
-    fun detect(preview: Bitmap,timestampMs: Long,crop: Rect?=null,mirrorInput: Boolean=false): FaceAnalyzer.FaceMetrics {
+    fun detect(preview: Bitmap,timestampMs: Long,crop: Rect?=null,mirrorInput: Boolean=false,
+        motion: FloatArray?=null): FaceAnalyzer.FaceMetrics {
         require(!preview.isRecycled)
         val prepareStart=SystemClock.uptimeMillis()
         val region=crop ?: Rect(0,0,preview.width,preview.height)
@@ -538,16 +673,36 @@ internal class VtoPreviewFaceTracker(
             target.drawBitmap(preview,region,RectF(0f,0f,w.toFloat(),h.toFloat()),paint)
         } finally { target.restoreToCount(save) }
         val modelStart=SystemClock.uptimeMillis()
-        lastTimestamp=timestampMs.coerceAtLeast(lastTimestamp+1L)
-        val result=detector.detectForVideo(requireNotNull(image),lastTimestamp)
+        val frame=requireNotNull(input)
+        val mesh=light
+        // Follow the face with the light mesh; the full landmarker only finds it.
+        // Source-pixel eye motion since the last mesh, in this (scaled, possibly mirrored) input.
+        val moveX=(motion?.getOrNull(0) ?: 0f)*w/region.width()*(if(mirrorInput) -1f else 1f)
+        val moveY=(motion?.getOrNull(1) ?: 0f)*h/region.height()
+        var points=if(mesh?.tracking==true) try { mesh.track(frame,moveX,moveY) } catch(error: Exception) {
+            Log.w("FaceFitVTO","Light face mesh failed; finding the face again",error); mesh.reset(); null
+        } else null
+        if(points!=null) lightFrames++ else {
+            heavyFrames++
+            val result=detector.detect(requireNotNull(image))
+            points=result.faceLandmarks().firstOrNull()?.map { FaceAnalyzer.LandmarkPoint(it.x(),it.y(),it.z()) }.orEmpty()
+            if(mesh!=null && points.size>=468) try { mesh.seed(frame,points) } catch(error: Exception) {
+                Log.w("FaceFitVTO","Light face mesh could not start",error); mesh.reset()
+            }
+        }
         val modelEnd=SystemClock.uptimeMillis()
-        val points=result.faceLandmarks().firstOrNull()?.map { FaceAnalyzer.LandmarkPoint(it.x(),it.y(),it.z()) }.orEmpty()
+        if(Log.isLoggable("FaceFitVTOTiming",Log.VERBOSE) && modelEnd-lightLogAt>=1000L) {
+            Log.i("FaceFitVTODiag","event=faceMesh lightFrames=$lightFrames fullFrames=$heavyFrames " +
+                "backend=${mesh?.backend} shapeJitterEyeSpans(raw,smoothed)=${mesh?.shapeJitter} lightScore=${mesh?.lastScore} seedDisagreementPx=${mesh?.lastSeedDisagreementPx} widerRetries=${mesh?.retries}")
+            lightFrames=0; heavyFrames=0; lightLogAt=modelEnd
+        }
         lastTiming=VtoDiagnostics.Detection(modelStart-prepareStart,modelEnd-modelStart,SystemClock.uptimeMillis()-modelEnd)
-        val face=FaceAnalyzer.FaceMetrics(0f,0f,0f,"",points,region.width(),region.height(),points.size>=468)
+        val found=points.orEmpty()
+        val face=FaceAnalyzer.FaceMetrics(0f,0f,0f,"",found,region.width(),region.height(),found.size>=468)
         return VtoCameraFrame.restoreCrop(face,preview.width,preview.height,region,mirrorInput)
     }
     override fun close() {
-        try { detector.close() } finally { image?.close(); image=null; input=null; canvas=null }
+        try { detector.close(); light?.close() } finally { image?.close(); image=null; input=null; canvas=null }
     }
 }
 
@@ -556,5 +711,7 @@ private fun displayResolutionSelector(): ResolutionSelector = ResolutionSelector
     .setAspectRatioStrategy(AspectRatioStrategy.RATIO_16_9_FALLBACK_AUTO_STRATEGY)
     .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
     .build()
-/** VTO uses GPU by default. CPU is reserved for explicit selection or a delegate failure. */
+private const val VTO_PREFS = "facefit_vto"
+
+/** First guess before this phone has been measured; [VtoBackendProbe] then keeps the faster one. */
 private fun preferredVtoBackend(): TrackingBackend = TrackingBackend.GPU

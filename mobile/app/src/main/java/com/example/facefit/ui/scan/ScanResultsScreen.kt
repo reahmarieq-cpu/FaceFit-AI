@@ -92,13 +92,8 @@ fun ScanResultsScreen(
                 ) {
                     Text("YOUR FACE, DECODED", color = FaceFitTeal, fontSize = 11.sp,
                         fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                    Text(result.headline, color = ResultsInk, fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold, lineHeight = 25.sp)
-                    result.suggestedStyle?.let { style ->
-                        Text("Try $style frames", color = FaceFitTeal,
-                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    }
-                    Text(result.explanation, color = ResultsMuted, fontSize = 14.sp, lineHeight = 21.sp)
+                    com.example.facefit.ui.catalog.ExplanationSections(result.noticed, result.styles,
+                        titleColor = ResultsInk, bodyColor = ResultsMuted)
                 }
                 Spacer(Modifier.height(24.dp))
                 Button(

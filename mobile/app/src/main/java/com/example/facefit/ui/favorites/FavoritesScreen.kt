@@ -96,5 +96,5 @@ fun FavoritesScreen(
 @Preview(showBackground=true)
 @Composable
 fun FavoritesScreenPreview() {
-    FacefitTheme { FavoritesScreen(frames=sampleFrames.filter { it.name in listOf("Nova", "Pax") }) }
+    FacefitTheme { FavoritesScreen(frames=sampleFrames.filter { it.name in listOf("Nova", "Square Tortoise") }) }
 }

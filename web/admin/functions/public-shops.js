@@ -9,3 +9,11 @@ exports.syncPublicShop = onDocumentWritten({
   retry: true
 }, event =>
   publishCurrentShop(getFirestore(), event.params.retailerId, () => FieldValue.serverTimestamp()));
+
+// Keep publicShops.subscribed current when a shop's subscription starts, changes or ends.
+exports.syncPublicShopSubscription = onDocumentWritten({
+  document: "subscriptions/{retailerId}",
+  region: "asia-southeast1",
+  retry: true
+}, event =>
+  publishCurrentShop(getFirestore(), event.params.retailerId, () => FieldValue.serverTimestamp()));

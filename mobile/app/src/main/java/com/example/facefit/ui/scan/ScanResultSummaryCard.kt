@@ -65,7 +65,8 @@ internal fun ScanResultSummaryCard(
                     horizontalArrangement = Arrangement.spacedBy(20.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     FaceShapePortrait(metrics.faceShape)
-                    AnalysisSummary(metrics, modifier = Modifier.weight(1f))
+                    // Label and shape name centred in the space beside the picture.
+                    AnalysisSummary(metrics, modifier = Modifier.weight(1f), centered = true)
                 }
             }
         }
@@ -83,14 +84,10 @@ private fun AnalysisSummary(
     val alignment = if (centered) Alignment.CenterHorizontally else Alignment.Start
     val textAlignment = if (centered) TextAlign.Center else TextAlign.Start
     Column(modifier, horizontalAlignment = alignment) {
-        Text("SCAN COMPLETE", color = Color(0xFF159CAE), fontSize = 10.sp,
-            fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, textAlign = textAlignment)
-        Spacer(Modifier.height(8.dp))
-        Text("Analysis ready", color = ResultsInk, fontSize = 18.sp,
+        Text("Estimated face shape", color = ResultsMuted, fontSize = 12.sp, textAlign = textAlignment)
+        Spacer(Modifier.height(6.dp))
+        Text(metrics.faceShape.trim().ifBlank { "Uncertain" }, color = ResultsInk, fontSize = 24.sp,
             fontWeight = FontWeight.Bold, textAlign = textAlignment)
-        Spacer(Modifier.height(8.dp))
-        Text("${metrics.shapeSampleCount} scan samples\n${metrics.landmarks.size} landmarks mapped",
-            color = ResultsMuted, fontSize = 12.sp, lineHeight = 18.sp, textAlign = textAlignment)
     }
 }
 

@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -132,28 +135,60 @@ fun FaceFitCard(
 ) {
     Card(
         modifier = modifier
-            .padding(8.dp)
             .softContainerShadow(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(iconBackgroundColor),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+        // The card may be squeezed on short screens: show only the lines that fit fully,
+        // never a half-cut line. Full card, then without the subtitle, then icon beside title.
+        BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+            val density = LocalDensity.current
+            val titleLine = with(density) { 20.sp.toDp() }
+            val descriptionLine = with(density) { 17.sp.toDp() }
+            val iconSize = 40.dp
+            val padding = 14.dp
+            val stacked = padding * 2 + iconSize + 10.dp + titleLine
+            val iconBox: @Composable () -> Unit = {
+                Box(
+                    modifier = Modifier
+                        .size(iconSize)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(iconBackgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(imageVector = icon, contentDescription = null, tint = Color.White)
+                }
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = FaceFitTextPrimary)
-            Text(text = description, fontSize = 12.sp, color = FaceFitTextSecondary)
+            val showDescription = maxHeight == Dp.Infinity || maxHeight >= stacked + 2.dp + descriptionLine
+            if (maxHeight == Dp.Infinity || maxHeight >= stacked) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(padding),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    iconBox()
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 20.sp,
+                        color = FaceFitTextPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (showDescription) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = description, fontSize = 12.sp, lineHeight = 17.sp,
+                            color = FaceFitTextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = padding),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    iconBox()
+                    Text(text = title, fontWeight = FontWeight.Bold, fontSize = 14.sp, lineHeight = 18.sp,
+                        color = FaceFitTextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
         }
     }
 }

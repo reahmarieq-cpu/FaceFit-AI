@@ -27,15 +27,15 @@ class FavoritesFlowTest {
                     onBack={},onScanAgain={},onDone={},savedFrames=saved.value,onFavoriteChange=update,onFrameClick={})
             }
         }
-        compose.onNodeWithContentDescription("Save Pax").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Unsave Pax").assertExists()
+        compose.onNodeWithContentDescription("Save Nova").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Unsave Nova").assertExists()
         compose.runOnIdle { favoritesVisible.value=true }
         compose.onNodeWithText("1 saved").assertExists()
-        compose.onNodeWithText("Pax").assertExists()
-        compose.onNodeWithContentDescription("Unsave Pax").performClick()
+        compose.onNodeWithText("Nova").assertExists()
+        compose.onNodeWithContentDescription("Unsave Nova").performClick()
         compose.onNodeWithText("0 saved").assertExists()
         compose.onNodeWithText("No favorite frames yet").assertExists()
         compose.runOnIdle { favoritesVisible.value=false }
-        compose.onNodeWithContentDescription("Save Pax").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Save Nova").performScrollTo().assertExists()
     }
 }

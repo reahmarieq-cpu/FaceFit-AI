@@ -1,544 +1,681 @@
 {
+  "source": "FaceFitAI_ExplanationAnalysis.csv",
+  "categoryStatus": "Provisional categories relative to the reference dataset",
   "rules": {
     "heart_narrow_narrow_close_set": {
-      "headline": "Narrower upper face · narrower jaw · closer eyes",
-      "explanation": "Your forehead and jawline both have a slimmer outline. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since both areas are narrower, avoid a pair that extends too far past the sides of your face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_narrow_average": {
-      "headline": "Narrower upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face a slimmer outline, and your forehead stays relatively narrow. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. This may add definition near your eyes while leaving your narrower jaw less emphasized. A moderate overall width may keep the frame from looking too large beside your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_narrow_wide_set": {
-      "headline": "Narrower upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead area is on the narrower side, and your jawline is relatively narrow. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that stays close to the sides of your face rather than stretching too far outward. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_medium_close_set": {
-      "headline": "Medium upper-face width · narrower jaw · closer eyes",
-      "explanation": "Your jawline is narrower, while the width around your forehead falls in the middle range. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_medium_average": {
-      "headline": "Medium upper-face width · narrower jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face a slimmer outline, while your forehead sits near the middle width range. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. This may add definition near your eyes while leaving your narrower jaw less emphasized. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_medium_wide_set": {
-      "headline": "Medium upper-face width · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead area falls near the middle width range, while your jawline is relatively narrow. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_wide_close_set": {
-      "headline": "Wider upper face · narrower jaw · closer eyes",
-      "explanation": "Your forehead is relatively wide, while your jawline has a slimmer outline. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_wide_average": {
-      "headline": "Wider upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face a slimmer outline, while your forehead has a broader outline. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. This may add definition near your eyes while leaving your narrower jaw less emphasized. A frame with enough width around your eyes may look more in proportion with your broader forehead. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_narrow_wide_wide_set": {
-      "headline": "Wider upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead area is on the wider side, while your jawline is relatively narrow. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Compare wider front widths if a pair looks too small across your upper face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_narrow_close_set": {
-      "headline": "Narrower upper face · medium jaw width · closer eyes",
-      "explanation": "Your forehead is relatively narrow, while your jawline has a medium width. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_narrow_average": {
-      "headline": "Narrower upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jawline sits near the middle width range, while your forehead stays relatively narrow. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The shape may add interest around your eyes without making your lower face the main focus. Choose a width that does not look oversized across your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_narrow_wide_set": {
-      "headline": "Narrower upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead area is on the narrower side, while your jawline sits near the middle width range. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_medium_close_set": {
-      "headline": "Medium upper-face width · medium jaw width · closer eyes",
-      "explanation": "Your forehead and jawline both fall near the middle of the width ranges. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_medium_average": {
-      "headline": "Medium upper-face width · medium jaw width · average eye spacing",
-      "explanation": "Your jawline sits near the middle width range, and your forehead sits near the middle width range. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The shape may add interest around your eyes without making your lower face the main focus. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_medium_wide_set": {
-      "headline": "Medium upper-face width · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead area falls near the middle width range, and your jawline sits near the middle width range. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_wide_close_set": {
-      "headline": "Wider upper face · medium jaw width · closer eyes",
-      "explanation": "Your forehead area is on the wider side, while your jawline has a medium width. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_wide_average": {
-      "headline": "Wider upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jawline sits near the middle width range, while your forehead has a broader outline. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The shape may add interest around your eyes without making your lower face the main focus. A frame with enough width around your eyes may look more in proportion with your broader forehead. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_medium_wide_wide_set": {
-      "headline": "Wider upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead area is on the wider side, while your jawline sits near the middle width range. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Compare wider front widths if a pair looks too small across your upper face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_narrow_close_set": {
-      "headline": "Narrower upper face · wider jaw · closer eyes",
-      "explanation": "Your jawline adds noticeable width to your lower face, while your forehead is relatively narrow. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the eye area enough definition to stand alongside your broader jawline. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_narrow_average": {
-      "headline": "Narrower upper face · wider jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face more width, while your forehead stays relatively narrow. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Choose a width that does not look oversized across your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_narrow_wide_set": {
-      "headline": "Narrower upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead area is on the narrower side, while your jawline is relatively broad. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The defined outline around your eyes may work with the stronger width of your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_medium_close_set": {
-      "headline": "Medium upper-face width · wider jaw · closer eyes",
-      "explanation": "Your jawline is relatively broad, while your forehead area has a medium width. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the eye area enough definition to stand alongside your broader jawline. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_medium_average": {
-      "headline": "Medium upper-face width · wider jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face more width, while your forehead sits near the middle width range. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_medium_wide_set": {
-      "headline": "Medium upper-face width · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead area falls near the middle width range, while your jawline is relatively broad. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The defined outline around your eyes may work with the stronger width of your jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_wide_close_set": {
-      "headline": "Wider upper face · wider jaw · closer eyes",
-      "explanation": "Your forehead and jawline both have a relatively broad outline. The space between your eyes is a little closer than the middle range for your face width. Frames with straight edges and a defined outline may give the area around your eyes a clearer shape. This may give the eye area enough definition to stand alongside your broader jawline. Since your forehead and jaw are both relatively wide, look for a frame that does not appear too narrow across your face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Heart — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_wide_average": {
-      "headline": "Wider upper face · wider jaw · average eye spacing",
-      "explanation": "Your jawline gives the lower part of your face more width, and your forehead has a broader outline. Your eye spacing is about average compared with your face width. Frames with a defined, wider-than-tall outline may highlight your eyes without adding much height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. With more width through both areas, check that the frame does not look small across your upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Heart — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "heart_wide_wide_wide_set": {
-      "headline": "Wider upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead area is on the wider side, and your jawline is relatively broad. Your eyes sit farther apart compared with your overall face width. The straight sides and simple corners of these frames may add definition around your eyes. The defined outline around your eyes may work with the stronger width of your jaw. Compare the front width when trying them on so the glasses do not feel tight at the sides. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Heart — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
     },
     "oblong_narrow_narrow_close_set": {
-      "headline": "Narrower upper face · narrower jaw · closer eyes",
-      "explanation": "Neither the upper part of your face nor your jaw is especially wide. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. This may add definition near your eyes while leaving your narrower jaw less emphasized. A moderate overall width may keep the frame from looking too large beside your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_narrow_average": {
-      "headline": "Narrower upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline falls in the narrower width group, and your upper face has a slimmer outline. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that stays close to the sides of your face rather than stretching too far outward. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_narrow_wide_set": {
-      "headline": "Narrower upper face · narrower jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has a slimmer outline, and the lower part of your face has a slimmer outline. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since both areas are narrower, avoid a pair that extends too far past the sides of your face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_medium_close_set": {
-      "headline": "Medium upper-face width · narrower jaw · closer eyes",
-      "explanation": "The upper part of your face has a medium width, with a slimmer jawline below. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. This may add definition near your eyes while leaving your narrower jaw less emphasized. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_medium_average": {
-      "headline": "Medium upper-face width · narrower jaw · average eye spacing",
-      "explanation": "Your jawline falls in the narrower width group, while your upper-face width is moderate. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_medium_wide_set": {
-      "headline": "Medium upper-face width · narrower jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has moderate width, while the lower part of your face has a slimmer outline. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_wide_close_set": {
-      "headline": "Wider upper face · narrower jaw · closer eyes",
-      "explanation": "The upper part of your face is broader, with a narrower jawline below. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. This may add definition near your eyes while leaving your narrower jaw less emphasized. A frame with enough width around your eyes may look more in proportion with your broader forehead. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_wide_average": {
-      "headline": "Wider upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline falls in the narrower width group, while the upper part of your face is relatively wide. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Compare wider front widths if a pair looks too small across your upper face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_narrow_wide_wide_set": {
-      "headline": "Wider upper face · narrower jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has a broad outline, while the lower part of your face has a slimmer outline. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_narrow_close_set": {
-      "headline": "Narrower upper face · medium jaw width · closer eyes",
-      "explanation": "Your jawline sits near the middle width range, with a slimmer forehead area above it. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The shape may add interest around your eyes without making your lower face the main focus. Choose a width that does not look oversized across your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_narrow_average": {
-      "headline": "Narrower upper face · medium jaw width · average eye spacing",
-      "explanation": "The lower part of your face has a moderate width, while your upper face has a slimmer outline. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The frame outline may add definition around your eyes without drawing too much attention to your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_narrow_wide_set": {
-      "headline": "Narrower upper face · medium jaw width · farther-apart eyes",
-      "explanation": "The upper part of your face has a slimmer outline, while the lower part of your face has a moderate width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_medium_close_set": {
-      "headline": "Medium upper-face width · medium jaw width · closer eyes",
-      "explanation": "Neither your upper face nor your jawline is especially narrow or wide in this scan. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The shape may add interest around your eyes without making your lower face the main focus. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_medium_average": {
-      "headline": "Medium upper-face width · medium jaw width · average eye spacing",
-      "explanation": "The lower part of your face has a moderate width, and your upper-face width is moderate. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_medium_wide_set": {
-      "headline": "Medium upper-face width · medium jaw width · farther-apart eyes",
-      "explanation": "The upper part of your face has moderate width, and the lower part of your face has a moderate width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_wide_close_set": {
-      "headline": "Wider upper face · medium jaw width · closer eyes",
-      "explanation": "Your jawline sits near the middle range beneath a relatively broad forehead. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The shape may add interest around your eyes without making your lower face the main focus. A frame with enough width around your eyes may look more in proportion with your broader forehead. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_wide_average": {
-      "headline": "Wider upper face · medium jaw width · average eye spacing",
-      "explanation": "The lower part of your face has a moderate width, while the upper part of your face is relatively wide. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Compare wider front widths if a pair looks too small across your upper face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_medium_wide_wide_set": {
-      "headline": "Wider upper face · medium jaw width · farther-apart eyes",
-      "explanation": "The upper part of your face has a broad outline, while the lower part of your face has a moderate width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_narrow_close_set": {
-      "headline": "Narrower upper face · wider jaw · closer eyes",
-      "explanation": "The area around your jaw is on the wider side, but your forehead is slimmer. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Choose a width that does not look oversized across your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_narrow_average": {
-      "headline": "Narrower upper face · wider jaw · average eye spacing",
-      "explanation": "The area around your jaw is relatively broad, while your upper face has a slimmer outline. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The defined outline around your eyes may work with the stronger width of your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_narrow_wide_set": {
-      "headline": "Narrower upper face · wider jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has a slimmer outline, while the lower part of your face has more width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_medium_close_set": {
-      "headline": "Medium upper-face width · wider jaw · closer eyes",
-      "explanation": "The lower part of your face is on the wider side, with a moderately wide forehead above it. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_medium_average": {
-      "headline": "Medium upper-face width · wider jaw · average eye spacing",
-      "explanation": "The area around your jaw is relatively broad, while your upper-face width is moderate. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The defined outline around your eyes may work with the stronger width of your jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_medium_wide_set": {
-      "headline": "Medium upper-face width · wider jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has moderate width, while the lower part of your face has more width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the eye area enough definition to stand alongside your broader jawline. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_wide_close_set": {
-      "headline": "Wider upper face · wider jaw · closer eyes",
-      "explanation": "The upper and lower parts of your face both fall in the wider width group. Your eyes are positioned relatively close together compared with your face width. A defined, horizontal lens outline may add width around your eyes without adding more height. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. With more width through both areas, check that the frame does not look small across your upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Oblong — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_wide_average": {
-      "headline": "Wider upper face · wider jaw · average eye spacing",
-      "explanation": "The area around your jaw is relatively broad, and the upper part of your face is relatively wide. The distance between your eyes sits near the middle of the reference range. Frames with straight sides and lenses that are wider than they are tall may bring attention to the eye area. The defined outline around your eyes may work with the stronger width of your jaw. Compare the front width when trying them on so the glasses do not feel tight at the sides. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Oblong — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oblong_wide_wide_wide_set": {
-      "headline": "Wider upper face · wider jaw · farther-apart eyes",
-      "explanation": "The upper part of your face has a broad outline, and the lower part of your face has more width. There is more space between your eyes than in the middle reference group. Frames with straight edges and a wider-than-tall outline may draw attention across your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Since your forehead and jaw are both relatively wide, look for a frame that does not appear too narrow across your face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Oblong — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
     },
     "oval_narrow_narrow_close_set": {
-      "headline": "Narrower upper face · narrower jaw · closer eyes",
-      "explanation": "The areas around your forehead and jaw are both relatively narrow. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that stays close to the sides of your face rather than stretching too far outward. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_narrow_average": {
-      "headline": "Narrower upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jaw area has a relatively narrow outline, and the forehead area falls in the narrow group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since both areas are narrower, avoid a pair that extends too far past the sides of your face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_narrow_wide_set": {
-      "headline": "Narrower upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the narrow range, and your jaw area falls in the narrower group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. This may add definition near your eyes while leaving your narrower jaw less emphasized. A moderate overall width may keep the frame from looking too large beside your narrower upper face. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_medium_close_set": {
-      "headline": "Medium upper-face width · narrower jaw · closer eyes",
-      "explanation": "Your forehead area is neither especially narrow nor wide, but your jawline is on the narrow side. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that sits comfortably across the upper part of your face. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_medium_average": {
-      "headline": "Medium upper-face width · narrower jaw · average eye spacing",
-      "explanation": "Your jaw area has a relatively narrow outline, while the forehead area falls in the middle group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_medium_wide_set": {
-      "headline": "Medium upper-face width · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead width sits between the narrow and wide groups, while your jaw area falls in the narrower group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. This may add definition near your eyes while leaving your narrower jaw less emphasized. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_wide_close_set": {
-      "headline": "Wider upper face · narrower jaw · closer eyes",
-      "explanation": "Your wider forehead stands in contrast to your narrower jaw. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Compare wider front widths if a pair looks too small across your upper face. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_wide_average": {
-      "headline": "Wider upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jaw area has a relatively narrow outline, while the forehead area falls in the wider group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_narrow_wide_wide_set": {
-      "headline": "Wider upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the wider range, while your jaw area falls in the narrower group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. This may add definition near your eyes while leaving your narrower jaw less emphasized. A frame with enough width around your eyes may look more in proportion with your broader forehead. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_narrow_close_set": {
-      "headline": "Narrower upper face · medium jaw width · closer eyes",
-      "explanation": "The upper part of your face is on the narrower side, but your jawline is closer to the middle range. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The frame outline may add definition around your eyes without drawing too much attention to your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_narrow_average": {
-      "headline": "Narrower upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jaw area is neither especially narrow nor wide, while the forehead area falls in the narrow group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_narrow_wide_set": {
-      "headline": "Narrower upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the narrow range, while your jaw area falls in the middle group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The shape may add interest around your eyes without making your lower face the main focus. Choose a width that does not look oversized across your narrower upper face. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_medium_close_set": {
-      "headline": "Medium upper-face width · medium jaw width · closer eyes",
-      "explanation": "The forehead and jaw areas both have medium-width measurements. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Look for a size that sits comfortably across the upper part of your face. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_medium_average": {
-      "headline": "Medium upper-face width · medium jaw width · average eye spacing",
-      "explanation": "Your jaw area is neither especially narrow nor wide, and the forehead area falls in the middle group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_medium_wide_set": {
-      "headline": "Medium upper-face width · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead width sits between the narrow and wide groups, and your jaw area falls in the middle group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The shape may add interest around your eyes without making your lower face the main focus. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_wide_close_set": {
-      "headline": "Wider upper face · medium jaw width · closer eyes",
-      "explanation": "The upper part of your face has a wider outline, but your jawline is closer to the middle range. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Compare wider front widths if a pair looks too small across your upper face. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_wide_average": {
-      "headline": "Wider upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jaw area is neither especially narrow nor wide, while the forehead area falls in the wider group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_medium_wide_wide_set": {
-      "headline": "Wider upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the wider range, while your jaw area falls in the middle group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The shape may add interest around your eyes without making your lower face the main focus. A frame with enough width around your eyes may look more in proportion with your broader forehead. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_narrow_close_set": {
-      "headline": "Narrower upper face · wider jaw · closer eyes",
-      "explanation": "Your forehead is relatively narrow, with a broader jawline below. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The defined outline around your eyes may work with the stronger width of your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_narrow_average": {
-      "headline": "Narrower upper face · wider jaw · average eye spacing",
-      "explanation": "Your lower face has a wider outline around the jaw, while the forehead area falls in the narrow group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_narrow_wide_set": {
-      "headline": "Narrower upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the narrow range, while your jaw area falls in the wider group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Choose a width that does not look oversized across your narrower upper face. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_medium_close_set": {
-      "headline": "Medium upper-face width · wider jaw · closer eyes",
-      "explanation": "Your forehead falls in the middle range, but your jawline has a broader outline. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The defined outline around your eyes may work with the stronger width of your jaw. Look for a size that sits comfortably across the upper part of your face. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_medium_average": {
-      "headline": "Medium upper-face width · wider jaw · average eye spacing",
-      "explanation": "Your lower face has a wider outline around the jaw, while the forehead area falls in the middle group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_medium_wide_set": {
-      "headline": "Medium upper-face width · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead width sits between the narrow and wide groups, while your jaw area falls in the wider group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_wide_close_set": {
-      "headline": "Wider upper face · wider jaw · closer eyes",
-      "explanation": "There is noticeable width around both your forehead and your jawline. There is less space between your eyes than in the middle group of measurements. Frames with noticeable corners and straight lines may contrast with the softer outline of your face. The defined outline around your eyes may work with the stronger width of your jaw. Compare the front width when trying them on so the glasses do not feel tight at the sides. Check the lens position and how the bridge rests on your nose."
+      "headline": "Oval — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_wide_average": {
-      "headline": "Wider upper face · wider jaw · average eye spacing",
-      "explanation": "Your lower face has a wider outline around the jaw, and the forehead area falls in the wider group. Your eyes are neither especially close together nor far apart for your face width. Frames with straight edges and defined corners may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Since your forehead and jaw are both relatively wide, look for a frame that does not appear too narrow across your face. When trying them on, check the lens alignment and bridge comfort."
+      "headline": "Oval — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "oval_wide_wide_wide_set": {
-      "headline": "Wider upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your forehead width falls toward the wider range, and your jaw area falls in the wider group. Your eye spacing is on the wider side relative to your face width. A wider-than-tall outline with straight sides may give the eye area more definition. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. With more width through both areas, check that the frame does not look small across your upper face. When trying frames, check where your eyes fall inside each lens."
+      "headline": "Oval — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
     },
     "round_narrow_narrow_close_set": {
-      "headline": "Narrower upper face · narrower jaw · closer eyes",
-      "explanation": "Your forehead stays on the narrower side, and so does your jawline. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since both areas are narrower, avoid a pair that extends too far past the sides of your face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_narrow_average": {
-      "headline": "Narrower upper face · narrower jaw · average eye spacing",
-      "explanation": "The lower part of your face is slimmer around the jaw, and your forehead is on the narrower side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. This may add definition near your eyes while leaving your narrower jaw less emphasized. A moderate overall width may keep the frame from looking too large beside your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_narrow_wide_set": {
-      "headline": "Narrower upper face · narrower jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively narrow, and your jaw width is on the narrow side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that stays close to the sides of your face rather than stretching too far outward. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_medium_close_set": {
-      "headline": "Medium upper-face width · narrower jaw · closer eyes",
-      "explanation": "Your jawline has a slimmer outline, while your forehead is closer to the middle width range. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_medium_average": {
-      "headline": "Medium upper-face width · narrower jaw · average eye spacing",
-      "explanation": "The lower part of your face is slimmer around the jaw, while your forehead is neither especially narrow nor wide. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. This may add definition near your eyes while leaving your narrower jaw less emphasized. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_medium_wide_set": {
-      "headline": "Medium upper-face width · narrower jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is neither especially narrow nor wide, while your jaw width is on the narrow side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_wide_close_set": {
-      "headline": "Wider upper face · narrower jaw · closer eyes",
-      "explanation": "Your jawline falls on the narrower side, while your forehead area is broader. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_wide_average": {
-      "headline": "Wider upper face · narrower jaw · average eye spacing",
-      "explanation": "The lower part of your face is slimmer around the jaw, while your forehead is on the broader side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. This may add definition near your eyes while leaving your narrower jaw less emphasized. A frame with enough width around your eyes may look more in proportion with your broader forehead. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_narrow_wide_wide_set": {
-      "headline": "Wider upper face · narrower jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively broad, while your jaw width is on the narrow side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Compare wider front widths if a pair looks too small across your upper face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_narrow_close_set": {
-      "headline": "Narrower upper face · medium jaw width · closer eyes",
-      "explanation": "Your forehead has a slimmer outline, while the width around your jaw is more moderate. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_narrow_average": {
-      "headline": "Narrower upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jawline falls between the narrow and wide groups, while your forehead is on the narrower side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The shape may add interest around your eyes without making your lower face the main focus. Choose a width that does not look oversized across your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_narrow_wide_set": {
-      "headline": "Narrower upper face · medium jaw width · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively narrow, while your jaw width is neither especially narrow nor wide. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_medium_close_set": {
-      "headline": "Medium upper-face width · medium jaw width · closer eyes",
-      "explanation": "Your upper and lower face both sit in the middle width group. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_medium_average": {
-      "headline": "Medium upper-face width · medium jaw width · average eye spacing",
-      "explanation": "Your jawline falls between the narrow and wide groups, and your forehead is neither especially narrow nor wide. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The shape may add interest around your eyes without making your lower face the main focus. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_medium_wide_set": {
-      "headline": "Medium upper-face width · medium jaw width · farther-apart eyes",
-      "explanation": "The area around your forehead is neither especially narrow nor wide, and your jaw width is neither especially narrow nor wide. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_wide_close_set": {
-      "headline": "Wider upper face · medium jaw width · closer eyes",
-      "explanation": "Your forehead is relatively broad, while the lower part of your face has a more moderate width. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_wide_average": {
-      "headline": "Wider upper face · medium jaw width · average eye spacing",
-      "explanation": "Your jawline falls between the narrow and wide groups, while your forehead is on the broader side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The shape may add interest around your eyes without making your lower face the main focus. A frame with enough width around your eyes may look more in proportion with your broader forehead. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_medium_wide_wide_set": {
-      "headline": "Wider upper face · medium jaw width · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively broad, while your jaw width is neither especially narrow nor wide. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Compare wider front widths if a pair looks too small across your upper face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_narrow_close_set": {
-      "headline": "Narrower upper face · wider jaw · closer eyes",
-      "explanation": "There is a clear difference between your narrower forehead and wider jawline. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_narrow_average": {
-      "headline": "Narrower upper face · wider jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the wider end of the reference range, while your forehead is on the narrower side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Choose a width that does not look oversized across your narrower upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_narrow_wide_set": {
-      "headline": "Narrower upper face · wider jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively narrow, while your jaw width is on the broader side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The defined outline around your eyes may work with the stronger width of your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_medium_close_set": {
-      "headline": "Medium upper-face width · wider jaw · closer eyes",
-      "explanation": "A broader jawline gives your lower face more width alongside a medium-width forehead. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_medium_average": {
-      "headline": "Medium upper-face width · wider jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the wider end of the reference range, while your forehead is neither especially narrow nor wide. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_medium_wide_set": {
-      "headline": "Medium upper-face width · wider jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is neither especially narrow nor wide, while your jaw width is on the broader side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The defined outline around your eyes may work with the stronger width of your jaw. Look for a size that sits comfortably across the upper part of your face. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_wide_close_set": {
-      "headline": "Wider upper face · wider jaw · closer eyes",
-      "explanation": "Your forehead area and jawline are each on the wider side in this scan. Your eye spacing is on the closer side relative to your overall face width. Frames with a wider upper outline and curved lower edges may add a different shape around your eyes. This may give the eye area enough definition to stand alongside your broader jawline. Since your forehead and jaw are both relatively wide, look for a frame that does not appear too narrow across your face. When trying them on, check that each lens sits in front of your eyes."
+      "headline": "Round — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_wide_average": {
-      "headline": "Wider upper face · wider jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the wider end of the reference range, and your forehead is on the broader side. The space between your eyes falls in the middle group for this scan. A broad top edge with gently sloping lower edges may create contrast around the eye area. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. With more width through both areas, check that the frame does not look small across your upper face. Choose a pair that places your eyes comfortably inside the lenses."
+      "headline": "Round — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "round_wide_wide_wide_set": {
-      "headline": "Wider upper face · wider jaw · farther-apart eyes",
-      "explanation": "The area around your forehead is relatively broad, and your jaw width is on the broader side. The distance between your eyes falls in the wider group for this scan. Frames that are wider at the top and curve toward the bottom may bring attention to your eyes. The defined outline around your eyes may work with the stronger width of your jaw. Compare the front width when trying them on so the glasses do not feel tight at the sides. Check that both lenses sit comfortably in front of your eyes and the bridge feels right."
+      "headline": "Round — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
     },
     "square_narrow_narrow_close_set": {
-      "headline": "Narrower upper face · narrower jaw · closer eyes",
-      "explanation": "Both your forehead area and jawline fall within the narrower width group. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. This may add definition near your eyes while leaving your narrower jaw less emphasized. A moderate overall width may keep the frame from looking too large beside your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_narrow_average": {
-      "headline": "Narrower upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the narrower end of the reference range, and your upper-face width is toward the narrower range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that stays close to the sides of your face rather than stretching too far outward. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_narrow_wide_set": {
-      "headline": "Narrower upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the narrower group, and the width around your jaw is relatively slim. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since both areas are narrower, avoid a pair that extends too far past the sides of your face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_medium_close_set": {
-      "headline": "Medium upper-face width · narrower jaw · closer eyes",
-      "explanation": "A medium-width forehead sits above a narrower jawline. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. This may add definition near your eyes while leaving your narrower jaw less emphasized. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_medium_average": {
-      "headline": "Medium upper-face width · narrower jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the narrower end of the reference range, while your upper-face width stays in the middle range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_medium_wide_set": {
-      "headline": "Medium upper-face width · narrower jaw · farther-apart eyes",
-      "explanation": "Your upper-face width stays close to the middle range, while the width around your jaw is relatively slim. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_wide_close_set": {
-      "headline": "Wider upper face · narrower jaw · closer eyes",
-      "explanation": "A broad forehead area and slimmer jawline give your upper and lower face different widths. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. This may add definition near your eyes while leaving your narrower jaw less emphasized. A frame with enough width around your eyes may look more in proportion with your broader forehead. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_wide_average": {
-      "headline": "Wider upper face · narrower jaw · average eye spacing",
-      "explanation": "Your jawline measures toward the narrower end of the reference range, while the width around your forehead is in the wider range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. Its outline may help bring attention near your eyes without adding a heavy look above your slimmer jaw. Compare wider front widths if a pair looks too small across your upper face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_narrow_wide_wide_set": {
-      "headline": "Wider upper face · narrower jaw · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the wider group, while the width around your jaw is relatively slim. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. The outline around your eyes may stand out without needing extra bulk near your narrower jaw. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_narrow_close_set": {
-      "headline": "Narrower upper face · medium jaw width · closer eyes",
-      "explanation": "A relatively narrow forehead is paired with a jawline that is neither especially narrow nor wide. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The shape may add interest around your eyes without making your lower face the main focus. Choose a width that does not look oversized across your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_narrow_average": {
-      "headline": "Narrower upper face · medium jaw width · average eye spacing",
-      "explanation": "The width around your jaw is in the middle range, while your upper-face width is toward the narrower range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The frame outline may add definition around your eyes without drawing too much attention to your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_narrow_wide_set": {
-      "headline": "Narrower upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the narrower group, while the width around your jaw stays in the middle range. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_medium_close_set": {
-      "headline": "Medium upper-face width · medium jaw width · closer eyes",
-      "explanation": "Your forehead and jawline have similar, moderate width readings. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The shape may add interest around your eyes without making your lower face the main focus. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_medium_average": {
-      "headline": "Medium upper-face width · medium jaw width · average eye spacing",
-      "explanation": "The width around your jaw is in the middle range, and your upper-face width stays in the middle range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_medium_wide_set": {
-      "headline": "Medium upper-face width · medium jaw width · farther-apart eyes",
-      "explanation": "Your upper-face width stays close to the middle range, and the width around your jaw stays in the middle range. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_wide_close_set": {
-      "headline": "Wider upper face · medium jaw width · closer eyes",
-      "explanation": "Your upper face is in the wider group, with a jawline that is neither especially narrow nor wide. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The shape may add interest around your eyes without making your lower face the main focus. A frame with enough width around your eyes may look more in proportion with your broader forehead. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_wide_average": {
-      "headline": "Wider upper face · medium jaw width · average eye spacing",
-      "explanation": "The width around your jaw is in the middle range, while the width around your forehead is in the wider range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The frame outline may add definition around your eyes without drawing too much attention to your jaw. Compare wider front widths if a pair looks too small across your upper face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_medium_wide_wide_set": {
-      "headline": "Wider upper face · medium jaw width · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the wider group, while the width around your jaw stays in the middle range. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the area around your eyes a clearer outline while your jaw stays in the middle width range. Since your forehead is relatively wide, look for a frame that does not appear too narrow across the upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_narrow_close_set": {
-      "headline": "Narrower upper face · wider jaw · closer eyes",
-      "explanation": "Your lower face has a broader outline, while the area around your forehead stays narrow. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Choose a width that does not look oversized across your narrower upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_narrow_average": {
-      "headline": "Narrower upper face · wider jaw · average eye spacing",
-      "explanation": "There is noticeable width around the lower part of your face, while your upper-face width is toward the narrower range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The defined outline around your eyes may work with the stronger width of your jaw. A moderate front width may keep the frames from looking too large near your forehead. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_narrow_wide_set": {
-      "headline": "Narrower upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the narrower group, while the area around your jaw has a wider outline. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the eye area enough definition to stand alongside your broader jawline. Because your forehead is narrower, avoid a frame that extends too far beyond the sides of your upper face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_medium_close_set": {
-      "headline": "Medium upper-face width · wider jaw · closer eyes",
-      "explanation": "Your jaw falls in the wider group, while your upper face stays near the middle range. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. Your forehead width is in the middle range, so the frame should sit comfortably without looking unusually wide or narrow. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_medium_average": {
-      "headline": "Medium upper-face width · wider jaw · average eye spacing",
-      "explanation": "There is noticeable width around the lower part of your face, while your upper-face width stays in the middle range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The defined outline around your eyes may work with the stronger width of your jaw. Look for a size that sits comfortably across the upper part of your face. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_medium_wide_set": {
-      "headline": "Medium upper-face width · wider jaw · farther-apart eyes",
-      "explanation": "Your upper-face width stays close to the middle range, while the area around your jaw has a wider outline. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the eye area enough definition to stand alongside your broader jawline. With a medium upper-face width, compare a few sizes to see which sits naturally across your eyes. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_wide_close_set": {
-      "headline": "Wider upper face · wider jaw · closer eyes",
-      "explanation": "Your jawline is broad, and the area around your forehead is also relatively wide. The gap between your eyes is smaller than the middle range in the reference set. A fuller lens outline with noticeable corners may add definition around your eyes. The frame may draw attention toward your eyes while your jaw remains a noticeable part of your face. With more width through both areas, check that the frame does not look small across your upper face. Since your eyes are closer together, check that they sit comfortably within the lenses."
+      "headline": "Square — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_wide_average": {
-      "headline": "Wider upper face · wider jaw · average eye spacing",
-      "explanation": "There is noticeable width around the lower part of your face, and the width around your forehead is in the wider range. Your eye spacing is proportionate to your overall face width. Frames with straight sides and lenses nearly as tall as they are wide may give your eyes a more defined outline. The defined outline around your eyes may work with the stronger width of your jaw. Compare the front width when trying them on so the glasses do not feel tight at the sides. Check that the bridge feels comfortable and the lenses line up with your eyes."
+      "headline": "Square — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     },
     "square_wide_wide_wide_set": {
-      "headline": "Wider upper face · wider jaw · farther-apart eyes",
-      "explanation": "Your upper-face width sits in the wider group, and the area around your jaw has a wider outline. The gap between your eyes is relatively wide compared with your face width. Frames with straight edges and visible corners may complement the defined outline of your lower face. This may give the eye area enough definition to stand alongside your broader jawline. Since your forehead and jaw are both relatively wide, look for a frame that does not appear too narrow across your face. Since your eyes are farther apart, check that the lenses line up with them."
+      "headline": "Square — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
     }
   },
   "suggestedStyles": {

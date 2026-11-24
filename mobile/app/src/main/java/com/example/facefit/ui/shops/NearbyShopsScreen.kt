@@ -6,8 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.net.Uri
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
@@ -20,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,21 +32,29 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.example.facefit.data.shops.NearbyShopsRepository
 import com.example.facefit.data.shops.OpticalShop
 import com.example.facefit.data.shops.nearbyShopLocation
+import com.example.facefit.data.shops.rankShops
+import com.example.facefit.data.shops.suitsFace
+import com.example.facefit.facefit.recommendation.FrameCompatibility
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import com.example.facefit.ui.components.FaceFitBottomNavBar
 import com.example.facefit.ui.theme.*
 import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.CancellationException
-import org.json.JSONArray
-import org.json.JSONObject
 import java.util.Locale
 
 @Composable
-fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopClick: (String) -> Unit) {
+fun NearbyShopsScreen(
+    onBack: () -> Unit,
+    onNavigate: (String) -> Unit,
+    onShopClick: (String) -> Unit,
+    faceShape: String? = null
+) {
     val context = LocalContext.current
     val repository = remember { NearbyShopsRepository() }
     var shops by remember { mutableStateOf<List<OpticalShop>>(emptyList()) }
@@ -60,7 +65,6 @@ fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopCl
     var locationMessage by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var locationAttempt by remember { mutableIntStateOf(0) }
-    var nearbyOnly by rememberSaveable { mutableStateOf(true) }
     fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     var permission by remember { mutableStateOf(granted()) }
@@ -92,13 +96,28 @@ fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopCl
             finally { locating = false }
         }
     }
-    val center = location
-    val listed = remember(shops, center, nearbyOnly) {
-        if (center == null) shops.sortedBy { it.name.lowercase(Locale.ROOT) }
-        else shops.filter { !nearbyOnly || (it.distanceKm(center.latitude, center.longitude) ?: Double.POSITIVE_INFINITY) <= 3.0 }
-            .sortedWith(compareBy<OpticalShop> { it.distanceKm(center.latitude, center.longitude) ?: Double.POSITIVE_INFINITY }.thenBy { it.name })
+    // Shops with at least one published frame that suits the user's latest face shape.
+    val compatibility = remember(context) { FrameCompatibility.load(context) }
+    var compatibleShopIds by remember { mutableStateOf(emptySet<String>()) }
+    val shopIds = remember(shops) { shops.map { it.id } }
+    LaunchedEffect(shopIds, faceShape) {
+        compatibleShopIds = emptySet()
+        if (faceShape.isNullOrBlank() || shopIds.isEmpty()) return@LaunchedEffect
+        val perShop = shopIds.map { id ->
+            repository.observeFrames(id)
+                .map { frames -> id to frames.any { frame -> frame.suitsFace { compatibility.lookup(faceShape, it)?.score } } }
+                .catch { emit(id to false) } // A shop whose frames cannot be read simply ranks as "no match".
+        }
+        combine(perShop) { rows -> rows.filter { it.second }.map { it.first }.toSet() }
+            .catch { emit(emptySet()) }
+            .collect { compatibleShopIds = it }
     }
-    val unmapped = if (center != null && nearbyOnly) shops.filter { !it.hasCoordinates } else emptyList()
+    val center = location
+    // Every registered shop is listed (no distance limit); shops without a map location rank last in their group.
+    val listed = remember(shops, center, compatibleShopIds) {
+        val distance = { shop: OpticalShop -> center?.let { shop.distanceKm(it.latitude, it.longitude) } }
+        rankShops(shops, compatibleShopIds, System.currentTimeMillis(), distance)
+    }
     fun directions(shop: OpticalShop) {
         if (!openShopDirections(context, shop)) locationMessage = "No maps or browser app is available to open directions."
     }
@@ -116,49 +135,40 @@ fun NearbyShopsScreen(onBack: () -> Unit, onNavigate: (String) -> Unit, onShopCl
                     IconButton(onClick = { reload++; if (permission) locationAttempt++ }) { Icon(Icons.Outlined.Refresh, "Refresh shops", tint = FaceFitTeal) }
                 }
             }
-            item {
-                ShopMap(center, listed.filter { it.hasCoordinates }, Modifier.fillMaxWidth().height(120.dp)
-                    .softContainerShadow(RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp)))
-            }
             if (!permission || center == null || locationMessage != null) item {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(locationMessage ?: "Enable location to find registered optical shops within 3 km.", fontSize = 13.sp, color = FaceFitTextSecondary)
+                    Text(locationMessage ?: "Enable location to see how far each registered optical shop is.", fontSize = 13.sp, color = FaceFitTextSecondary)
                     OutlinedButton(enabled = !locating, onClick = {
                         if (permission) locationAttempt++ else request.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                     }) { Text(if (locating) "Finding your location..." else if (permission) "Retry location" else "Use my location") }
                 }
             }
-            if (center != null) item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    FilterChip(selected = nearbyOnly, onClick = { nearbyOnly = true }, label = { Text("Within 3 km") })
-                    FilterChip(selected = !nearbyOnly, onClick = { nearbyOnly = false }, label = { Text("All shops") })
-                }
-                Text("Distances are approximate and measured in a straight line.", fontSize = 11.sp, color = FaceFitTextSecondary)
-            }
             if (!loading && error == null) item {
-                Text(if (center != null && nearbyOnly) "${listed.size} optical ${if (listed.size == 1) "shop" else "shops"} within 3 km"
-                    else "${listed.size} registered optical ${if (listed.size == 1) "shop" else "shops"}",
+                Text("${listed.size} registered optical ${if (listed.size == 1) "shop" else "shops"}",
                     fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF17383E))
             }
             when {
                 loading -> item { Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = FaceFitTeal) } }
                 error != null -> item { Column { Text(error!!, color = FaceFitTextSecondary); TextButton(onClick = { reload++ }) { Text("Retry") } } }
-                listed.isEmpty() -> item { Text(if (center != null && nearbyOnly) "No registered shops with a map location were found within 3 km. Try All shops."
-                    else "No approved shops have been published in FaceFit yet.", color = FaceFitTextSecondary, fontSize = 14.sp) }
+                listed.isEmpty() -> item { Text("No approved shops have been published in FaceFit yet.",
+                    color = FaceFitTextSecondary, fontSize = 14.sp) }
             }
             if (!loading && error == null) {
-                items(listed, key = { it.id }) { shop -> ShopRow(shop, center, onOpenShop = { onShopClick(shop.id) }, onDirections = { directions(shop) }) }
-                if (unmapped.isNotEmpty()) {
-                    item { Text("Registered shops awaiting map locations", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = FaceFitTextSecondary) }
-                    items(unmapped, key = { "unmapped-${it.id}" }) { shop -> ShopRow(shop, null, onOpenShop = { onShopClick(shop.id) }, onDirections = { directions(shop) }) }
-                }
+                items(listed, key = { it.id }) { shop -> ShopRow(shop, center, shop.id in compatibleShopIds, faceShape, onOpenShop = { onShopClick(shop.id) }, onDirections = { directions(shop) }) }
             }
         }
     }
 }
 
 @Composable
-private fun ShopRow(shop: OpticalShop, location: Location?, onOpenShop: () -> Unit, onDirections: () -> Unit) {
+private fun ShopRow(
+    shop: OpticalShop,
+    location: Location?,
+    hasCompatibleFrame: Boolean,
+    faceShape: String?,
+    onOpenShop: () -> Unit,
+    onDirections: () -> Unit
+) {
     val cardShape = RoundedCornerShape(24.dp)
     Surface(onClick = onOpenShop, shape = cardShape, color = Color.White,
         modifier = Modifier.fillMaxWidth().softContainerShadow(cardShape)) {
@@ -182,6 +192,11 @@ private fun ShopRow(shop: OpticalShop, location: Location?, onOpenShop: () -> Un
                 }
                 Text(shop.address.ifBlank { "Address not provided" }, fontSize = 12.sp,
                     lineHeight = 16.sp, color = Color(0xFF6A8A99), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (hasCompatibleFrame && !faceShape.isNullOrBlank()) {
+                    Text("Has frames for your ${faceShape.trim().lowercase(Locale.ROOT)} face", fontSize = 12.sp,
+                        lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, color = FaceFitTeal, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis)
+                }
             }
             IconButton(onClick = onDirections, modifier = Modifier.size(48.dp)
                 .semantics { contentDescription = "Directions to ${shop.name}" }) {
@@ -217,30 +232,3 @@ internal fun openShopDirections(context: Context, shop: OpticalShop): Boolean {
     return runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)); true }.getOrDefault(false)
 }
 
-
-@Composable
-private fun ShopMap(location: Location?,shops: List<OpticalShop>,modifier: Modifier) {
-    val context=LocalContext.current
-    val payload=remember(location,shops) {
-        JSONObject().apply {
-            if(location!=null) put("user",JSONArray(listOf(location.latitude,location.longitude)))
-            put("shops",JSONArray().apply { shops.forEach { shop -> put(JSONObject().put("name",shop.name).put("lat",shop.latitude).put("lon",shop.longitude)) } })
-        }.toString().replace("<","\\u003c")
-    }
-    val template=remember { context.assets.open("nearby/map.html").bufferedReader().use { it.readText() } }
-    val html=remember(payload) { template.replace("/*SHOP_DATA*/",payload) }
-    AndroidView(modifier=modifier,factory={ ctx -> WebView(ctx).apply {
-        settings.javaScriptEnabled=true
-        settings.allowFileAccess=false;settings.allowContentAccess=false
-        settings.userAgentString=settings.userAgentString+" FaceFit/1.0"
-        webViewClient=object: WebViewClient() {
-            override fun shouldOverrideUrlLoading(view: WebView,request: android.webkit.WebResourceRequest): Boolean {
-                if(request.isForMainFrame && request.url.scheme=="https") {
-                    runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW,request.url)) }
-                }
-                return true
-            }
-        }
-    } },update={ view -> if(view.tag!=html) { view.tag=html;view.loadDataWithBaseURL("https://facefit.local/",html,"text/html","UTF-8",null) } },
-        onRelease={ it.stopLoading();it.destroy() })
-}

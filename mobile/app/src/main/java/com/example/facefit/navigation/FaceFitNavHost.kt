@@ -168,7 +168,7 @@ fun FaceFitNavHost(
                 else navController.navigate(route) { launchSingleTop = true }
             }, onShopClick = { shopId ->
                 navController.navigate("shopDetails/${Uri.encode(shopId)}") { launchSingleTop = true }
-            })
+            }, faceShape = (latestScanMetrics?.faceShape ?: latestScan.faceShape)?.takeIf { it.isNotBlank() })
         }
         composable("shopDetails/{shopId}") { entry ->
             val shopId = entry.arguments?.getString("shopId").orEmpty()
@@ -356,7 +356,7 @@ fun FaceFitNavHost(
             (sampleFrames + favorites.frames).find { it.name == entry.arguments?.getString("frameName") }?.let { frame ->
                 FrameDetailsScreen(
                     frame = frame,
-                    faceShape = latestScanMetrics?.faceShape,
+                    faceShape = (latestScanMetrics?.faceShape ?: latestScan.faceShape)?.takeIf { it.isNotBlank() },
                     isFavorite = frame.name in savedFrameNames,
                     onBack = { navController.popBackStack() },
                     onFavoriteChange = { saved -> updateFrameFavorite(frame.name, saved) },
@@ -381,6 +381,7 @@ fun FaceFitNavHost(
                     onFindNearbyShops = {
                         navController.navigate("nearbyShops") { launchSingleTop = true }
                     },
+                    faceShape = (latestScanMetrics?.faceShape ?: latestScan.faceShape)?.takeIf { it.isNotBlank() },
                 )
             }
         }

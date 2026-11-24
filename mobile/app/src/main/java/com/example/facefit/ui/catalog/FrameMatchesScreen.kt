@@ -51,7 +51,9 @@ fun FrameMatchesScreen(
 ) {
     val context = LocalContext.current
     val thresholds = remember(context) { com.example.facefit.facefit.recommendation.FacialFeatureThresholds.load(context) }
-    val result = remember(metrics, thresholds) { metrics?.let { RecommendationResult.from(it, thresholds) } }
+    val rules = remember(context) { com.example.facefit.facefit.recommendation.FacialExplanationRules.load(context) }
+    // Same wording as the results screen: built from face shape, jawline, upper face and eye spacing.
+    val result = remember(metrics, thresholds, rules) { metrics?.let { RecommendationResult.from(it, thresholds, rules) } }
 
     val compatibility = remember(context) { com.example.facefit.facefit.recommendation.FrameCompatibility.load(context) }
     val matches = remember(metrics?.faceShape, compatibility) {
@@ -78,6 +80,17 @@ fun FrameMatchesScreen(
         }
         if (metrics != null && result != null) {
             item { ScanResultSummaryCard(metrics = metrics, result = result) }
+            if (result.explanation.isNotBlank()) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(20.dp))
+                            .clip(RoundedCornerShape(20.dp)).background(Color.White).padding(16.dp)
+                    ) {
+                        ExplanationSections(result.noticed, result.styles,
+                            titleColor = FaceFitTextPrimary, bodyColor = FaceFitTextSecondary)
+                    }
+                }
+            }
         }
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -149,6 +162,36 @@ fun FrameMatchesScreen(
     }
 }
 
+/** Shows the first [collapsedLines] lines of [text], with a toggle to read all of it. */
+@Composable
+private fun ExpandableExplanation(text: String, key: String, collapsedLines: Int = 3) {
+    var expanded by rememberSaveable(key) { mutableStateOf(false) }
+    var cutOff by remember(key, text) { mutableStateOf(false) }
+    Text(
+        text = text,
+        color = FaceFitTextSecondary,
+        fontSize = 13.sp,
+        lineHeight = 19.sp,
+        maxLines = if (expanded) Int.MAX_VALUE else collapsedLines,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        onTextLayout = { if (!expanded) cutOff = it.hasVisualOverflow },
+    )
+    if (expanded || cutOff) {
+        Text(
+            text = if (expanded) "Show less" else "Read full explanation",
+            color = FaceFitTeal,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .clickable(onClickLabel = if (expanded) "Show less" else "Read full explanation") {
+                    expanded = !expanded
+                }
+                .padding(vertical = 4.dp),
+        )
+    }
+}
+
 @Composable
 private fun FrameThumbnail(frame: SampleFrame) {
     Box(Modifier.size(62.dp).clip(RoundedCornerShape(16.dp)).background(frame.color.copy(alpha = 0.1f)),
@@ -181,4 +224,18 @@ internal fun FrameIllustration(frame: SampleFrame, modifier: Modifier = Modifier
             drawLine(frame.color, Offset(size.width * 0.43f, top + lensHeight * 0.4f),
                 Offset(size.width * 0.57f, top + lensHeight * 0.4f), strokeWidth = 2.dp.toPx())
         }
+}
+
+/** "What we noticed" then "Styles to explore", as in the facial explanation rules. */
+@Composable
+internal fun ExplanationSections(noticed: String, styles: String?, titleColor: Color, bodyColor: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("What we noticed", color = titleColor, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(noticed, color = bodyColor, fontSize = 14.sp, lineHeight = 21.sp)
+        if (!styles.isNullOrBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text("Styles to explore", color = titleColor, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text(styles, color = bodyColor, fontSize = 14.sp, lineHeight = 21.sp)
+        }
+    }
 }

@@ -4,7 +4,11 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
+import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.data.auth.GoogleSignInClient
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.example.facefit.data.session.UserPreferencesRepository
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -68,6 +72,24 @@ class PrivacyRepository(private val context: Context) {
             clipData = ClipData.newRawUri("FaceFit data export", uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }, "Export your FaceFit data")
+    }
+
+    /**
+     * Offload: archive the account instead of deleting it. Profile, favorites and scans stay in the
+     * cloud, marked archived; this device's copies are removed and the user is signed out.
+     * Signing in again restores everything (AuthManager.restoreIfOffloaded).
+     */
+    suspend fun offloadAccount() {
+        val user = checkNotNull(auth.currentUser) { "Sign in before offloading your account." }
+        FirebaseFirestore.getInstance().collection("users").document(user.uid)
+            .set(mapOf("accountStatus" to AuthManager.ACCOUNT_ARCHIVED,
+                "archivedAt" to FieldValue.serverTimestamp()), SetOptions.merge()).await()
+        check(auth.currentUser?.uid == user.uid) { "Your account changed. Please try again." }
+        scans.clearLocalCopy() // Restored from the cloud at the next sign-in.
+        setAnalyticsEnabled(false)
+        withContext(Dispatchers.IO) { File(context.cacheDir, "privacy-exports").listFiles()?.forEach { it.delete() } }
+        auth.signOut()
+        GoogleSignInClient.clearSignInState(context)
     }
 
     suspend fun deleteAccount(password: String) {

@@ -17,6 +17,12 @@ import com.google.firebase.firestore.FieldValue
 import kotlinx.coroutines.tasks.await
 
 class AuthManager {
+    companion object {
+        const val ACCOUNT_ACTIVE = "active"
+        /** Set by Offload Account: profile, favorites and scans stay in the cloud, unused until sign-in. */
+        const val ACCOUNT_ARCHIVED = "archived"
+    }
+
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
@@ -47,6 +53,7 @@ class AuthManager {
     suspend fun signIn(email: String, password: String): Result<Unit> {
         return try {
             auth.signInWithEmailAndPassword(email, password).await()
+            restoreIfOffloaded()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -61,6 +68,7 @@ class AuthManager {
             val user = auth.signInWithCredential(credential).await().user
                 ?: error("Google sign-in could not be completed.")
             GoogleAuthDiagnostics.event("firebaseSessionCreated")
+            restoreIfOffloaded()
 
             // Initialize a missing profile without overwriting an existing user's edits.
             // Authentication can succeed even when profile storage is unavailable.
@@ -146,35 +154,47 @@ class AuthManager {
         }
     }
 
+    /**
+     * Offloaded accounts are archived, not deleted: signing in again brings them back.
+     * Never blocks sign-in; a failed restore is retried at the next sign-in.
+     */
+    private suspend fun restoreIfOffloaded() {
+        val uid = auth.currentUser?.uid ?: return
+        try {
+            withTimeoutOrNull(5_000L) {
+                val reference = db.collection("users").document(uid)
+                if (reference.get().await().getString("accountStatus") == ACCOUNT_ARCHIVED) {
+                    reference.update(mapOf("accountStatus" to ACCOUNT_ACTIVE,
+                        "restoredAt" to FieldValue.serverTimestamp())).await()
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            Log.w("AuthManager", "Signed in; the archived account could not be restored yet.")
+        }
+    }
+
     suspend fun updateProfile(
-        fullName: String,
-        phone: String,
-        age: Int?,
-        gender: String,
+        firstName: String,
+        lastName: String,
         photo: ByteArray?
     ): Result<Map<String, Any>> {
         val user = auth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
-        val names = fullName.trim().split(Regex("\\s+"), limit = 2)
-        if (names.first().isBlank()) return Result.failure(IllegalArgumentException("Full name is required"))
-        if (age != null && age !in 0..125) {
-            return Result.failure(IllegalArgumentException("Age is out of range"))
-        }
+        val first = firstName.trim()
+        if (first.isBlank()) return Result.failure(IllegalArgumentException("First name is required"))
 
         val profile = db.collection("users").document(user.uid)
         val fields = buildMap<String, Any> {
-            put("firstName", names.first())
-            put("lastName", names.getOrElse(1) { "" })
-            put("phone", phone.trim())
-            put("gender", gender)
-            age?.let { put("age", it) }
+            put("firstName", first)
+            put("lastName", lastName.trim())
             photo?.let { put("profilePhoto", Blob.fromBytes(it)) }
         }
         val changes = fields + ("updatedAt" to FieldValue.serverTimestamp())
         return try {
             db.runTransaction { transaction ->
                 if (transaction.get(profile).exists()) {
-                    val updates = if (age == null) changes + ("age" to FieldValue.delete()) else changes
-                    transaction.update(profile, updates)
+                    transaction.update(profile, changes)
                 } else {
                     transaction.set(profile, changes + mapOf(
                         "uid" to user.uid,

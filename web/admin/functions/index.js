@@ -187,3 +187,4 @@ exports.hideFrame = onCall(async (request) => {
 
 // Publish only public shop fields for the mobile Nearby Shops directory.
 exports.syncPublicShop = require("./public-shops").syncPublicShop;
+exports.syncPublicShopSubscription = require("./public-shops").syncPublicShopSubscription;

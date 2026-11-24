@@ -66,6 +66,14 @@ internal object NotificationInbox {
         if (current.any { !it.read }) save(context, accountId, current.map { it.copy(read = true) })
     }
 
+    /** Removes one notification (swiped away). */
+    @Synchronized
+    fun remove(context: Context, accountId: String, id: Long) {
+        val current = entries(context, accountId)
+        val kept = current.filter { it.id != id }
+        if (kept.size != current.size) save(context, accountId, kept)
+    }
+
     @Synchronized
     fun clear(context: Context, accountId: String) {
         prefs(context).edit().remove(key(accountId)).apply()

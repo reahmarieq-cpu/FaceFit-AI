@@ -33,6 +33,8 @@ internal class FacialProfileResult(
     }
     private val wording = rules?.find(shape, jawline.category, upperFace.category, eyeSpacing.category)
     val suggestedStyle = wording?.suggestedStyle
+    /** "Styles to explore"; null when no rule matched. */
+    val styles: String? = wording?.styles
     val headline = wording?.headline ?: shape?.let { "Estimated face shape: $it" } ?: "Face shape uncertain"
     val explanation: String = wording?.explanation ?: buildString {
         if (shape != null) {
@@ -47,6 +49,8 @@ internal class FacialProfileResult(
         ).filterNotNull()
         append(descriptions.joinToString(" "))
     }.trim()
+    /** "What we noticed": the rule's facial analysis, or the generated description. */
+    val noticed: String = wording?.noticed ?: explanation
 
     private fun FacialFeatureResult.describe(name: String): String? =
         category?.let { "Your $name is ${it.lowercase(Locale.ROOT)}." }

@@ -20,7 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,7 +35,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.data.auth.AuthManager
@@ -58,12 +56,9 @@ internal fun EditProfileScreen(
     onBack: () -> Unit,
     onSaved: (Map<String, Any>) -> Unit
 ) {
-    var fullName by rememberSaveable { mutableStateOf(profile.profileFullName()) }
-    var phone by rememberSaveable { mutableStateOf((profile["phone"] as? String).orEmpty()) }
-    var age by rememberSaveable { mutableStateOf(profile["age"]?.toString().orEmpty()) }
-    var gender by rememberSaveable { mutableStateOf((profile["gender"] as? String).orEmpty()) }
+    var firstName by rememberSaveable { mutableStateOf((profile["firstName"] as? String).orEmpty()) }
+    var lastName by rememberSaveable { mutableStateOf((profile["lastName"] as? String).orEmpty()) }
     var selectedPhoto by rememberSaveable { mutableStateOf<ByteArray?>(null) }
-    var genderMenuOpen by remember { mutableStateOf(false) }
     var loadingPhoto by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -119,7 +114,7 @@ internal fun EditProfileScreen(
             val photo = selectedPhoto
             val avatarBytes = remember(photo, profile) { photo ?: (profile["profilePhoto"] as? Blob)?.toBytes() }
             ProfileAvatar(
-                fullName = fullName,
+                fullName = "$firstName $lastName".trim(),
                 photo = avatarBytes,
                 modifier = Modifier.size(84.dp).shadow(8.dp, RoundedCornerShape(24.dp))
             )
@@ -141,62 +136,21 @@ internal fun EditProfileScreen(
             modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ProfileField("Full name", fullName, { fullName = it }, enabled = editable,
+            ProfileField("First name", firstName, { firstName = it }, enabled = editable,
+                keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+            ProfileField("Last name", lastName, { lastName = it }, enabled = editable,
                 keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
             ProfileField("Email", authManager.currentUser?.email ?: (profile["email"] as? String).orEmpty(), {},
                 readOnly = true)
-            ProfileField("Phone", phone, { phone = it }, enabled = editable,
-                keyboard = KeyboardOptions(keyboardType = KeyboardType.Phone))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ProfileField("Age", age, { if (it.length <= 3 && it.all { c -> c in '0'..'9' }) age = it },
-                    modifier = Modifier.width(72.dp), enabled = editable,
-                    keyboard = KeyboardOptions(keyboardType = KeyboardType.Number))
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Gender", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FaceFitTextPrimary)
-                    Box {
-                        OutlinedButton(
-                            onClick = { genderMenuOpen = true },
-                            enabled = editable,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            border = null,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White, contentColor = FaceFitTextPrimary
-                            )
-                        ) {
-                            Text(gender.ifBlank { "Select" }, modifier = Modifier.weight(1f))
-                            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null)
-                        }
-                        DropdownMenu(expanded = genderMenuOpen, onDismissRequest = { genderMenuOpen = false }) {
-                            listOf("", "Female", "Male", "Non-binary", "Prefer not to say").forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.ifBlank { "Not specified" }) },
-                                    onClick = {
-                                        gender = option
-                                        genderMenuOpen = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
 
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = {
                     if (!editable) return@Button
-                    val ageYears = age.toIntOrNull()
-                    if (age.isNotEmpty() && (ageYears == null || ageYears !in 0..125)) {
-                        error = "Enter an age from 0 to 125 or leave it blank."
-                        return@Button
-                    }
-
                     saving = true
                     error = null
                     scope.launch {
-                        authManager.updateProfile(fullName, phone, ageYears, gender, selectedPhoto)
+                        authManager.updateProfile(firstName, lastName, selectedPhoto)
                             .onSuccess(onSaved)
                             .onFailure {
                                 val code = (it as? FirebaseFirestoreException)?.code
@@ -209,7 +163,7 @@ internal fun EditProfileScreen(
                         saving = false
                     }
                 },
-                enabled = editable && fullName.isNotBlank(),
+                enabled = editable && firstName.isNotBlank(),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 54.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = FaceFitTeal, contentColor = Color.White),

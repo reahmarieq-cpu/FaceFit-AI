@@ -12,7 +12,10 @@ internal data class RecommendationResult(
     val explanation: String,
     val jawlineBorderline: Boolean = false,
     val foreheadBorderline: Boolean = false,
-    val eyeSpacingBorderline: Boolean = false
+    val eyeSpacingBorderline: Boolean = false,
+    /** "What we noticed" and "Styles to explore". */
+    val noticed: String = explanation,
+    val styles: String? = null
 ) {
     companion object {
         fun from(metrics: FaceAnalyzer.FaceMetrics, thresholds: FacialFeatureThresholds? = null,
@@ -28,7 +31,9 @@ internal data class RecommendationResult(
                 profile.explanation,
                 profile.jawline.isBorderline,
                 profile.upperFace.isBorderline,
-                profile.eyeSpacing.isBorderline
+                profile.eyeSpacing.isBorderline,
+                profile.noticed,
+                profile.styles
             )
         }
     }

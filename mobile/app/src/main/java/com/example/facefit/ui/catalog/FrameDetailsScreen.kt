@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.facefit.facefit.recommendation.FrameCompatibility
+import com.example.facefit.facefit.recommendation.FrameFitExplanation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -128,10 +129,15 @@ internal fun FrameDetailsContent(frame: SampleFrame, modifier: Modifier = Modifi
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 )
+                // Why this frame style suits (or doesn't suit) the scanned face shape.
+                val fitExplanation = remember(faceShape, frame.category, assessment) {
+                    FrameFitExplanation.explain(faceShape, frame.category, assessment?.score)
+                }
                 Text(
                     text = when {
                         compatibility.loadError != null -> compatibility.loadError
                         faceShape.isNullOrBlank() && assessment == null -> "Complete a face scan to view compatibility."
+                        fitExplanation != null -> fitExplanation
                         else -> frame.explanation
                     },
                     color = FaceFitTextSecondary,

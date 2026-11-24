@@ -56,6 +56,7 @@ fun VirtualTryOnScreen(
     isFavorite: Boolean,
     onFavoriteChange: (Boolean) -> Unit,
     onFindNearbyShops: (SampleFrame) -> Unit,
+    faceShape: String? = null,
 ) {
     val context = LocalContext.current
     val glbPath = frame.assetPath?.takeIf { it.endsWith(".glb", ignoreCase = true) }
@@ -123,7 +124,7 @@ fun VirtualTryOnScreen(
                     }
                     status?.let { Text(it, fontSize = 12.sp, color = FaceFitTextSecondary) }
                 }
-                FrameDetailsContent(frame)
+                FrameDetailsContent(frame, faceShape = faceShape)
                 Row(
                     Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

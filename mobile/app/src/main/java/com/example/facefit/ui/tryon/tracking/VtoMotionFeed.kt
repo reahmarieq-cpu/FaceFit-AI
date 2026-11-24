@@ -5,6 +5,7 @@ import com.example.facefit.ui.camera.VtoEyeMotion
 import com.example.facefit.ui.camera.VtoLatencyEstimator
 import com.example.facefit.ui.camera.VtoFaceLossGrace
 import com.example.facefit.facefit.analysis.FaceAnalyzer
+import com.example.facefit.facefit.tryon.tracking.VtoFrameShiftTracker
 
 /** Shares mesh poses and lightweight motion offsets without retaining camera display pixels. */
 class VtoMotionFeed internal constructor() {
@@ -18,6 +19,8 @@ class VtoMotionFeed internal constructor() {
         val timing: VtoLatencyEstimator.Snapshot,
         val motionAnchor: VtoEyeMotion.Anchor? = null,
         val recovering: Boolean = false,
+        /** Camera frame the mesh came from; frame shifts measured against it carry the same id. */
+        val referenceId: Long = 0L,
     ) {
         val measuredMeshNanos: Long get() = timing.cycleNanos
         val sampledAtNanos: Long get() = deliveredAtNanos - measuredLatencyNanos
@@ -58,8 +61,25 @@ class VtoMotionFeed internal constructor() {
         motion = null
     }
 
+    /** Eye-region displacement since a mesh's camera frame, measured on every camera frame. */
+    internal data class ShiftSample(val shift: VtoFrameShiftTracker.Shift, val capturedElapsedNanos: Long)
+
+    @Volatile internal var shift: ShiftSample? = null
+        private set
+    private val shiftLock = Any()
+
+    /** Camera/worker threads. A shift for an older mesh never replaces one for a newer mesh. */
+    internal fun publishShift(next: VtoFrameShiftTracker.Shift?, capturedElapsedNanos: Long) {
+        synchronized(shiftLock) {
+            val current = shift
+            if (next != null && current != null && next.referenceId < current.shift.referenceId) return
+            shift = next?.let { ShiftSample(it, capturedElapsedNanos) }
+        }
+    }
+
     @Synchronized
     internal fun clear() {
+        synchronized(shiftLock) { shift = null }
         lossGrace.reset()
         recovering = false
         estimator.reset()

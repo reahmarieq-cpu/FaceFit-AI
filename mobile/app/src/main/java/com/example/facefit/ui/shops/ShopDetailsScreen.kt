@@ -124,20 +124,6 @@ fun ShopDetailsScreen(shopId: String, onBack: () -> Unit, onFrameClick: (String)
                         }
                     }
                 }
-                item {
-                    Column(shopContainer().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("About the shop", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = FaceFitTextPrimary)
-                        Text(current.description.ifBlank { "This shop has not added an introduction yet." },
-                            fontSize = 14.sp, lineHeight = 21.sp, color = FaceFitTextSecondary)
-                        if (current.openingHours.isNotBlank()) Text("Opening hours\n${current.openingHours}", color = FaceFitTextSecondary, fontSize = 14.sp)
-                        if (current.phone.isNotBlank()) TextButton(onClick = { open(Uri.fromParts("tel", current.phone, null), Intent.ACTION_DIAL) }) {
-                            Icon(Icons.Outlined.Phone, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(current.phone)
-                        }
-                        current.website?.let { website -> TextButton(onClick = { open(Uri.parse(website)) }) {
-                            Icon(Icons.Outlined.Language, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Visit website")
-                        } }
-                    }
-                }
                 if (actionMessage != null) item { Text(actionMessage!!, color = FaceFitTextSecondary, fontSize = 13.sp) }
                 item {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -170,6 +156,13 @@ private fun ShopFrameCard(frame: ShopFrame, onClick: () -> Unit) {
                 Text(frame.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = FaceFitTextPrimary)
                 val subtitle = listOf(frame.shape, frame.type, frame.color).filter { it.isNotBlank() }.distinct().joinToString(" · ")
                 if (subtitle.isNotBlank()) Text(subtitle, color = FaceFitTextSecondary, fontSize = 12.sp)
+                // Size and measurements, as published by the shop.
+                val size = frame.sizeLabel.takeIf { it.isNotBlank() }?.let { "Size: $it" }
+                val measurements = frame.measurementsMm.entries.joinToString(" · ") { (label, mm) ->
+                    "${label.replace(" width", "").replace(" length", "")} ${if (mm % 1.0 == 0.0) mm.toInt() else mm} mm"
+                }.takeIf { it.isNotBlank() }
+                Text(size ?: "Size: not provided", color = FaceFitTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(measurements ?: "Measurements not provided", color = FaceFitTextSecondary, fontSize = 12.sp, lineHeight = 16.sp)
                 Text("View frame", color = FaceFitTeal, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
             Icon(Icons.Outlined.ChevronRight, null, tint = FaceFitTeal)

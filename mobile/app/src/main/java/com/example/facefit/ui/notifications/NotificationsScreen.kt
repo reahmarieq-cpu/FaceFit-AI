@@ -23,7 +23,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.NotificationsNone
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,6 +83,20 @@ fun NotificationsScreen(
     // Show which ones are new this time, then count them as read.
     val unreadIds = remember(accountId) { entries.filter { !it.read }.map { it.id }.toSet() }
     LaunchedEffect(accountId) { accountId?.let { NotificationInbox.markAllRead(context, it) } }
+    var confirmClear by remember { mutableStateOf(false) }
+    if (confirmClear && accountId != null) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            title = { Text("Clear all notifications?") },
+            text = { Text("This removes every notification from this list.") },
+            confirmButton = {
+                TextButton(onClick = { NotificationInbox.clear(context, accountId); confirmClear = false }) {
+                    Text("Clear all", color = Color(0xFFE5484D))
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } }
+        )
+    }
 
     Column(Modifier.fillMaxSize().background(FaceFitBackground).statusBarsPadding()) {
         Row(
@@ -86,6 +108,11 @@ fun NotificationsScreen(
             }
             Text("Notifications", fontSize = 20.sp, fontWeight = FontWeight.Bold,
                 color = FaceFitTextPrimary, modifier = Modifier.weight(1f))
+            if (entries.isNotEmpty() && accountId != null) {
+                TextButton(onClick = { confirmClear = true }) {
+                    Text("Clear all", color = Color(0xFFE5484D), fontWeight = FontWeight.SemiBold)
+                }
+            }
             IconButton(onClick = onOpenSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = "Notification settings", tint = FaceFitTextSecondary)
             }
@@ -112,8 +139,29 @@ fun NotificationsScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(entries, key = { it.id }) { entry ->
-                    NotificationCard(entry, isNew = entry.id in unreadIds,
-                        onClick = { entry.frameName?.let(onOpenFrame) })
+                    // Swipe right to left to remove one notification.
+                    val swipe = rememberSwipeToDismissBoxState()
+                    LaunchedEffect(swipe.currentValue) {
+                        if (swipe.currentValue == SwipeToDismissBoxValue.EndToStart && accountId != null) {
+                            NotificationInbox.remove(context, accountId, entry.id)
+                        }
+                    }
+                    SwipeToDismissBox(
+                        state = swipe,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp))
+                                    .background(Color(0xFFE5484D)).padding(end = 22.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(Icons.Outlined.Delete, contentDescription = "Remove", tint = Color.White)
+                            }
+                        }
+                    ) {
+                        NotificationCard(entry, isNew = entry.id in unreadIds,
+                            onClick = { entry.frameName?.let(onOpenFrame) })
+                    }
                 }
             }
         }
