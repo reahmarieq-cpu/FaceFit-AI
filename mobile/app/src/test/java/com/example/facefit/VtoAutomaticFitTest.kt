@@ -19,7 +19,8 @@ class VtoAutomaticFitTest {
     }
     @Test fun calibratedLensCentersFollowEyesAtDifferentDistances() {
         val anchors=VtoAutomaticFit.squareTortoise
-        val halfSpan = 150f * (4.445859f + 1.856432f) / (2f * 4.445859f)
+        // Lens centres land on the eye centres: (350 + 400) / 2 and (600 + 650) / 2, i.e. 125 px from the middle.
+        val halfSpan = 125f
         for(zoom in listOf(.6f,1f,1.3f)) {
             val m=requireNotNull(GlbFaceTransform.matrix(face(zoom),1000,1000,
                 floatArrayOf(0f,-11.5f,-73.5f),floatArrayOf(70f,24f,76.25f),1f,0f,anchors))

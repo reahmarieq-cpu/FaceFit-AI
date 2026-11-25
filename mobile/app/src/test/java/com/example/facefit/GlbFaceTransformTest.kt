@@ -9,7 +9,9 @@ import org.junit.Test
 import kotlin.math.*
 
 class GlbFaceTransformTest {
-    private val eyeSpan = 240f * (4.445859f + 1.856432f) / (2f * 4.445859f)
+    // Distance between the two eye centres (midpoints of the inner and outer corners):
+    // each eye centre is 0.5 * 0.25 * 800 = 100 px from the middle.
+    private val eyeSpan = 200f
     private val center = floatArrayOf(0f, -11.5f, -73.5f)
     private val extent = floatArrayOf(70f, 24f, 76.25f)
     private fun face(yaw: Float = 0f, shiftX: Float = 0f): FaceAnalyzer.FaceMetrics {
@@ -34,8 +36,9 @@ class GlbFaceTransformTest {
     @Test fun frontFitsEyesAndNativeArmsExtendBehindFrame() {
         val m = matrix()!!
         val bridge = transform(m, Vector3(0f, center[1], 2.75f))
+        // Frame centre sits between the eyes, on the eye line (y = 1000 - 400 in Filament's Y-up space).
         assertEquals(400f, bridge.x, 0.01f)
-        assertEquals(611.7729f, bridge.y, 0.01f)
+        assertEquals(600f, bridge.y, 0.01f)
         val left = transform(m, Vector3(-70f, center[1], 2.75f))
         val right = transform(m, Vector3(70f, center[1], 2.75f))
         assertEquals(2f * eyeSpan, right.x-left.x, 0.01f)

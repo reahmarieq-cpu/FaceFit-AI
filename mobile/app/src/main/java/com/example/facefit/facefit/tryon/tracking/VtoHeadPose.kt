@@ -85,7 +85,7 @@ internal object VtoHeadPose {
 
     internal fun candidates(face: FaceAnalyzer.FaceMetrics, width: Int, height: Int,
         scale: Float, heightOffset: Float): Candidates? {
-        if(face.landmarks.size<468) return null
+        if(!face.isFaceDetected || face.landmarks.size<468) return null
         fun p(i: Int)=face.landmarks[i].let { Vector3(it.x*width,it.y*height,it.z*width) }
         val first=(p(33)+p(133))*.5f; val second=(p(263)+p(362))*.5f
         val fallback=GlassesRig.fromEyes(first,second,p(152),scale,heightOffset,p(10),p(168)) ?: return null
