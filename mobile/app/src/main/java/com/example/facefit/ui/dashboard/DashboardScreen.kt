@@ -52,11 +52,10 @@ fun DashboardScreen(
 
     LaunchedEffect(authManager) {
         authManager?.getUserProfile()?.onSuccess { userData ->
-            val firstName = userData["firstName"] as? String
-            val lastName = userData["lastName"] as? String
-            fullName = listOfNotNull(firstName, lastName)
-                .joinToString(" ")
-                .ifBlank { userName }
+            fullName = com.example.facefit.data.auth.PersonName.fullName(
+                userData["firstName"] as? String, userData["middleInitial"] as? String,
+                userData["lastName"] as? String, userData["suffix"] as? String
+            ).ifBlank { userName }
         }
     }
 
@@ -141,7 +140,7 @@ fun DashboardScreen(
                         Text("Find your perfect frames", fontSize = 20.sp,
                             lineHeight = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         Spacer(Modifier.height(6.dp))
-                        Text("Scan your face and get instant compatibility matches",
+                        Text("Scan your face and get instant suitability matches",
                             modifier = Modifier.fillMaxWidth(0.66f),
                             fontSize = 13.sp, lineHeight = 18.sp,
                             color = Color.White.copy(alpha = 0.88f))

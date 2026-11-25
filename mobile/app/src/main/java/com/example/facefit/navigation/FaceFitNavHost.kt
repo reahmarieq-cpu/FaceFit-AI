@@ -119,9 +119,13 @@ fun FaceFitNavHost(
                 onSignIn = { navController.navigate("signin") }
             )
         }
-        composable("signin") {
+        composable(
+            "signin?email={email}",
+            arguments = listOf(androidx.navigation.navArgument("email") { defaultValue = "" })
+        ) { entry ->
             SignInScreen(
                 authManager = authManager,
+                initialEmail = entry.arguments?.getString("email").orEmpty(),
                 onBack = { navController.popBackStack() },
                 onSignInSuccess = {
                     navController.navigate("dashboard") {
@@ -135,9 +139,17 @@ fun FaceFitNavHost(
             RegisterScreen(
                 authManager = authManager,
                 onBack = { navController.popBackStack() },
+                // Google sign-up signs straight in.
                 onRegisterSuccess = {
                     navController.navigate("dashboard") {
                         popUpTo("splash") { inclusive = true }
+                    }
+                },
+                // Email registration: back to Sign In (already signed out), email filled in.
+                onRegistered = { email ->
+                    navController.navigate("signin?email=${Uri.encode(email)}") {
+                        popUpTo("splash")
+                        launchSingleTop = true
                     }
                 },
                 onSignIn = { navController.navigate("signin") }

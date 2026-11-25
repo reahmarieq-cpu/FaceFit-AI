@@ -143,7 +143,7 @@ fun FrameMatchesScreen(
                                 modifier = Modifier.size(20.dp))
                         }
                         frame.compatibilityScore?.let { score ->
-                            Text("${kotlin.math.round(score).toInt()}/100", color = FaceFitTeal,
+                            Text("${kotlin.math.round(score).toInt()}%", color = FaceFitTeal,
                                 fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }

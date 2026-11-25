@@ -49,8 +49,6 @@ val sampleFrames = listOf(
         "Lifted outer corners draw attention to the eyes and add an expressive accent.",
         assetPath = "frames/cat-eye/model.glb", has3DModel = true,
         thumbnailAssetPath = "frames/cat-eye/thumbail.png"),
-    SampleFrame("Leo", "Aviator", 86, Color(0xFFB18B42), "Metal", "Gold",
-        "Aviator frames combine a curved outline and a light metal finish for a classic look."),
     SampleFrame("Browline Black", "Browline", 85, Color(0xFF303030), "Metal & Acetate", "Black",
         "A bold upper rim emphasizes the brow, while slim metal lower rims keep the frame visually light.",
         assetPath = "frames/browline/black_browline_front_depth.png",

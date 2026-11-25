@@ -6,7 +6,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,9 +58,13 @@ object AppMessages {
 }
 
 /** Place once, at the bottom of the app's root layout, above everything else. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AppMessageHost(modifier: Modifier = Modifier) {
     val message by AppMessages.message.collectAsState()
+    // The app draws edge to edge, so the keyboard covers the bottom of the screen:
+    // while it is open, sit just above it instead of above the bottom navigation bar.
+    val keyboardOpen = WindowInsets.isImeVisible
     // Keep the last text while the bar animates out.
     var lastText by remember { mutableStateOf("") }
     SideEffect { message?.let { lastText = it.text } }
@@ -76,8 +86,8 @@ fun AppMessageHost(modifier: Modifier = Modifier) {
             lineHeight = 20.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier
-                .navigationBarsPadding()
-                .padding(start = 24.dp, end = 24.dp, bottom = 88.dp)
+                .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars))
+                .padding(start = 24.dp, end = 24.dp, bottom = if (keyboardOpen) 12.dp else 88.dp)
                 .widthIn(max = 420.dp)
                 .background(Color(0xEE1F2A30), RoundedCornerShape(14.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp),

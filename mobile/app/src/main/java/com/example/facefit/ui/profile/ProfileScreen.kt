@@ -125,7 +125,8 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            ProfileAvatar(fullName, photo, modifier = Modifier.size(100.dp))
+            ProfileAvatar(fullName, photo, modifier = Modifier.size(100.dp),
+                initials = userData.orEmpty().profileInitials())
 
             Spacer(modifier = Modifier.height(16.dp))
 

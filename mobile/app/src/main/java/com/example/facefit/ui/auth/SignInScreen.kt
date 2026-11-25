@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.facefit.data.auth.AuthErrors
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.ui.components.FaceFitButton
 import com.example.facefit.ui.components.FaceFitLogo
@@ -33,9 +34,10 @@ fun SignInScreen(
     authManager: AuthManager,
     onBack: () -> Unit,
     onSignInSuccess: () -> Unit,
-    onRegister: () -> Unit
+    onRegister: () -> Unit,
+    initialEmail: String = ""
 ) {
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(initialEmail) }
     var password by remember { mutableStateOf("") }
     
     var isLoading by remember { mutableStateOf(false) }
@@ -95,7 +97,26 @@ fun SignInScreen(
         )
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            TextButton(onClick = { /* Forgot Password */ }) {
+            TextButton(enabled = !isLoading, onClick = {
+                val typed = email.trim()
+                when {
+                    typed.isEmpty() -> AppMessages.show("Enter your email above, then tap Forgot password.")
+                    !AuthErrors.isValidEmail(typed) -> AppMessages.show("Please enter a valid email address.")
+                    else -> {
+                        isLoading = true
+                        scope.launch {
+                            val result = authManager.sendPasswordReset(typed)
+                            isLoading = false
+                            result.onSuccess {
+                                AppMessages.show("If an account exists for $typed, a password reset link has been sent. " +
+                                    "Check your inbox and spam folder.", long = true)
+                            }.onFailure { e ->
+                                AppMessages.show(AuthErrors.message(e, AuthErrors.Action.RESET_PASSWORD), long = true)
+                            }
+                        }
+                    }
+                }
+            }) {
                 Text(text = "Forgot password?", color = FaceFitTeal, fontSize = 14.sp)
             }
         }
@@ -112,15 +133,19 @@ fun SignInScreen(
                         AppMessages.show("Please enter email and password")
                         return@FaceFitButton
                     }
-                    
+                    if (!AuthErrors.isValidEmail(email)) {
+                        AppMessages.show("Please enter a valid email address.")
+                        return@FaceFitButton
+                    }
+
                     isLoading = true
                     scope.launch {
-                        val result = authManager.signIn(email, password)
+                        val result = authManager.signIn(email.trim(), password)
                         isLoading = false
                         result.onSuccess {
                             onSignInSuccess()
                         }.onFailure { e ->
-                            AppMessages.show("Login failed: ${e.message}", long = true)
+                            AppMessages.show(AuthErrors.message(e, AuthErrors.Action.SIGN_IN), long = true)
                         }
                     }
                 }

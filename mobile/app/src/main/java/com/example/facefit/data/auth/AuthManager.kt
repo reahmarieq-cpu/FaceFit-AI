@@ -29,7 +29,14 @@ class AuthManager {
     val currentUser
         get() = auth.currentUser
 
-    suspend fun signUp(firstName: String, lastName: String, email: String, password: String): Result<Unit> {
+    suspend fun signUp(
+        firstName: String,
+        lastName: String,
+        email: String,
+        password: String,
+        middleInitial: String = "",
+        suffix: String = ""
+    ): Result<Unit> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val userId = result.user?.uid ?: throw Exception("User creation failed")
@@ -37,7 +44,9 @@ class AuthManager {
             val userProfile = hashMapOf(
                 "uid" to userId,
                 "firstName" to firstName,
+                "middleInitial" to PersonName.cleanInitial(middleInitial),
                 "lastName" to lastName,
+                "suffix" to PersonName.cleanSuffix(suffix),
                 "email" to email,
                 "createdAt" to FieldValue.serverTimestamp(),
                 "updatedAt" to FieldValue.serverTimestamp()
@@ -142,6 +151,16 @@ class AuthManager {
             ?.email
             ?.takeIf { it.isNotBlank() }
 
+    /** "Forgot password?" on the sign-in screen: reset link for a typed email. */
+    suspend fun sendPasswordReset(email: String): Result<Unit> = try {
+        auth.sendPasswordResetEmail(email.trim()).await()
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
     suspend fun sendPasswordResetEmail(): Result<Unit> {
         val email = passwordResetEmail ?: return Result.failure(IllegalStateException("Password reset unavailable"))
         return try {
@@ -178,7 +197,9 @@ class AuthManager {
     suspend fun updateProfile(
         firstName: String,
         lastName: String,
-        photo: ByteArray?
+        photo: ByteArray?,
+        middleInitial: String = "",
+        suffix: String = ""
     ): Result<Map<String, Any>> {
         val user = auth.currentUser ?: return Result.failure(IllegalStateException("Not signed in"))
         val first = firstName.trim()
@@ -187,7 +208,9 @@ class AuthManager {
         val profile = db.collection("users").document(user.uid)
         val fields = buildMap<String, Any> {
             put("firstName", first)
+            put("middleInitial", PersonName.cleanInitial(middleInitial))
             put("lastName", lastName.trim())
+            put("suffix", PersonName.cleanSuffix(suffix))
             photo?.let { put("profilePhoto", Blob.fromBytes(it)) }
         }
         val changes = fields + ("updatedAt" to FieldValue.serverTimestamp())

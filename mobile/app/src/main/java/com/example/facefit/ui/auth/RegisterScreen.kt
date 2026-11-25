@@ -15,12 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.facefit.data.auth.AuthErrors
 import com.example.facefit.data.auth.AuthManager
 import com.example.facefit.data.auth.PasswordPolicy
+import com.example.facefit.data.auth.PersonName
 import com.example.facefit.ui.components.FaceFitButton
 import com.example.facefit.ui.components.FaceFitLogo
 import com.example.facefit.ui.components.FaceFitTextField
@@ -35,10 +42,13 @@ fun RegisterScreen(
     authManager: AuthManager,
     onBack: () -> Unit,
     onRegisterSuccess: () -> Unit,
-    onSignIn: () -> Unit
+    onSignIn: () -> Unit,
+    onRegistered: (email: String) -> Unit = { onSignIn() }
 ) {
     var firstName by remember { mutableStateOf("") }
+    var middleInitial by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
+    var suffix by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -85,8 +95,20 @@ fun RegisterScreen(
 
         FaceFitTextField(
             value = firstName,
-            onValueChange = { firstName = it },
+            onValueChange = { firstName = PersonName.capitalizeName(it) },
+            capitalization = KeyboardCapitalization.Words,
             label = "First Name",
+            placeholder = "Enter first name",
+            leadingIcon = Icons.Outlined.Person
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        FaceFitTextField(
+            value = middleInitial,
+            onValueChange = { middleInitial = PersonName.cleanInitial(it) },
+            label = "M.I. (optional)",
+            placeholder = "Enter middle initial",
             leadingIcon = Icons.Outlined.Person
         )
 
@@ -94,8 +116,20 @@ fun RegisterScreen(
 
         FaceFitTextField(
             value = lastName,
-            onValueChange = { lastName = it },
+            onValueChange = { lastName = PersonName.capitalizeName(it) },
+            capitalization = KeyboardCapitalization.Words,
             label = "Last Name",
+            placeholder = "Enter last name",
+            leadingIcon = Icons.Outlined.Person
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        FaceFitTextField(
+            value = suffix,
+            onValueChange = { suffix = PersonName.typedSuffix(it) },
+            label = "Suffix (optional)",
+            placeholder = "e.g. Jr., Sr., III",
             leadingIcon = Icons.Outlined.Person
         )
 
@@ -105,42 +139,84 @@ fun RegisterScreen(
             value = email,
             onValueChange = { email = it },
             label = "Email",
+            placeholder = "Enter your email address",
             leadingIcon = Icons.Outlined.Email
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        FaceFitTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = "Password",
-            leadingIcon = Icons.Outlined.Lock,
-            isPassword = true
-        )
+        // Password field and its hint scroll above the keyboard together.
+        val passwordArea = remember { BringIntoViewRequester() }
+        var passwordFocused by remember { mutableStateOf(false) }
+        val keyboardHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+        val passwordHint = PasswordPolicy.remainingHint(password)
+        LaunchedEffect(passwordFocused, keyboardHeight, passwordHint) {
+            if (passwordFocused) passwordArea.bringIntoView()
+        }
+        Column(
+            Modifier
+                .bringIntoViewRequester(passwordArea)
+                .onFocusChanged { passwordFocused = it.hasFocus }
+                .padding(bottom = 8.dp)
+        ) {
+            FaceFitTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = "Password",
+                placeholder = "Enter your password",
+                leadingIcon = Icons.Outlined.Lock,
+                isPassword = true
+            )
 
-        // Live checklist of the password requirements.
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(modifier = Modifier.padding(start = 4.dp)) {
-            PasswordPolicy.requirements(password).forEach { requirement ->
+            // One-line password rule; rules already met drop out as the user types.
+            passwordHint?.let { hint ->
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = (if (requirement.met) "✓  " else "•  ") + requirement.label,
+                    text = hint,
+                    modifier = Modifier.padding(start = 4.dp),
                     fontSize = 12.sp,
-                    color = if (requirement.met) Color(0xFF2E7D32) else FaceFitTextSecondary
+                    lineHeight = 17.sp,
+                    color = FaceFitTextSecondary
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        FaceFitTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = "Confirm Password",
-            leadingIcon = Icons.Outlined.Lock,
-            isPassword = true
-        )
+        // Confirm field and its match message also stay above the keyboard.
+        val confirmArea = remember { BringIntoViewRequester() }
+        var confirmFocused by remember { mutableStateOf(false) }
+        val passwordsMatch = confirmPassword.isNotEmpty() && confirmPassword == password
+        LaunchedEffect(confirmFocused, keyboardHeight, confirmPassword.isEmpty()) {
+            if (confirmFocused) confirmArea.bringIntoView()
+        }
+        Column(
+            Modifier
+                .bringIntoViewRequester(confirmArea)
+                .onFocusChanged { confirmFocused = it.hasFocus }
+                .padding(bottom = 8.dp)
+        ) {
+            FaceFitTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = "Confirm Password",
+                placeholder = "Re-enter your password",
+                leadingIcon = Icons.Outlined.Lock,
+                isPassword = true
+            )
+            if (confirmPassword.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (passwordsMatch) "✓  Passwords match" else "Passwords do not match",
+                    modifier = Modifier.padding(start = 4.dp),
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    color = if (passwordsMatch) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
@@ -171,9 +247,12 @@ fun RegisterScreen(
                         AppMessages.show("Please fill in all fields")
                         return@FaceFitButton
                     }
+                    if (!AuthErrors.isValidEmail(email)) {
+                        AppMessages.show("Please enter a valid email address.")
+                        return@FaceFitButton
+                    }
                     if (!PasswordPolicy.isValid(password)) {
-                        AppMessages.show("Password needs at least 8 characters with an uppercase letter, " +
-                            "a lowercase letter, a number and a special symbol.", long = true)
+                        AppMessages.show(PasswordPolicy.remainingHint(password) ?: PasswordPolicy.HINT, long = true)
                         return@FaceFitButton
                     }
                     if (password != confirmPassword) {
@@ -183,12 +262,22 @@ fun RegisterScreen(
                     
                     isLoading = true
                     scope.launch {
-                        val result = authManager.signUp(firstName, lastName, email, password)
-                        isLoading = false
+                        val result = authManager.signUp(firstName.trim(), lastName.trim(), email.trim(), password,
+                            middleInitial = middleInitial, suffix = suffix)
                         result.onSuccess {
-                            onRegisterSuccess()
+                            // Firebase signs a new account in; the user signs in themselves instead.
+                            authManager.signOut(context)
+                            isLoading = false
+                            AppMessages.show("Account created. Please sign in.")
+                            onRegistered(email.trim())
                         }.onFailure { e ->
-                            AppMessages.show("Error: ${e.message}", long = true)
+                            // The account itself may exist (only the profile save failed):
+                            // don't leave it half signed in on this screen.
+                            val accountCreated = authManager.currentUser != null
+                            if (accountCreated) authManager.signOut(context)
+                            isLoading = false
+                            AppMessages.show(AuthErrors.message(e, AuthErrors.Action.REGISTER), long = true)
+                            if (accountCreated) onRegistered(email.trim())
                         }
                     }
                 }

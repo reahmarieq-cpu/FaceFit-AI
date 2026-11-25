@@ -1,0 +1,167 @@
+{
+  "version": "1.0",
+  "source": "FaceFit_AI_Final_Frame_Explanations.csv",
+  "note": "Visual compatibility based on eyewear styling principles. The compatibility score comes separately from frame_compatibility_ratings.json.",
+  "explanations": {
+    "Oval": {
+      "Oval": [
+        "Gentle curves follow the natural outline of your oval face.",
+        "The oval lenses echo your soft facial curves.",
+        "Its rounded edges create a softly coordinated look."
+      ],
+      "Round": [
+        "Circular lenses give your oval face a softer look.",
+        "The round outline highlights the curves of your face.",
+        "Its circular shape brings a gentle look to your features."
+      ],
+      "Rectangle": [
+        "Straight lines add definition to your oval face.",
+        "The rectangular outline contrasts with your soft facial curves.",
+        "Its angular edges give your features a more defined look."
+      ],
+      "Square": [
+        "Defined corners add structure to your oval face.",
+        "The square outline contrasts with your gently curved features.",
+        "Its angular shape gives your soft facial outline more definition."
+      ],
+      "Aviator": [
+        "The aviator silhouette gives your oval face a bolder look.",
+        "Its distinctive lens shape adds character to your oval face.",
+        "The teardrop-style outline offers a different look for your facial proportions."
+      ],
+      "Wayfarer": [
+        "The structured outline contrasts with your soft facial curves.",
+        "Wayfarer angles add definition to your oval face.",
+        "Its angular upper outline gives your features a structured look."
+      ]
+    },
+    "Square": {
+      "Oval": [
+        "Soft curves contrast with your angular facial features.",
+        "The oval outline softens the look of your square face.",
+        "Rounded edges offer contrast to your defined jawline."
+      ],
+      "Round": [
+        "Circular lenses contrast with your square face shape.",
+        "The round outline softens the appearance of your facial angles.",
+        "Its curved shape offers a softer look against your defined features."
+      ],
+      "Rectangle": [
+        "Straight lines echo the defined angles of your square face.",
+        "The rectangular outline reinforces your structured facial appearance.",
+        "Its angular edges follow the geometry of your face."
+      ],
+      "Square": [
+        "The square outline highlights your naturally defined facial angles.",
+        "Its geometric shape echoes your square facial structure.",
+        "Defined corners reinforce the angular look of your face."
+      ],
+      "Aviator": [
+        "The curved aviator outline contrasts with your angular features.",
+        "Its rounded lower edges offer a softer contrast to your square face.",
+        "The aviator shape combines curves with your defined facial structure."
+      ],
+      "Wayfarer": [
+        "Wayfarer angles echo the structure of your square face.",
+        "Its defined upper outline complements a structured facial look.",
+        "The angular silhouette reinforces your naturally defined features."
+      ]
+    },
+    "Oblong": {
+      "Oval": [
+        "The oval outline adds soft curves to your elongated face.",
+        "Its rounded edges offer contrast to your longer facial outline.",
+        "Gentle lens curves bring a softer look to your oblong face."
+      ],
+      "Round": [
+        "Circular lenses contrast with your elongated facial outline.",
+        "The round shape introduces curves to your longer face.",
+        "Its circular outline offers a softer contrast to your oblong shape."
+      ],
+      "Rectangle": [
+        "The horizontal outline adds visual emphasis across your longer face.",
+        "Rectangular lenses draw attention across your oblong face.",
+        "Its straight horizontal lines contrast with your elongated proportions."
+      ],
+      "Square": [
+        "Defined corners add structure to your elongated face.",
+        "The square outline introduces angles to your oblong features.",
+        "Its geometric design offers contrast to your longer facial outline."
+      ],
+      "Aviator": [
+        "The curved aviator silhouette contrasts with your longer face.",
+        "Its distinctive lens outline adds variety to your elongated proportions.",
+        "The aviator curves offer a softer look against your oblong outline."
+      ],
+      "Wayfarer": [
+        "The structured upper outline draws attention across your face.",
+        "Wayfarer lines add horizontal emphasis to your oblong face.",
+        "Its angular upper shape contrasts with your elongated proportions."
+      ]
+    },
+    "Round": {
+      "Oval": [
+        "Gentle oval curves echo your rounded facial outline.",
+        "The oval shape follows the soft curves of your face.",
+        "Its curved lenses create a softly coordinated look."
+      ],
+      "Round": [
+        "Circular lenses highlight your naturally rounded features.",
+        "The round outline echoes the curves of your face.",
+        "Its circular shape reinforces your soft facial appearance."
+      ],
+      "Rectangle": [
+        "Straight lines add definition to your round face.",
+        "The rectangular outline contrasts with your soft facial curves.",
+        "Its angular edges create a more structured look for your round face."
+      ],
+      "Square": [
+        "Defined corners contrast with your rounded facial features.",
+        "The square outline adds angles to your naturally soft face.",
+        "Its geometric shape gives your round face a more defined look."
+      ],
+      "Aviator": [
+        "The aviator silhouette offers contrast to your round face.",
+        "Its distinctive lens outline adds character to your rounded features.",
+        "The aviator shape introduces a different outline against your facial curves."
+      ],
+      "Wayfarer": [
+        "The angular upper outline adds definition to your round face.",
+        "Wayfarer angles contrast with your naturally soft facial curves.",
+        "Its structured silhouette gives your rounded features a defined look."
+      ]
+    },
+    "Heart": {
+      "Oval": [
+        "Soft oval curves draw attention toward your eyes.",
+        "The oval outline gives your heart-shaped face a softer look.",
+        "Its rounded lenses bring visual emphasis to your eye area."
+      ],
+      "Round": [
+        "Circular lenses contrast with your tapered facial outline.",
+        "The round shape introduces soft curves to your heart-shaped face.",
+        "Its curved outline offers contrast to your tapered features."
+      ],
+      "Rectangle": [
+        "Its straight lines add definition to your heart-shaped face.",
+        "The rectangular outline creates contrast with your tapered face shape.",
+        "Its horizontal lines introduce structure to your heart-shaped features."
+      ],
+      "Square": [
+        "The defined corners complement your naturally tapered facial outline.",
+        "Its angular shape brings a more structured look to your features.",
+        "Square edges add definition to your heart-shaped face."
+      ],
+      "Aviator": [
+        "The aviator outline offers contrast to your tapered face shape.",
+        "Its distinctive curves introduce a different look to your heart-shaped face.",
+        "The aviator silhouette adds character against your tapered outline."
+      ],
+      "Wayfarer": [
+        "Its structured outline adds definition to your heart-shaped face.",
+        "Wayfarer angles introduce structure to your tapered features.",
+        "The defined upper outline gives your heart-shaped face a structured look."
+      ]
+    }
+  }
+}

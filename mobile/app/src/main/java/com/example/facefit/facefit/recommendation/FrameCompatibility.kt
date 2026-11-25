@@ -88,7 +88,7 @@ class FrameCompatibility private constructor(
             }
         } catch (error: Exception) {
             Log.w("FrameCompatibility", "Compatibility ratings could not be loaded", error)
-            FrameCompatibility(emptyMap(), "Compatibility ratings could not be loaded.")
+            FrameCompatibility(emptyMap(), "Suitability ratings could not be loaded.")
         }
     }
 }

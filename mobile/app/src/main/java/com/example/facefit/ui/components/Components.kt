@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -80,7 +81,9 @@ fun FaceFitTextField(
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
     isPassword: Boolean = false,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
+    placeholder: String? = null
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -98,6 +101,7 @@ fun FaceFitTextField(
             singleLine = true,
             modifier = Modifier.fillMaxWidth().softContainerShadow(RoundedCornerShape(12.dp)),
             shape = RoundedCornerShape(12.dp),
+            placeholder = placeholder?.let { { Text(it, color = FaceFitTextSecondary.copy(alpha = 0.7f)) } },
             leadingIcon = leadingIcon?.let {
                 { Icon(imageVector = it, contentDescription = null, tint = FaceFitTextSecondary) }
             },
@@ -113,7 +117,8 @@ fun FaceFitTextField(
                 }
             } else null,
             visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
+            keyboardOptions = KeyboardOptions(capitalization = capitalization,
+                keyboardType = keyboardType, imeAction = ImeAction.Done),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = FaceFitTeal,
                 unfocusedBorderColor = Color.Transparent,

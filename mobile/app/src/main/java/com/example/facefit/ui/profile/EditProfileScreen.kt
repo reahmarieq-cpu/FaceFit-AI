@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.facefit.data.auth.AuthManager
+import com.example.facefit.data.auth.PersonName
 import com.example.facefit.ui.theme.FaceFitTeal
 import com.example.facefit.ui.theme.FaceFitTealVariant
 import com.example.facefit.ui.theme.FaceFitTextPrimary
@@ -57,7 +58,11 @@ internal fun EditProfileScreen(
     onSaved: (Map<String, Any>) -> Unit
 ) {
     var firstName by rememberSaveable { mutableStateOf((profile["firstName"] as? String).orEmpty()) }
+    var middleInitial by rememberSaveable {
+        mutableStateOf(PersonName.cleanInitial((profile["middleInitial"] as? String).orEmpty()))
+    }
     var lastName by rememberSaveable { mutableStateOf((profile["lastName"] as? String).orEmpty()) }
+    var suffix by rememberSaveable { mutableStateOf(PersonName.cleanSuffix(profile["suffix"] as? String)) }
     var selectedPhoto by rememberSaveable { mutableStateOf<ByteArray?>(null) }
     var loadingPhoto by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
@@ -115,6 +120,7 @@ internal fun EditProfileScreen(
             val avatarBytes = remember(photo, profile) { photo ?: (profile["profilePhoto"] as? Blob)?.toBytes() }
             ProfileAvatar(
                 fullName = "$firstName $lastName".trim(),
+                initials = PersonName.initials(firstName, lastName),
                 photo = avatarBytes,
                 modifier = Modifier.size(84.dp).shadow(8.dp, RoundedCornerShape(24.dp))
             )
@@ -136,9 +142,15 @@ internal fun EditProfileScreen(
             modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ProfileField("First name", firstName, { firstName = it }, enabled = editable,
+            ProfileField("First name", firstName, { firstName = PersonName.capitalizeName(it) }, enabled = editable,
                 keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
-            ProfileField("Last name", lastName, { lastName = it }, enabled = editable,
+            ProfileField("M.I. (optional)", middleInitial, { middleInitial = PersonName.cleanInitial(it) },
+                enabled = editable,
+                keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Characters))
+            ProfileField("Last name", lastName, { lastName = PersonName.capitalizeName(it) }, enabled = editable,
+                keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
+            ProfileField("Suffix (optional)", suffix, { suffix = PersonName.typedSuffix(it) },
+                enabled = editable,
                 keyboard = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
             ProfileField("Email", authManager.currentUser?.email ?: (profile["email"] as? String).orEmpty(), {},
                 readOnly = true)
@@ -150,7 +162,8 @@ internal fun EditProfileScreen(
                     saving = true
                     error = null
                     scope.launch {
-                        authManager.updateProfile(firstName, lastName, selectedPhoto)
+                        authManager.updateProfile(firstName, lastName, selectedPhoto,
+                            middleInitial = middleInitial, suffix = suffix)
                             .onSuccess(onSaved)
                             .onFailure {
                                 val code = (it as? FirebaseFirestoreException)?.code
@@ -208,17 +221,28 @@ private fun ProfileField(
     }
 }
 
-internal fun Map<String, Any>.profileFullName(): String =
-    listOf("firstName", "lastName").mapNotNull { this[it] as? String }
-        .filter { it.isNotBlank() }.joinToString(" ")
+/** "Juan A. Dela Cruz Jr." from the saved profile. */
+internal fun Map<String, Any>.profileFullName(): String = PersonName.fullName(
+    this["firstName"] as? String, this["middleInitial"] as? String,
+    this["lastName"] as? String, this["suffix"] as? String
+)
+
+/** Avatar letters from first and last name, skipping the middle initial and suffix. */
+internal fun Map<String, Any>.profileInitials(): String =
+    PersonName.initials(this["firstName"] as? String, this["lastName"] as? String)
 
 @Composable
-internal fun ProfileAvatar(fullName: String, photo: ByteArray?, modifier: Modifier = Modifier) {
+internal fun ProfileAvatar(
+    fullName: String,
+    photo: ByteArray?,
+    modifier: Modifier = Modifier,
+    initials: String? = null
+) {
     val bitmap = remember(photo) {
         photo?.let { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }
     }
     val words = fullName.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-    val initials = (words.firstOrNull()?.take(1).orEmpty() +
+    val initials = initials ?: (words.firstOrNull()?.take(1).orEmpty() +
         words.lastOrNull()?.takeIf { words.size > 1 }?.take(1).orEmpty()).uppercase()
     Box(
         modifier = modifier.clip(RoundedCornerShape(24.dp)).background(

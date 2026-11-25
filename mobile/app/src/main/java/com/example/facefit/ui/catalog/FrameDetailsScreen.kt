@@ -20,7 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.example.facefit.facefit.recommendation.FrameCompatibility
-import com.example.facefit.facefit.recommendation.FrameFitExplanation
+import com.example.facefit.facefit.recommendation.FrameExplanations
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -85,6 +85,7 @@ fun FrameDetailsScreen(
 internal fun FrameDetailsContent(frame: SampleFrame, modifier: Modifier = Modifier, faceShape: String? = null) {
     val context = LocalContext.current
     val compatibility = remember(context) { FrameCompatibility.load(context) }
+    val frameExplanations = remember(context) { FrameExplanations.load(context) }
     // Without a face shape (e.g. the try-on sheet), fall back to the frame's own assessment.
     val assessment = remember(compatibility, faceShape, frame.category, frame.compatibilityAssessment) {
         compatibility.lookup(faceShape, frame.category) ?: frame.compatibilityAssessment
@@ -99,51 +100,42 @@ internal fun FrameDetailsContent(frame: SampleFrame, modifier: Modifier = Modifi
             Text("${frame.category} · ${frame.material} · ${frame.colorName}",
                 color = FaceFitTextSecondary, fontSize = 13.sp)
         }
+        // Suitability card: frame name, big score, then "Why It Suits You".
+        // Explanation = face shape + frame category (frame_explanations.json).
+        val fitExplanation = remember(faceShape, frame.id, frame.category, frameExplanations) {
+            frameExplanations.forFrame(faceShape, frame.id, frame.category,
+                sampleFrames.map { it.id to it.category })
+        }
         val cardShape = RoundedCornerShape(24.dp)
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth()
                 .softContainerShadow(cardShape)
                 .background(Color.White, cardShape)
-                .padding(horizontal = 20.dp, vertical = 22.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
-            if (assessment != null) {
-                Text(
-                    text = kotlin.math.round(assessment.score).toInt().toString(),
-                    modifier = Modifier.weight(1f),
-                    color = FaceFitTeal,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+            val message = when {
+                compatibility.loadError != null -> compatibility.loadError
+                faceShape.isNullOrBlank() && assessment == null -> "Complete a face scan to view suitability."
+                else -> null
             }
-            Column(
-                modifier = Modifier.weight(2f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    "COMPATIBILITY",
-                    color = FaceFitTeal,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
-                )
-                // Why this frame style suits (or doesn't suit) the scanned face shape.
-                val fitExplanation = remember(faceShape, frame.category, assessment) {
-                    FrameFitExplanation.explain(faceShape, frame.category, assessment?.score)
+            if (message != null) {
+                Text("Compatibility Score", color = FaceFitTextSecondary, fontSize = 13.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(message, color = FaceFitTextSecondary, fontSize = 14.sp, lineHeight = 21.sp)
+            } else {
+                // Frame name is already shown above the card, so the score heads it.
+                if (assessment != null) {
+                    Text("${kotlin.math.round(assessment.score).toInt()}%", color = FaceFitTeal,
+                        fontSize = 48.sp, lineHeight = 54.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Compatibility Score", color = FaceFitTextSecondary, fontSize = 13.sp)
+                    HorizontalDivider(Modifier.padding(vertical = 16.dp), color = Color(0xFFE3EBEE))
                 }
-                Text(
-                    text = when {
-                        compatibility.loadError != null -> compatibility.loadError
-                        faceShape.isNullOrBlank() && assessment == null -> "Complete a face scan to view compatibility."
-                        fitExplanation != null -> fitExplanation
-                        else -> frame.explanation
-                    },
-                    color = FaceFitTextSecondary,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp
-                )
+                // Frames without a styling explanation (e.g. Cat-Eye, Browline) show their description.
+                Text(if (fitExplanation != null) "Why It Suits You" else "About This Frame",
+                    color = FaceFitTextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+                Text(fitExplanation ?: frame.explanation, color = FaceFitTextSecondary,
+                    fontSize = 14.sp, lineHeight = 21.sp)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
