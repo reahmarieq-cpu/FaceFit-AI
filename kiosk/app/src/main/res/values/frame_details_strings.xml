@@ -17,4 +17,5 @@
     <string name="details_measurement_mm">%1$s · %2$s mm</string>
     <string name="details_why_it_suits_you">Why It Suits You</string>
     <string name="details_about_this_frame">About This Frame</string>
+    <string name="details_try_on_disclaimer">Note: Virtual Try-On provides an approximate preview of how this frame looks. Actual size, bridge fit, and temple comfort may differ&#8212;ask our store staff to try on the physical frame.</string>
 </resources>

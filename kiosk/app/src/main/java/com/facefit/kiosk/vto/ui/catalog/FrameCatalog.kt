@@ -32,8 +32,12 @@ data class VtoFrame(
     val rightArmAssetPath: String? = null,
     val leftArmAnchors: FrameArmAnchors? = null,
     val rightArmAnchors: FrameArmAnchors? = null,
-    val modelStoragePath: String? = null
-)
+    val modelStoragePath: String? = null,
+    val imageStoragePath: String? = null
+) { 
+    val canTryOn: Boolean get() = has3DModel || modelStoragePath != null ||
+        tryOnAssetPath != null || imageStoragePath != null
+}
 
 // Preview catalog until the real frame dataset and scoring are connected.
 val sampleFrames = listOf(

@@ -66,11 +66,6 @@ class KioskResultsView(
         val metrics = profile.metrics
         bindFaceShape(profile.faceShape)
         binding.resultsShapeLabel.setText(if (profile.isEstimate) R.string.results_shape_label else R.string.profile_shape_label)
-        binding.resultsShapeNote.text = profile.confidencePercent?.let {
-            context.getString(R.string.profile_confidence, it)
-        } ?: profile.modelScores[profile.faceShape.name]?.let {
-            context.getString(R.string.scan_model_score, (it * 100).toInt())
-        } ?: context.getString(R.string.results_shape_note)
         val explanation = profile.notes.filter { it.isNotBlank() }.joinToString("\n")
         if (explanation.isNotEmpty()) binding.resultsProfileSummary.text = explanation
         profile.profileHeadline?.let { binding.resultsProfileTitle.text = it }
@@ -105,7 +100,6 @@ class KioskResultsView(
         val content = DialogResultsExplanationBinding.inflate(LayoutInflater.from(context))
         content.explanationShapeLabel.text = binding.resultsShapeLabel.text
         content.explanationShapeName.text = binding.resultsFaceShapeText.text
-        content.explanationShapeNote.text = binding.resultsShapeNote.text
         content.explanationWidth.text = binding.resultsAspectText.text
         content.explanationJawline.text = binding.resultsJawText.text
         content.explanationEyeSpacing.text = binding.resultsEyesText.text

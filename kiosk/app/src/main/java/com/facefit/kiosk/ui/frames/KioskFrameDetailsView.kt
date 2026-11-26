@@ -54,10 +54,12 @@ class KioskFrameDetailsView(
             } else null
         binding.detailsExplanation.text = explanationText
         binding.detailsExplanation.visibility = if (explanationText == null) View.GONE else View.VISIBLE
-        val ready = frame.tryOn?.let { it.has3DModel || it.tryOnAssetPath != null } == true
+        val ready = frame.tryOn?.canTryOn == true
         binding.detailsTryOn.isEnabled = ready
         binding.detailsTryOn.alpha = if (ready) 1f else 0.65f
-        binding.detailsTryOnNotice.visibility = if (ready) View.GONE else View.VISIBLE
+        binding.detailsTryOnNotice.setText(
+            if (ready) R.string.details_try_on_disclaimer else R.string.details_try_on_unavailable
+        )
         binding.detailsTryOn.setOnClickListener { navigator.navigateTo(KioskDestination.VirtualTryOn) }
     }
 

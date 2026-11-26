@@ -5,13 +5,11 @@
     <string name="shop_login_subtitle">Access your shop\'s uploaded frames and availability.</string>
     <string name="shop_login_email_label">Email address</string>
     <string name="shop_login_password_label">Password</string>
-    <string name="shop_login_forgot_password">Forgot password?</string>
     <string name="shop_login_button">Sign In</string>
     <string name="shop_login_invalid">We could not sign in with those shop credentials.</string>
     <string name="shop_login_required_email">Enter the shop email address.</string>
     <string name="shop_login_required_password">Enter the shop password.</string>
     <string name="shop_login_invalid_email">Enter a valid email address.</string>
-    <string name="shop_login_demo_button">Demo Mode</string>
     <string name="shop_hero_eyebrow">FACEFIT AI KIOSK</string>
     <string name="shop_hero_title">Better Vision.\nSmarter Frame Discovery.</string>
     <string name="shop_hero_body">Connect this kiosk to your partner-shop account so customers see frames available from your own catalog.</string>

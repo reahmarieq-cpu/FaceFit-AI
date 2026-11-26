@@ -6,7 +6,6 @@ import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
-import android.widget.Toast
 import com.facefit.kiosk.R
 import kotlinx.coroutines.CancellationException
 import com.google.firebase.firestore.FirebaseFirestoreException
@@ -25,8 +24,7 @@ class ShopLoginView(
     context: Context,
     private val authRepository: ShopAuthRepository,
     private val sessionStore: KioskSessionStore,
-    private val navigator: KioskNavigator,
-    private val onStartDemo: (() -> Unit)? = null
+    private val navigator: KioskNavigator
 ) : FrameLayout(context) {
 
     private val binding = ScreenShopLoginBinding.inflate(LayoutInflater.from(context), this, true)
@@ -51,10 +49,6 @@ class ShopLoginView(
         binding.passwordInput.setTextColor(Color.WHITE)
 
         binding.signInButton.setOnClickListener { submitLogin() }
-        if (onStartDemo != null) {
-            binding.demoModeButton.visibility = VISIBLE
-            binding.demoModeButton.setOnClickListener { onStartDemo.invoke() }
-        }
         binding.passwordInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 submitLogin()
@@ -62,9 +56,6 @@ class ShopLoginView(
             } else {
                 false
             }
-        }
-        binding.forgotPasswordText.setOnClickListener {
-            Toast.makeText(context, R.string.future_not_ready, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -83,7 +74,6 @@ class ShopLoginView(
         binding.signInButton.isEnabled = false
         binding.emailInput.isEnabled = false
         binding.passwordInput.isEnabled = false
-        binding.demoModeButton.isEnabled = false
         loginJob = CoroutineScope(Dispatchers.Main).launch {
             try {
                 when (val result = request()) {
@@ -115,7 +105,6 @@ class ShopLoginView(
                 binding.emailInput.isEnabled = true
                 binding.passwordInput.isEnabled = true
                 binding.signInButton.isEnabled = true
-                binding.demoModeButton.isEnabled = true
             }
         }
     }

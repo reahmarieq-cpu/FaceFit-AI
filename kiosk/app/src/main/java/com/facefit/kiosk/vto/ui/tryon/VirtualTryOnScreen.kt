@@ -5,6 +5,7 @@ import com.facefit.kiosk.vto.ui.components.ResultIconButton
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,6 +38,12 @@ import com.facefit.kiosk.vto.ui.tryon.rendering.FilamentGlassesOverlay
 import com.facefit.kiosk.vto.ui.tryon.rendering.Glasses3DOverlay
 import com.facefit.kiosk.vto.ui.tryon.rendering.Glasses3DState
 import com.facefit.kiosk.vto.ui.theme.*
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 
 
@@ -45,10 +52,13 @@ import com.facefit.kiosk.vto.ui.theme.*
 fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> Unit) {
     val context = LocalContext.current
     val glbPath = frame.modelStoragePath ?: frame.assetPath?.takeIf { it.endsWith(".glb", ignoreCase = true) }
+    val localImage = frame.tryOnAssetPath?.takeUnless { it.endsWith(".glb", ignoreCase = true) }
+    val storageImage = frame.imageStoragePath.takeIf { glbPath == null && !frame.has3DModel }
+    val expectsImage = glbPath == null && !frame.has3DModel && (storageImage != null || localImage != null)
     val trackingFeed=remember(glbPath) { VtoTrackingFeed() }
     var faceDetected by remember(glbPath) { mutableStateOf(false) }
-    var modelLoading by remember(glbPath) { mutableStateOf(glbPath != null) }
-    var modelError by remember(glbPath) { mutableStateOf<String?>(null) }
+    var modelLoading by remember(glbPath, storageImage, localImage) { mutableStateOf(glbPath != null || expectsImage) }
+    var modelError by remember(glbPath, storageImage, localImage) { mutableStateOf<String?>(null) }
     var backendNotice by remember { mutableStateOf<String?>(null) }
     var trackingStatus by remember { mutableStateOf<String?>("Starting face tracking...") }
     var hasPermission by remember {
@@ -61,11 +71,33 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> 
     var cameraError by remember { mutableStateOf<String?>(null) }
     var headerHeight by remember { mutableIntStateOf(0) }
     var footerHeight by remember { mutableIntStateOf(0) }
-    val bitmap = remember(frame.tryOnAssetPath) {
-        frame.tryOnAssetPath?.takeUnless { it.endsWith(".glb", ignoreCase = true) }?.let { path ->
-            runCatching { context.assets.open(path).use { BitmapFactory.decodeStream(it) } }.getOrNull()
+    var bitmap by remember(glbPath, storageImage, localImage) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(glbPath, storageImage, localImage) {
+        if (!expectsImage) return@LaunchedEffect
+
+        try {
+            bitmap = withContext(Dispatchers.IO) {
+                if (storageImage != null) {
+                    val bytes = withTimeoutOrNull(20_000L) {
+                        FirebaseStorage.getInstance().reference.child(storageImage)
+                            .getBytes(12L * 1024 * 1024).await()
+                    } ?: error("Frame image download timed out")
+                    prepareRetailerFrame(bytes)
+                } else {
+                    context.assets.open(requireNotNull(localImage)).use { BitmapFactory.decodeStream(it) }
+                        ?: error("Invalid bundled frame image")
+                }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            android.util.Log.w("VirtualTryOn", "Could not open 2D frame image", error)
+            modelError = "The selected frame image could not be opened."
+        } finally {
+            modelLoading = false
         }
     }
+    val frontBitmap = bitmap
     val templeBitmap = remember(frame.templeAssetPath) {
         frame.templeAssetPath?.let { path ->
             runCatching { context.assets.open(path).use { BitmapFactory.decodeStream(it) } }.getOrNull()
@@ -78,7 +110,7 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> 
         frame.rightArmAssetPath?.let { path -> runCatching { context.assets.open(path).use { BitmapFactory.decodeStream(it) } }.getOrNull() }
     }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
-        if (hasPermission && (frame.has3DModel || bitmap != null)) {
+        if (hasPermission && frame.canTryOn) {
             TryOnCameraPreview(stabilizeLandmarks = glbPath == null, onResult = {
                 if(glbPath!=null) {
                     trackingFeed.publish(it)
@@ -104,12 +136,12 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> 
                     state = Glasses3DState(if (cameraError == null) metrics else null, 1f, 0f, headerHeight, footerHeight),
                     onError = { cameraError = it }
                 )
-            } else if (bitmap != null && leftArm != null && rightArm != null &&
+            } else if (frontBitmap != null && leftArm != null && rightArm != null &&
                 frame.leftArmAnchors != null && frame.rightArmAnchors != null) {
-                LayeredImageTryOnOverlay(if(cameraError==null) metrics else null,bitmap,leftArm,rightArm,
+                LayeredImageTryOnOverlay(if(cameraError==null) metrics else null,frontBitmap,leftArm,rightArm,
                     frame.lensAnchors,frame.leftArmAnchors,frame.rightArmAnchors)
-            } else if (bitmap != null) {
-                TryOnOverlay(metrics = if (cameraError == null) metrics else null, front = bitmap,
+            } else if (frontBitmap != null) {
+                TryOnOverlay(metrics = if (cameraError == null) metrics else null, front = frontBitmap,
                     temple = templeBitmap, anchors = frame.lensAnchors, scale = 1f, heightOffset = 0f)
             }
         }
@@ -134,7 +166,7 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> 
             .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
             .background(Color.White).padding(18.dp)) {
             Text(frame.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = FaceFitTextPrimary)
-            Text(if (frame.has3DModel || bitmap != null) {
+            Text(if (frame.canTryOn) {
                 cameraError ?: modelError ?: if (modelLoading && hasPermission) "Loading glasses..." else if (!hasPermission) "Camera permission needed"
                 else if (trackingStatus != null) trackingStatus!!
                 else if (if(glbPath!=null) faceDetected else metrics?.isFaceDetected == true) "${frame.category} - ${frame.colorName}"

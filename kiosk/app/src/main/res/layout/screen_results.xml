@@ -11,8 +11,7 @@
                 </FrameLayout>
                 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="12dp" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false">
                     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/results_shape_label" android:textSize="14sp" android:textColor="@color/processing_text_secondary" android:id="@+id/resultsShapeLabel" />
-                    <TextView android:id="@+id/resultsFaceShapeText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/results_shape_unavailable" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/facefit_ink" />
-                    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/results_shape_note" android:textSize="12sp" android:textColor="@color/processing_text_secondary" android:id="@+id/resultsShapeNote" />
+                    <TextView android:id="@+id/resultsFaceShapeText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/results_shape_unavailable" android:textSize="30sp" android:textStyle="bold" android:textColor="@color/facefit_ink" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:orientation="horizontal" android:baselineAligned="false" android:clipChildren="false" android:clipToPadding="false">

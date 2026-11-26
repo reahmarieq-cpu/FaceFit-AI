@@ -219,19 +219,10 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
             context = this,
             authRepository = authRepository,
             sessionStore = sessionStore,
-            navigator = this,
-            onStartDemo = if (isDebuggable) ::startDemo else null
+            navigator = this
         )
         binding.screenContainer.removeAllViews()
         binding.screenContainer.addView(view)
-    }
-
-    private fun startDemo() {
-        if (!isDebuggable) return
-        sessionStore.clearAll()
-        kioskState.demoMode = true
-        sessionStore.activeShop = MockShopAuthRepository.demoShop
-        navigateTo(KioskDestination.Welcome)
     }
 
     private fun showResults() {
@@ -247,7 +238,7 @@ class MainActivity : AppCompatActivity(), KioskNavigator, CameraPermissionContro
 
     private fun showVirtualTryOn() {
         val frame = sessionStore.selectedRecommendation?.frame?.tryOn
-        if (frame == null || (frame.tryOnAssetPath == null && !frame.has3DModel)) {
+        if (frame == null || !frame.canTryOn) {
             navigateTo(KioskDestination.FrameDetails)
             return
         }

@@ -164,7 +164,6 @@
                         android:imeOptions="actionNext"
                         android:inputType="textEmailAddress"
                         android:singleLine="true"
-                        android:text="personnel@clearview.ph"
                         android:textColor="@android:color/white"
                         android:textSize="16sp" />
                 </com.google.android.material.textfield.TextInputLayout>
@@ -187,33 +186,13 @@
                         android:textColor="@android:color/white"
                         android:textSize="16sp" />
                 </com.google.android.material.textfield.TextInputLayout>
-                <TextView
-                    android:id="@+id/forgotPasswordText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="14dp"
-                    android:padding="8dp"
-                    android:text="@string/shop_login_forgot_password"
-                    android:textColor="@android:color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/signInButton"
                     style="@style/Widget.FaceFit.Button.Primary"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/button_height"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="24dp"
                     android:text="@string/shop_login_button" />
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/demoModeButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="@string/shop_login_demo_button"
-                    android:textColor="#D3EEF2"
-                    android:visibility="gone"
-                    style="@style/Widget.MaterialComponents.Button.TextButton" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

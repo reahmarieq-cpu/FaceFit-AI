@@ -140,7 +140,7 @@ class FirebaseFrameCatalog(
             return null
         }
         val preview = if (!retailerCatalog) {
-            text("previewStoragePath")?.takeIf { isStorageChild(it, "shops/$shopId/frame-previews/") }
+            storagePath(text("previewStoragePath"), "shops/$shopId/frame-previews/")
         } else {
             storagePath(text("productImagePath"), "frame-images/$retailerId/$id/")
         }
@@ -148,13 +148,15 @@ class FirebaseFrameCatalog(
         val modelPath = sequenceOf(text("vtoAssetPath"), text("vtoAssetUrl"))
             .mapNotNull { storagePath(it, modelPrefix) }
             .firstOrNull { it.endsWith(".glb", ignoreCase = true) }
-        val tryOn = modelPath?.let {
+        val tryOn = if (modelPath != null || preview != null) {
             VtoFrame(
                 name = name, category = shape, score = 0, color = Color.Gray,
                 material = material, colorName = color, explanation = "",
-                has3DModel = true, modelStoragePath = it
+                has3DModel = modelPath != null,
+                modelStoragePath = modelPath,
+                imageStoragePath = preview.takeIf { modelPath == null }
             )
-        }
+        } else null
         val shapeScores = (get("recommendations") as? Map<*, *>)?.get(shapeKey) as? Map<*, *>
         val retailerScore = shapeScores.percent("compatibilityPercent")
         val assessorScore = if (retailerScore == null) {
