@@ -372,15 +372,8 @@ fun FaceFitNavHost(
                     isFavorite = frame.name in savedFrameNames,
                     onBack = { navController.popBackStack() },
                     onFavoriteChange = { saved -> updateFrameFavorite(frame.name, saved) },
-                    onPreviewModel = { navController.navigate("modelPreview/${Uri.encode(frame.name)}") },
                     onStartTryOn = { navController.navigate("virtualTryOn/${Uri.encode(frame.name)}") }
                 )
-            }
-        }
-        composable("modelPreview/{frameName}") { entry ->
-            (sampleFrames + favorites.frames).find { it.name == entry.arguments?.getString("frameName") }?.let { frame ->
-                com.example.facefit.ui.catalog.ModelPreviewScreen(
-                    frame = frame, onBack = { navController.popBackStack() })
             }
         }
         composable("virtualTryOn/{frameName}") { entry ->

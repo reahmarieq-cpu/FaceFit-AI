@@ -26,11 +26,11 @@ class FaceScanGuideTest {
         assertFalse(FaceScanGuide.containsFace(360, 760, floatArrayOf(360f - x, y)))
     }
 
-    @Test fun outlineIsSizedForAnAverageFaceAt46Cm() {
+    @Test fun outlineIsSizedForAnAverageFaceAt45Cm() {
         // Test phone: 487.5 px focal length on the 480x640 analysis image, shown 3.75x on a 1080x2400 screen.
         val halfWidth = FaceScanGuide.halfWidthForTargetDistance(487.5f, 3.75f)!!
-        val cheekAt46 = 487.5f * FacialFeatureMeasurement.CANONICAL_CHEEK_WIDTH_CM / 46f * 3.75f
-        assertEquals(cheekAt46 / 2f * FaceScanGuide.FIT_MARGIN, halfWidth, 0.01f)
+        val cheekAt45 = 487.5f * FacialFeatureMeasurement.CANONICAL_CHEEK_WIDTH_CM / 45f * 3.75f
+        assertEquals(cheekAt45 / 2f * FaceScanGuide.FIT_MARGIN, halfWidth, 0.01f)
         val outline = FaceScanGuide.points(1080f, 2400f, halfWidth)
         assertEquals(2 * halfWidth, outline.maxOf { it.x } - outline.minOf { it.x }, 1f)
         // At 45 cm the cheeks sit well inside the outline; at 37 cm they no longer fit.

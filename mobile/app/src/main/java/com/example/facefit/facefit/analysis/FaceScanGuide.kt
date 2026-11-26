@@ -34,11 +34,8 @@ internal object FaceScanGuide {
      */
     const val FIT_MARGIN = 1.20f
 
-    /**
-     * Distance (cm) the dashed outline is drawn for. The scan itself requires 45 cm; the outline is
-     * sized for 46 cm, so at 45 cm the face fills it slightly more and still fits with room to spare.
-     */
-    const val GUIDE_DISTANCE_CM = 46f
+    /** Distance (cm) the dashed outline is drawn for: the same 45 cm the scan requires. */
+    const val GUIDE_DISTANCE_CM = 45f
 
     /** Largest half-width that keeps the outline above the bottom controls. */
     private fun maxHalfWidth(width: Float, height: Float) = minOf(width * .45f, height * .52f / 2.84f)

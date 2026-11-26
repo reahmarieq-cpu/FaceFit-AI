@@ -34,7 +34,6 @@ fun FrameDetailsScreen(
     isFavorite: Boolean,
     onBack: () -> Unit,
     onFavoriteChange: (Boolean) -> Unit,
-    onPreviewModel: () -> Unit,
     onStartTryOn: () -> Unit
 ) {
     Column(
@@ -56,15 +55,6 @@ fun FrameDetailsScreen(
             }
         }
         FrameDetailsContent(frame, faceShape = faceShape)
-        if (frame.assetPath?.endsWith(".glb", ignoreCase = true) == true) {
-            OutlinedButton(
-                onClick = onPreviewModel,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Preview 3D Model", fontWeight = FontWeight.Bold)
-            }
-        }
         Button(
             onClick = onStartTryOn,
             enabled = frame.tryOnAssetPath != null,

@@ -2,13 +2,9 @@ package com.example.facefit
 
 import android.graphics.BitmapFactory
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.facefit.facefit.tryon.geometry.VtoAutomaticFit
 import com.example.facefit.ui.catalog.sampleFrames
-import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 class FrameCatalogAssetsTest {
     @Test fun catalogPathsResolveAndPngTryOnUsesTheActualImage() {
@@ -31,30 +27,10 @@ class FrameCatalogAssetsTest {
             }
         }
     }
-    @Test fun newGlbCalibrationsMatchTheExportedLensAnchors() {
-        val assets=InstrumentationRegistry.getInstrumentation().targetContext.assets
-        val glbs=sampleFrames.mapNotNull { it.assetPath }.filter { it.endsWith(".glb") && it!="frames/square_tortoise/SquareTortoise.glb" }
-        assertTrue(glbs.size>=9)
-        for(path in glbs) {
-            val bytes=assets.open(path).use { it.readBytes() }
-            val buffer=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
-            assertEquals(0x46546c67,buffer.getInt(0))
-            val json=JSONObject(String(bytes,20,buffer.getInt(12),Charsets.UTF_8))
-            val nodes=json.getJSONArray("nodes")
-            val expected=requireNotNull(VtoAutomaticFit.forAsset(path))
-            for(i in 0 until nodes.length()) {
-                val node=nodes.getJSONObject(i)
-                val anchor=when(node.optString("name")) {
-                    "anchor_lens_image_left" -> expected.firstLens
-                    "anchor_lens_image_right" -> expected.secondLens
-                    else -> continue
-                }
-                val xyz=node.getJSONArray("translation")
-                assertEquals(xyz.getDouble(0).toFloat(),anchor.x,.000001f)
-                assertEquals(xyz.getDouble(1).toFloat(),anchor.y,.000001f)
-                assertEquals(xyz.getDouble(2).toFloat(),anchor.z,.000001f)
-            }
-            assertTrue(expected.isValid())
+    @Test fun catalogHasTwoTwoDFramesPerStyle() {
+        assertTrue(sampleFrames.none { it.has3DModel })
+        sampleFrames.groupBy { it.category }.forEach { (style, frames) ->
+            assertEquals(style, 2, frames.size)
         }
     }
 }
