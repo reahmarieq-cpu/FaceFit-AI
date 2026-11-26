@@ -35,7 +35,7 @@ internal object VtoHeadOcclusionGeometry {
 
     fun positions(face: FaceAnalyzer.FaceMetrics?, width: Int, height: Int, sharedRig: GlassesRig? = null): FloatArray? {
         if(face?.isFaceDetected != true || face.landmarks.size < 468 || width<=0 || height<=0) return null
-        val points=face.landmarks.take(468).map { Vector3(it.x*width,it.y*height,it.z*width) }
+        val points=face.landmarks.take(468).map { Vector3(it.x*width,it.y*height,it.z*width*VtoHeadPose.DEPTH_WEIGHT) }
         if(points.any { !it.isFinite() }) return null
         val first=(points[33]+points[133])*.5f
         val second=(points[263]+points[362])*.5f
@@ -45,13 +45,20 @@ internal object VtoHeadOcclusionGeometry {
         val pd=(second-first).length()
         val headWidth=kotlin.math.abs((points[454]-points[234]).dot(rig.xAxis)).coerceIn(pd*1.5f,pd*2.6f)
         val all=points.toMutableList()
-        // Keep the rear silhouette wide and deep enough to contain the full temple.
-        // A narrow rear taper lets an already hidden arm emerge again as a floating tip.
-        for(ring in 0..1) for(index in oval) {
-            val d=points[index]-headCenter
-            all.add(headCenter+rig.xAxis*(d.dot(rig.xAxis)*(if(ring==0) 1.02f else 1.02f))+
-                rig.yAxis*(d.dot(rig.yAxis)*(if(ring==0) 1.02f else 1.02f))+
-                rig.zAxis*(headWidth*(if(ring==0) .45f else 1.40f)))
+        // The generated skull is only an approximation behind the tracked face.
+        // On a turn, inset its camera-facing side so it does not hide the near temple arm.
+        // Keep the far side full width to mask the opposite arm.
+        val turnDepth = rig.xAxis.z
+        val turn = ((kotlin.math.abs(turnDepth) - .02f) / .10f).coerceIn(0f, 1f)
+        val nearSideInset = .22f * turn * turn * (3f - 2f * turn)
+        for (ring in 0..1) for (index in oval) {
+            val offset = points[index] - headCenter
+            val lateral = offset.dot(rig.xAxis)
+            val nearSide = lateral * turnDepth < 0f
+            val widthScale = 1.02f - if (nearSide) nearSideInset else 0f
+            val depth = headWidth * if (ring == 0) .45f else 1.40f
+            all.add(headCenter + rig.xAxis * (lateral * widthScale) +
+                rig.yAxis * (offset.dot(rig.yAxis) * 1.02f) + rig.zAxis * depth)
         }
         all.add(headCenter+rig.zAxis*(headWidth*1.65f))
         holes.forEach { ring ->
@@ -60,7 +67,12 @@ internal object VtoHeadOcclusionGeometry {
             all.add(center*(1f/ring.size))
         }
         return FloatArray(vertexCount*3).also { result ->
-            all.forEachIndexed { i,p -> result[i*3]=p.x; result[i*3+1]=height-p.y; result[i*3+2]=-2000f-p.z }
+            all.forEachIndexed { i,p ->
+                // Recess the front facial mask (0..467) by 25px into depth so the glasses bridge,
+                // lenses, and browline are never clipped by skin/brow depth writes.
+                val zOffset = if (i < 468) 25f else 0f
+                result[i*3]=p.x; result[i*3+1]=height-p.y; result[i*3+2]=-2000f-p.z - zOffset
+            }
         }
     }
 }

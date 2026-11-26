@@ -13,6 +13,17 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import com.google.firebase.FirebaseException
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** Product photo preview, with a shape illustration when an image is unavailable. */
 class FrameArtworkView @JvmOverloads constructor(
@@ -23,6 +34,8 @@ class FrameArtworkView @JvmOverloads constructor(
     private data class Photo(val bitmap: Bitmap, val bounds: Rect)
     private companion object {
         val loader = Executors.newFixedThreadPool(2)
+        val remoteDownloads = Semaphore(2)
+        const val MAX_PREVIEW_BYTES = 2L * 1024 * 1024
         val photos = object : LruCache<String, Photo>(8 * 1024 * 1024) {
             override fun sizeOf(key: String, value: Photo) = value.bitmap.byteCount
         }
@@ -68,6 +81,67 @@ class FrameArtworkView @JvmOverloads constructor(
                 }
             }
         }
+    private var remotePhoto: Photo? = null
+    private var previewJob: Job? = null
+
+    var previewStoragePath: String? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            loadRemotePreview()
+        }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        loadRemotePreview()
+    }
+
+    override fun onDetachedFromWindow() {
+        previewJob?.cancel()
+        previewJob = null
+        remotePhoto = null
+        super.onDetachedFromWindow()
+    }
+
+    private fun loadRemotePreview() {
+        previewJob?.cancel()
+        remotePhoto = null
+        invalidate()
+        val path = previewStoragePath ?: return
+        if (!isAttachedToWindow) return
+        previewJob = CoroutineScope(Dispatchers.Main).launch {
+            remotePhoto = withContext(Dispatchers.IO) {
+                remoteDownloads.withPermit {
+                    try {
+                        val task = FirebaseStorage.getInstance().reference.child(path).getBytes(MAX_PREVIEW_BYTES)
+                        withTimeoutOrNull(8_000L) {
+                            val bytes = task.await()
+                            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+                            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withTimeoutOrNull null
+                            val options = BitmapFactory.Options().apply {
+                                inSampleSize = 1
+                                while (maxOf(bounds.outWidth, bounds.outHeight) / inSampleSize > 1024) {
+                                    inSampleSize *= 2
+                                }
+                            }
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)?.let { bitmap ->
+                                Photo(bitmap, Rect(0, 0, bitmap.width, bitmap.height))
+                            }
+                        }
+                    } catch (error: FirebaseException) {
+                        null
+                    } catch (error: IllegalArgumentException) {
+                        null
+                    } catch (error: IllegalStateException) {
+                        null
+                    }
+                }
+            }
+            invalidate()
+        }
+    }
+
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2.6f
@@ -77,7 +151,7 @@ class FrameArtworkView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        photo?.let { image ->
+        (remotePhoto ?: photo)?.let { image ->
             val inset = 3f * resources.displayMetrics.density
             val scale = minOf((width - inset * 2).coerceAtLeast(0f) / image.bounds.width(),
                 (height - inset * 2).coerceAtLeast(0f) / image.bounds.height())

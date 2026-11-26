@@ -1,0 +1,688 @@
+{
+  "source": "FaceFitAI_ExplanationAnalysis.csv",
+  "categoryStatus": "Provisional categories relative to the reference dataset",
+  "rules": {
+    "heart_narrow_narrow_close_set": {
+      "headline": "Heart — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_narrow_average": {
+      "headline": "Heart — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_narrow_wide_set": {
+      "headline": "Heart — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_medium_close_set": {
+      "headline": "Heart — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_medium_average": {
+      "headline": "Heart — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_medium_wide_set": {
+      "headline": "Heart — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_wide_close_set": {
+      "headline": "Heart — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_wide_average": {
+      "headline": "Heart — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_narrow_wide_wide_set": {
+      "headline": "Heart — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_narrow_close_set": {
+      "headline": "Heart — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_narrow_average": {
+      "headline": "Heart — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_narrow_wide_set": {
+      "headline": "Heart — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_medium_close_set": {
+      "headline": "Heart — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_medium_average": {
+      "headline": "Heart — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_medium_wide_set": {
+      "headline": "Heart — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_wide_close_set": {
+      "headline": "Heart — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_wide_average": {
+      "headline": "Heart — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_medium_wide_wide_set": {
+      "headline": "Heart — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a heart-shaped outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_narrow_close_set": {
+      "headline": "Heart — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_narrow_average": {
+      "headline": "Heart — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_narrow_wide_set": {
+      "headline": "Heart — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_medium_close_set": {
+      "headline": "Heart — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_medium_average": {
+      "headline": "Heart — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_medium_wide_set": {
+      "headline": "Heart — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_wide_close_set": {
+      "headline": "Heart — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_wide_average": {
+      "headline": "Heart — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "heart_wide_wide_wide_set": {
+      "headline": "Heart — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a heart-shaped outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their defined outlines can add structure and create a balanced look with your facial features."
+    },
+    "oblong_narrow_narrow_close_set": {
+      "headline": "Oblong — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_narrow_average": {
+      "headline": "Oblong — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_narrow_wide_set": {
+      "headline": "Oblong — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_medium_close_set": {
+      "headline": "Oblong — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_medium_average": {
+      "headline": "Oblong — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_medium_wide_set": {
+      "headline": "Oblong — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_wide_close_set": {
+      "headline": "Oblong — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_wide_average": {
+      "headline": "Oblong — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_narrow_wide_wide_set": {
+      "headline": "Oblong — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_narrow_close_set": {
+      "headline": "Oblong — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_narrow_average": {
+      "headline": "Oblong — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_narrow_wide_set": {
+      "headline": "Oblong — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_medium_close_set": {
+      "headline": "Oblong — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_medium_average": {
+      "headline": "Oblong — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_medium_wide_set": {
+      "headline": "Oblong — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_wide_close_set": {
+      "headline": "Oblong — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_wide_average": {
+      "headline": "Oblong — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_medium_wide_wide_set": {
+      "headline": "Oblong — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has an oblong outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_narrow_close_set": {
+      "headline": "Oblong — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_narrow_average": {
+      "headline": "Oblong — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_narrow_wide_set": {
+      "headline": "Oblong — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_medium_close_set": {
+      "headline": "Oblong — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_medium_average": {
+      "headline": "Oblong — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_medium_wide_set": {
+      "headline": "Oblong — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_wide_close_set": {
+      "headline": "Oblong — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_wide_average": {
+      "headline": "Oblong — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oblong_wide_wide_wide_set": {
+      "headline": "Oblong — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has an oblong outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and wayfarer frames are two styles worth exploring. Taller lenses and fuller shapes can add depth and balance to your longer facial outline."
+    },
+    "oval_narrow_narrow_close_set": {
+      "headline": "Oval — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_narrow_average": {
+      "headline": "Oval — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_narrow_wide_set": {
+      "headline": "Oval — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_medium_close_set": {
+      "headline": "Oval — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_medium_average": {
+      "headline": "Oval — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_medium_wide_set": {
+      "headline": "Oval — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_wide_close_set": {
+      "headline": "Oval — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_wide_average": {
+      "headline": "Oval — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_narrow_wide_wide_set": {
+      "headline": "Oval — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_narrow_close_set": {
+      "headline": "Oval — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_narrow_average": {
+      "headline": "Oval — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_narrow_wide_set": {
+      "headline": "Oval — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_medium_close_set": {
+      "headline": "Oval — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_medium_average": {
+      "headline": "Oval — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_medium_wide_set": {
+      "headline": "Oval — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_wide_close_set": {
+      "headline": "Oval — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_wide_average": {
+      "headline": "Oval — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_medium_wide_wide_set": {
+      "headline": "Oval — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has an oval outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_narrow_close_set": {
+      "headline": "Oval — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_narrow_average": {
+      "headline": "Oval — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_narrow_wide_set": {
+      "headline": "Oval — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_medium_close_set": {
+      "headline": "Oval — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_medium_average": {
+      "headline": "Oval — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_medium_wide_set": {
+      "headline": "Oval — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_wide_close_set": {
+      "headline": "Oval — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_wide_average": {
+      "headline": "Oval — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "oval_wide_wide_wide_set": {
+      "headline": "Oval — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has an oval outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can add a crisp contrast to your softly curved features."
+    },
+    "round_narrow_narrow_close_set": {
+      "headline": "Round — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_narrow_average": {
+      "headline": "Round — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_narrow_wide_set": {
+      "headline": "Round — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_medium_close_set": {
+      "headline": "Round — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_medium_average": {
+      "headline": "Round — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_medium_wide_set": {
+      "headline": "Round — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_wide_close_set": {
+      "headline": "Round — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_wide_average": {
+      "headline": "Round — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_narrow_wide_wide_set": {
+      "headline": "Round — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_narrow_close_set": {
+      "headline": "Round — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_narrow_average": {
+      "headline": "Round — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_narrow_wide_set": {
+      "headline": "Round — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_medium_close_set": {
+      "headline": "Round — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_medium_average": {
+      "headline": "Round — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_medium_wide_set": {
+      "headline": "Round — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a round outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_wide_close_set": {
+      "headline": "Round — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_wide_average": {
+      "headline": "Round — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_medium_wide_wide_set": {
+      "headline": "Round — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a round outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_narrow_close_set": {
+      "headline": "Round — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_narrow_average": {
+      "headline": "Round — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_narrow_wide_set": {
+      "headline": "Round — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_medium_close_set": {
+      "headline": "Round — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_medium_average": {
+      "headline": "Round — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_medium_wide_set": {
+      "headline": "Round — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a round outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_wide_close_set": {
+      "headline": "Round — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_wide_average": {
+      "headline": "Round — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "round_wide_wide_wide_set": {
+      "headline": "Round — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a round outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Square and aviator frames are two styles worth exploring. Their defined angles and strong top line can add contrast to your rounded features."
+    },
+    "square_narrow_narrow_close_set": {
+      "headline": "Square — closer eyes, narrow forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_narrow_average": {
+      "headline": "Square — narrow forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_narrow_wide_set": {
+      "headline": "Square — wider eye gap, narrow forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with narrow forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_medium_close_set": {
+      "headline": "Square — closer eyes, medium forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_medium_average": {
+      "headline": "Square — medium forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_medium_wide_set": {
+      "headline": "Square — wider eye gap, medium forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_wide_close_set": {
+      "headline": "Square — closer eyes, wide forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_wide_average": {
+      "headline": "Square — wide forehead, narrow jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_narrow_wide_wide_set": {
+      "headline": "Square — wider eye gap, wide forehead, narrow jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a narrow jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_narrow_close_set": {
+      "headline": "Square — closer eyes, narrow forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_narrow_average": {
+      "headline": "Square — narrow forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_narrow_wide_set": {
+      "headline": "Square — wider eye gap, narrow forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_medium_close_set": {
+      "headline": "Square — closer eyes, medium forehead, medium jaw",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_medium_average": {
+      "headline": "Square — medium forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_medium_wide_set": {
+      "headline": "Square — wider eye gap, medium forehead, medium jaw",
+      "noticed": "Your face has a square outline, with medium forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_wide_close_set": {
+      "headline": "Square — closer eyes, wide forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_wide_average": {
+      "headline": "Square — wide forehead, medium jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_medium_wide_wide_set": {
+      "headline": "Square — wider eye gap, wide forehead, medium jaw",
+      "noticed": "Your face has a square outline, with a wide forehead and a medium-width jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_narrow_close_set": {
+      "headline": "Square — closer eyes, narrow forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_narrow_average": {
+      "headline": "Square — narrow forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_narrow_wide_set": {
+      "headline": "Square — wider eye gap, narrow forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a narrow forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_medium_close_set": {
+      "headline": "Square — closer eyes, medium forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_medium_average": {
+      "headline": "Square — medium forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_medium_wide_set": {
+      "headline": "Square — wider eye gap, medium forehead, wide jaw",
+      "noticed": "Your face has a square outline, with a medium-width forehead and a wide jawline. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_wide_close_set": {
+      "headline": "Square — closer eyes, wide forehead, wide jaw",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eyes appear slightly closer together relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_wide_average": {
+      "headline": "Square — wide forehead, wide jaw, average eye gap",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eye spacing appears balanced relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    },
+    "square_wide_wide_wide_set": {
+      "headline": "Square — wider eye gap, wide forehead, wide jaw",
+      "noticed": "Your face has a square outline, with wide forehead and jawline widths. Your eyes appear slightly farther apart relative to your facial width.",
+      "styles": "Rectangular and square frames are two styles worth exploring. Their clean lines can complement your angular features with a streamlined or bolder look."
+    }
+  },
+  "suggestedStyles": {
+    "Heart": "rectangular",
+    "Oblong": "rectangular",
+    "Oval": "rectangular",
+    "Round": "aviator",
+    "Square": "square"
+  }
+}

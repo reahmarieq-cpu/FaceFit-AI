@@ -148,21 +148,6 @@
                             app:iconPadding="8dp"
                             android:layout_marginTop="10dp"
                             android:minHeight="@dimen/button_height" />
-                        <TextView
-                            android:id="@+id/browseFramesButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/bg_outline_button"
-                            android:gravity="center"
-                            android:minWidth="150dp"
-                            android:paddingStart="22dp"
-                            android:paddingEnd="22dp"
-                            android:text="@string/welcome_browse_frames"
-                            android:textColor="@color/facefit_ink"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="10dp"
-                            android:minHeight="@dimen/button_height" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>

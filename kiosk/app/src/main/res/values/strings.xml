@@ -11,7 +11,7 @@
     <string name="shop_login_required_email">Enter the shop email address.</string>
     <string name="shop_login_required_password">Enter the shop password.</string>
     <string name="shop_login_invalid_email">Enter a valid email address.</string>
-    <string name="shop_login_mock_hint">Mock sign-in: personnel@clearview.ph / facefit123</string>
+    <string name="shop_login_demo_button">Demo Mode</string>
     <string name="shop_hero_eyebrow">FACEFIT AI KIOSK</string>
     <string name="shop_hero_title">Better Vision.\nSmarter Frame Discovery.</string>
     <string name="shop_hero_body">Connect this kiosk to your partner-shop account so customers see frames available from your own catalog.</string>
@@ -29,8 +29,6 @@
     <string name="welcome_step_match_title">Match &amp; try on</string>
     <string name="welcome_step_match_body">See ranked frames and preview them virtually.</string>
     <string name="welcome_start_scan">Start Face Scan</string>
-    <string name="welcome_browse_frames">Browse Frames</string>
-    <string name="welcome_browse_not_ready">Frame browsing will be added after the approved kiosk flow screens.</string>
     <string name="welcome_shop_missing">Shop login is required before starting the kiosk session.</string>
     <string name="welcome_scan_corner">L</string>
     <string name="welcome_logo_title">FaceFit AI</string>
@@ -139,4 +137,14 @@
     <string name="scan_end_session_title">End this scan?</string>
     <string name="scan_end_session_body">Your temporary photo and scan results will be deleted. The kiosk will return to the welcome screen.</string>
     <string name="scan_keep_scanning">Keep scanning</string>
+    <string name="shop_login_unauthorized">This account needs an active kiosk subscription. Contact your administrator.</string>
+    <string name="shop_login_backend_error">Sign-in is temporarily unavailable. Check your connection and try again.</string>
+    <string name="kiosk_settings">Settings</string>
+    <string name="kiosk_sign_out">Sign Out</string>
+    <string name="kiosk_sign_out_title">Sign Out?</string>
+    <string name="kiosk_sign_out_body">Are you sure you want to sign out? You will need to sign in again to continue using the kiosk.</string>
+    <string name="kiosk_end_session">End Session</string>
+    <string name="kiosk_continue_session">Continue Session</string>
+    <string name="kiosk_end_session_title">End Your Session?</string>
+    <string name="kiosk_end_session_body">Your current scan and recommendations will be cleared, and you will return to the welcome screen.</string>
 </resources>

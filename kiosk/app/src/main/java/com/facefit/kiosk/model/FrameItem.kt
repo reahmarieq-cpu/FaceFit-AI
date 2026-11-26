@@ -8,6 +8,9 @@ data class FrameItem(
     val material: String,
     val isAvailable: Boolean,
     val tryOn: com.facefit.kiosk.vto.ui.catalog.VtoFrame? = null,
-    val imageAssetPath: String? = null
+    val imageAssetPath: String? = null,
+    val previewStoragePath: String? = null,
+    val description: String? = null,
+    val measurementsMm: Map<String, Double> = emptyMap()
 )
 

@@ -8,27 +8,53 @@ import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.facefit.kiosk.R
+import kotlinx.coroutines.CancellationException
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.facefit.kiosk.data.auth.AuthResult
 import com.facefit.kiosk.data.auth.ShopAuthRepository
 import com.facefit.kiosk.data.session.KioskSessionStore
 import com.facefit.kiosk.databinding.ScreenShopLoginBinding
 import com.facefit.kiosk.navigation.KioskDestination
 import com.facefit.kiosk.navigation.KioskNavigator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class ShopLoginView(
     context: Context,
     private val authRepository: ShopAuthRepository,
     private val sessionStore: KioskSessionStore,
-    private val navigator: KioskNavigator
+    private val navigator: KioskNavigator,
+    private val onStartDemo: (() -> Unit)? = null
 ) : FrameLayout(context) {
 
     private val binding = ScreenShopLoginBinding.inflate(LayoutInflater.from(context), this, true)
+
+    private var loginJob: Job? = null
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        if (authRepository.currentShopId != null) {
+            authenticate(restoring = true) { authRepository.restore() }
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        loginJob?.cancel()
+        loginJob = null
+        super.onDetachedFromWindow()
+    }
 
     init {
         binding.emailInput.setTextColor(Color.WHITE)
         binding.passwordInput.setTextColor(Color.WHITE)
 
         binding.signInButton.setOnClickListener { submitLogin() }
+        if (onStartDemo != null) {
+            binding.demoModeButton.visibility = VISIBLE
+            binding.demoModeButton.setOnClickListener { onStartDemo.invoke() }
+        }
         binding.passwordInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 submitLogin()
@@ -43,27 +69,60 @@ class ShopLoginView(
     }
 
     private fun submitLogin() {
+        if (loginJob?.isActive == true) return
         clearErrors()
 
         val email = binding.emailInput.text?.toString().orEmpty()
         val password = binding.passwordInput.text?.toString().orEmpty()
         if (!validate(email, password)) return
 
-        when (val result = authRepository.signIn(email, password)) {
-            is AuthResult.Success -> {
-                sessionStore.activeShop = result.shop
-                navigator.navigateTo(KioskDestination.Welcome)
-            }
-            AuthResult.InvalidCredentials -> {
-                binding.generalErrorText.text = context.getString(R.string.shop_login_invalid)
-                binding.generalErrorText.visibility = VISIBLE
-                binding.passwordLayout.error = " "
-            }
-            AuthResult.BackendUnavailable -> {
-                binding.generalErrorText.text = context.getString(R.string.future_not_ready)
-                binding.generalErrorText.visibility = VISIBLE
+        authenticate { authRepository.signIn(email, password) }
+    }
+
+    private fun authenticate(restoring: Boolean = false, request: suspend () -> AuthResult) {
+        binding.signInButton.isEnabled = false
+        binding.emailInput.isEnabled = false
+        binding.passwordInput.isEnabled = false
+        binding.demoModeButton.isEnabled = false
+        loginJob = CoroutineScope(Dispatchers.Main).launch {
+            try {
+                when (val result = request()) {
+                    is AuthResult.Success -> {
+                        check(authRepository.currentShopId == result.shop.id)
+                        binding.passwordInput.text?.clear()
+                        sessionStore.clearCustomerSession()
+                        sessionStore.activeShop = result.shop
+                        navigator.navigateTo(KioskDestination.Welcome)
+                    }
+                    AuthResult.InvalidCredentials -> {
+                        if (!restoring) {
+                            showLoginError(R.string.shop_login_invalid)
+                            binding.passwordLayout.error = " "
+                        }
+                    }
+                    AuthResult.ShopNotAuthorized -> showLoginError(R.string.shop_login_unauthorized)
+                    AuthResult.BackendUnavailable -> showLoginError(R.string.shop_login_backend_error)
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                authRepository.signOut()
+                showLoginError(if (error is FirebaseFirestoreException &&
+                    error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    R.string.shop_login_unauthorized
+                } else R.string.shop_login_backend_error)
+            } finally {
+                binding.emailInput.isEnabled = true
+                binding.passwordInput.isEnabled = true
+                binding.signInButton.isEnabled = true
+                binding.demoModeButton.isEnabled = true
             }
         }
+    }
+
+    private fun showLoginError(message: Int) {
+        binding.generalErrorText.setText(message)
+        binding.generalErrorText.visibility = VISIBLE
     }
 
     private fun validate(email: String, password: String): Boolean {
@@ -91,4 +150,3 @@ class ShopLoginView(
         binding.passwordLayout.error = null
     }
 }
-

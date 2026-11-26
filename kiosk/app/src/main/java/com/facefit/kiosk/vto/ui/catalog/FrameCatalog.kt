@@ -31,7 +31,8 @@ data class VtoFrame(
     val leftArmAssetPath: String? = null,
     val rightArmAssetPath: String? = null,
     val leftArmAnchors: FrameArmAnchors? = null,
-    val rightArmAnchors: FrameArmAnchors? = null
+    val rightArmAnchors: FrameArmAnchors? = null,
+    val modelStoragePath: String? = null
 )
 
 // Preview catalog until the real frame dataset and scoring are connected.

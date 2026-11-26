@@ -1,12 +1,16 @@
 # Mobile scan and analysis integration
 
-Ported the active mobile `facefit_18b` model, quality checks, geometry features, stable-frame collection, and highest-average-score decision policy.
-The kiosk Start Scan button begins collection; it requires the same pose/lighting/readiness rules and at least 15 fresh frames over two seconds.
-The still photo remains a kiosk review step. Continue runs the model on the collected batch; the five-second analyzing presentation is retained.
-No geometric face-shape fallback is used in the active analysis path. Model scores are labelled as model scores, not calibrated confidence.
-VTO sources and the mobile project were not changed. Scan resources live separately under facefit/mobilescan.
+The kiosk uses its original guided Face Scan screen. Start Scan collects stable camera
+frames and opens a photo review with Retake and Continue. Continue runs the mobile
+Face Shape Max classifier and uses its prediction and landmarks for the existing profile
+explanations and frame recommendations.
 
-## Files changed and why
+Results score the signed-in shop's frames using the imported mobile assessor data. An explicit
+retailer score takes precedence. Frame Matches lists available frames with an applicable score. Browse Frames shows the available inventory without requiring a score.
+The results profile uses the mobile explanation rules and keeps the full explanation accessible
+from the profile card. Frame Details shows the score source and any retailer-provided wording.
+
+## Earlier ONNX port and checks
 
 - [app/src/main/java/com/facefit/kiosk/facefit/mobilescan/FaceAnalyzer.kt](D:/AndroidStudioProjects/FaceFit-AI/kiosk/app/src/main/java/com/facefit/kiosk/facefit/mobilescan/FaceAnalyzer.kt) — Ported mobile scan logic or parity fixtures.
 - [app/src/main/java/com/facefit/kiosk/facefit/mobilescan/FrameImageScope.kt](D:/AndroidStudioProjects/FaceFit-AI/kiosk/app/src/main/java/com/facefit/kiosk/facefit/mobilescan/FrameImageScope.kt) — Ported mobile scan logic or parity fixtures.
@@ -65,4 +69,5 @@ VTO sources and the mobile project were not changed. Scan resources live separat
 
 ## Using the kiosk
 
-Sync Gradle after opening the project because ONNX Runtime was added. On the camera page, follow the pose/lighting guidance, tap Start Scan when ready, hold steady for two seconds, review the photo, then Continue. Analysis uses the collected mobile-model batch and retains the kiosk's five-second minimum presentation.
+Tap Start Scan and accept camera access. Follow the on-screen framing and lighting guidance,
+then hold still while the kiosk captures your photo. Review it and select Continue to analyze it.

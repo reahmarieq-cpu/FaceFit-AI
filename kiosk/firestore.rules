@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function hasActiveKioskPlan(shop) {
+      let retailer = get(/databases/$(database)/documents/retailers/$(shop.retailerId)).data;
+      return retailer.userId == request.auth.uid
+        && retailer.status == "approved"
+        && retailer.subscriptionPlan == "kioskplan"
+        && retailer.subscriptionStatus == "active";
+    }
+
+    function canUseKiosk(shopId, shop) {
+      return request.auth != null
+        && request.auth.uid == shopId
+        && shop.enabled == true
+        && shop.retailerId is string
+        && shop.retailerId.matches('^[^/]+$')
+        && hasActiveKioskPlan(shop);
+    }
+
+    function canReadRetailerKioskFrame(retailerId) {
+      let shop = get(/databases/$(database)/documents/shops/$(request.auth.uid)).data;
+      return shop.retailerId == retailerId && canUseKiosk(request.auth.uid, shop);
+    }
+
+    match /retailers/{retailerId} {
+      allow get: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    match /retailers/{retailerId}/frames/{frameId} {
+      allow get, list: if request.auth != null
+        && resource.data.status == "live"
+        && canReadRetailerKioskFrame(retailerId);
+    }
+
+    match /shops/{shopId} {
+      allow get: if canUseKiosk(shopId, resource.data);
+
+      match /frames/{frameId} {
+        allow get, list: if canUseKiosk(
+          shopId, get(/databases/$(database)/documents/shops/$(shopId)).data
+        );
+      }
+    }
+  }
+}

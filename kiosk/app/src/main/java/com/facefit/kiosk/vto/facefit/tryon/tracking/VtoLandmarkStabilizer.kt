@@ -1,55 +1,74 @@
 package com.facefit.kiosk.vto.facefit.tryon.tracking
 
 import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
-import com.facefit.kiosk.vto.facefit.tryon.geometry.Vector3
-
+import kotlin.math.PI
 import kotlin.math.abs
 
-/** Stabilizes each new VTO result once, without a display-frame animation or prediction.
- * Thresholds are fractions of eye spacing, so behavior does not depend on screen resolution.
- */
-internal class VtoLandmarkStabilizer {
+/** One-Euro filter. Values and velocities are measured in preview pixels. */
+internal class OneEuroFilter(
+    private val minCutoff: Float = 0.25f,
+    private val beta: Float = 0.05f
+) {
+    private var raw = 0f
+    private var filtered = 0f
+    private var speed = 0f
+
+    fun sample(value: Float, dt: Float): Float {
+        if (dt <= 0f) {
+            raw = value
+            filtered = value
+            speed = 0f
+        } else {
+            val velocity = (value - raw) / dt
+            speed += (velocity - speed) * alpha(dt, 2f)
+            val dynamicCutoff = minCutoff + beta * abs(speed)
+            filtered += (value - filtered) * alpha(dt, dynamicCutoff)
+            raw = value
+        }
+        return filtered
+    }
+
+    companion object {
+        fun alpha(dt: Float, cutoff: Float): Float {
+            val rate = (2 * PI).toFloat() * dt * cutoff
+            return (rate / (1f + rate)).coerceIn(0f, 1f)
+        }
+    }
+}
+
+/** Filters the deformable mesh independently of the glasses' rigid pose. */
+internal class VtoLandmarkStabilizer(
+    private val minCutoff: Float = 0.25f,
+    private val beta: Float = 0.05f
+) {
+    private var filters = emptyArray<OneEuroFilter>()
     private var previous: FaceAnalyzer.FaceMetrics? = null
-    private var timestamp=0L
-    private val anchors=intArrayOf(33,133,263,362,168,10,152,127,356)
+    private var timestamp = 0L
 
     fun sample(face: FaceAnalyzer.FaceMetrics?, now: Long): FaceAnalyzer.FaceMetrics? {
-        if(face?.isFaceDetected!=true || face.landmarks.size<468 ||
+        if (face?.isFaceDetected != true || face.landmarks.size < 468 ||
             face.landmarks.any { !it.x.isFinite() || !it.y.isFinite() || !it.z.isFinite() }) {
-            previous=null
+            previous = null
             return face
         }
-        val old=previous
-        val elapsed=now-timestamp
-        timestamp=now
-        if(old==null || old.landmarks.size!=face.landmarks.size || elapsed<=0L || elapsed>250_000_000L ||
-            old.imageWidth!=face.imageWidth || old.imageHeight!=face.imageHeight) {
-            previous=face
-            return face
+        val old = previous
+        val elapsed = now - timestamp
+        previous = face
+        timestamp = now
+        val reset = old == null || elapsed !in 1L..250_000_000L ||
+            old.imageWidth != face.imageWidth || old.imageHeight != face.imageHeight ||
+            old.landmarks.size != face.landmarks.size
+        if (reset) filters = Array(face.landmarks.size * 3) { OneEuroFilter(minCutoff, beta) }
+        val dt = if (reset) 0f else elapsed / 1_000_000_000f
+        val width = face.imageWidth.coerceAtLeast(1).toFloat()
+        val height = face.imageHeight.coerceAtLeast(1).toFloat()
+        val points = face.landmarks.mapIndexed { i, point ->
+            FaceAnalyzer.LandmarkPoint(
+                filters[i * 3].sample(point.x * width, dt) / width,
+                filters[i * 3 + 1].sample(point.y * height, dt) / height,
+                filters[i * 3 + 2].sample(point.z * width, dt) / width
+            )
         }
-        val aspect=if(face.imageWidth>0 && face.imageHeight>0) face.imageHeight.toFloat()/face.imageWidth else 1f
-        fun point(p: FaceAnalyzer.LandmarkPoint)=Vector3(p.x,p.y*aspect,p.z)
-        fun eye(points: List<FaceAnalyzer.LandmarkPoint>,a: Int,b: Int)=(point(points[a])+point(points[b]))*.5f
-        val span=(eye(face.landmarks,263,362)-eye(face.landmarks,33,133)).length()
-        if(!span.isFinite() || span<.02f) { previous=face;return face }
-        var displacement=0f
-        for(i in anchors) {
-            val d=point(face.landmarks[i])-point(old.landmarks[i])
-            displacement=maxOf(displacement,abs(d.x),abs(d.y),abs(d.z))
-        }
-        val motion=displacement/span
-        // Tiny fluctuations are damped. Intentional movement immediately opens the filter.
-        val t=((motion-.008f)/.032f).coerceIn(0f,1f)
-        val adaptive=.25f+.75f*t*t*(3f-2f*t)
-        // Bound added lag to 1.2% of eye spacing at the pose anchors (about 1-3 pixels).
-        val bounded=if(motion>0f) 1f-.012f/motion else 0f
-        val alpha=maxOf(adaptive,bounded).coerceIn(.25f,1f)
-        if(alpha>=.999f) { previous=face;return face }
-        val result=face.copy(landmarks=face.landmarks.mapIndexed { i,p ->
-            val q=old.landmarks[i]
-            FaceAnalyzer.LandmarkPoint(q.x+(p.x-q.x)*alpha,q.y+(p.y-q.y)*alpha,q.z+(p.z-q.z)*alpha)
-        })
-        previous=result
-        return result
+        return if (reset) face else face.copy(landmarks = points)
     }
 }

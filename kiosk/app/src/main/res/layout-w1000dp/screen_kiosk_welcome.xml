@@ -157,20 +157,6 @@
                             app:icon="@drawable/ic_arrow_right"
                             app:iconGravity="textEnd"
                             app:iconPadding="8dp" />
-                        <TextView
-                            android:id="@+id/browseFramesButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="@dimen/button_height"
-                            android:layout_marginStart="12dp"
-                            android:background="@drawable/bg_outline_button"
-                            android:gravity="center"
-                            android:minWidth="150dp"
-                            android:paddingStart="22dp"
-                            android:paddingEnd="22dp"
-                            android:text="@string/welcome_browse_frames"
-                            android:textColor="@color/facefit_ink"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
                     </LinearLayout>
                     <Space
                         android:layout_width="1dp"

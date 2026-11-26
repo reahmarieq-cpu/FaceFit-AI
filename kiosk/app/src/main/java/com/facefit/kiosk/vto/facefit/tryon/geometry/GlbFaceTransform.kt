@@ -40,11 +40,11 @@ object GlbFaceTransform {
             scale <= 0f ||
             !heightOffset.isFinite() ||
             (center + halfExtent).any { !it.isFinite() } ||
-            face.landmarks.any {
+            (sharedRig == null && face.landmarks.any {
                 !it.x.isFinite() ||
                         !it.y.isFinite() ||
                         !it.z.isFinite()
-            }
+            })
         ) {
             return null
         }
@@ -59,28 +59,33 @@ object GlbFaceTransform {
             )
         }
 
-        val leftEye =
-            (point(33) + point(133)) * 0.5f
-
-        val rightEye =
-            (point(263) + point(362)) * 0.5f
-
-        val eyeCenter =
-            (leftEye + rightEye) * 0.5f
-
         val rig = sharedRig ?: VtoHeadPose.rig(face, width, height, scale, heightOffset) ?: return null
 
         // Eye spacing alone can place the hinges inside a wider face. Fit the rigid
         // frame across the temples as well; measure in head space to retain width on yaw.
         val eyeUnit = rig.size / (calibration?.span ?: halfExtent[0])
-        val templeWidth = kotlin.math.abs((point(127) - point(356)).dot(rig.xAxis))
-        val cheekWidth = kotlin.math.abs((point(234) - point(454)).dot(rig.xAxis))
-        val faceWidth = maxOf(templeWidth, cheekWidth)
-        val validWidth = faceWidth >= rig.size * 1.4f && faceWidth <= rig.size * 3f
-        val unit = if (calibration != null && validWidth) {
-            maxOf(eyeUnit, faceWidth * 1.03f * scale / (2f * halfExtent[0]))
+        val faceWidth = if (sharedRig != null || rig.faceWidth > 0f) rig.faceWidth else {
+            val temple = kotlin.math.abs((point(127) - point(356)).dot(rig.xAxis))
+            val cheek = kotlin.math.abs((point(234) - point(454)).dot(rig.xAxis))
+            maxOf(temple, cheek)
+        }
+        val eyeSpacing = rig.size / scale
+        val validWidth = faceWidth >= eyeSpacing * 1.4f && faceWidth <= eyeSpacing * 3f
+        // Where the asset has hinge markers, fit the visible front using their span.
+        // The complete bounding box can include arms or other distant geometry.
+        val modelWidth = calibration?.hingeSpan ?: (2f * halfExtent[0])
+        val unit = if (validWidth) {
+            maxOf(eyeUnit, faceWidth * 1.02f * scale / modelWidth)
         } else eyeUnit
-        val anchor = calibration?.center ?: Vector3(center[0], center[1], center[2] + halfExtent[2])
+        val modelPivot = calibration?.bridge ?: calibration?.center ?: Vector3(center[0], center[1], center[2] + halfExtent[2])
+
+        // Add hinge clearance as the head turns, without making the lenses taller
+        // or extending the arms farther behind the head.
+        val horizontalUnit = if (validWidth && calibration?.hingeSpan != null) {
+            val turn = ((kotlin.math.abs(rig.xAxis.z) - .02f) / .13f).coerceIn(0f, 1f)
+            val clearance = 1.02f + .08f * turn * turn * (3f - 2f * turn)
+            maxOf(unit, faceWidth * clearance * scale / modelWidth)
+        } else unit
 
         // Filament uses Y-up coordinates.
         // The camera preview uses Y-down coordinates.
@@ -100,41 +105,16 @@ object GlbFaceTransform {
          * GLB local Y is vertical.
          * GLB local Z is depth.
          */
-        val x = worldDirection(rig.xAxis) * unit
+        val x = worldDirection(rig.xAxis) * horizontalUnit
 
         val y = worldDirection(rig.yAxis) * -unit
 
         val z = worldDirection(rig.zAxis) * -unit
 
-        /*
-         * The bounding box includes the glasses' temples.
-         * Its center is not necessarily the center of the
-         * front frame.
-         *
-         * For a -Z-temple GLB, the front frame is near
-         * the maximum Z side of the bounding box.
-         */
-        val frontZ = anchor.z
-
-        /*
-         * Position the GLB's front-frame reference at
-         * the eye center rather than at the model's
-         * overall bounding-box center.
-         */
-        val targetX = rig.origin.x
-        val targetY = height - rig.origin.y
-
-        // Keep the existing face-depth placement.
-        val targetZ = -2000f - rig.origin.z
-
-        val origin = Vector3(
-            targetX,
-            targetY,
-            targetZ
-        ) -
-                x * anchor.x -
-                y * anchor.y -
-                z * frontZ
+        // Seat the calibrated model pivot ahead of the face depth mask.
+        val targetZ = -2000f - rig.origin.z + 12f
+        val bridgeScreenPos = Vector3(rig.origin.x, height - rig.origin.y, targetZ)
+        val origin = bridgeScreenPos - x * modelPivot.x - y * modelPivot.y - z * modelPivot.z
 
         return floatArrayOf(
             x.x, x.y, x.z, 0f,

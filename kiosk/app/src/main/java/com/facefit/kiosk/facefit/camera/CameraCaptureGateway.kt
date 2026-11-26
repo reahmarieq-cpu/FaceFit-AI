@@ -19,5 +19,7 @@ interface CameraCaptureGateway {
         onError: (Throwable) -> Unit
     )
 
+    fun setModelInputCaptureEnabled(enabled: Boolean) {}
+
     fun stopPreview()
 }

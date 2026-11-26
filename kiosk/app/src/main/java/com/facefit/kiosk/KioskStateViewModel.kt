@@ -8,6 +8,8 @@ import com.facefit.kiosk.navigation.KioskDestination
 class KioskStateViewModel : ViewModel() {
     val sessionStore = InMemoryKioskSessionStore()
     var destination: KioskDestination = KioskDestination.ShopLogin
+    var frameDetailsBackTo: KioskDestination = KioskDestination.Results
+    var demoMode = false
 
     override fun onCleared() {
         sessionStore.clearAll()

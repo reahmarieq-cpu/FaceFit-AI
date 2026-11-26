@@ -2,9 +2,9 @@
 
 The customer UI consumes data contracts. Providers are selected in MainActivity:
 
-- `KioskAnalyzer = MobileKioskAnalyzer(...)`: mobile quality-gated multi-frame scan and the facefit_18b ONNX model. See MOBILE_SCAN_INTEGRATION.md.
-- `FrameCatalog = MockFrameCatalog()`: local records for demo-shop with explicit visual-preview score fixtures (not analyzer measurements).
-- `MockShopAuthRepository`: existing local authentication, still not real retailer authentication.
+- `KioskAnalyzer = MobileKioskAnalyzer(...)`: quality-gated multi-frame capture and the mobile EfficientNetB0 LiteRT model. See MOBILE_SCAN_INTEGRATION.md.
+- `FrameCatalog = FirebaseFrameCatalog()`: reads and ranks the signed-in shop's Firestore inventory.
+- `ShopAuthRepository = FirebaseAuthRepository()`: signs in with Firebase Auth and verifies the shop is enabled.
 
 ## Kenn's analyzer
 
@@ -30,17 +30,20 @@ Undetermined, never Oval. Diamond has a neutral illustration until a matching PN
 
 ## Retailer / Firebase
 
-Implement `FrameCatalog.recommendationsFor(profile, shopId)` using authenticated shop-scoped data.
+Browse Frames and scan recommendations resolve the enabled shop's retailerId and read
+live documents at `retailers/{retailerId}/frames`. The previous shop catalog is used when
+there are no live retailer listings. Existing retailer compatibility scores take precedence. The mobile assessor dataset supplies scores for remaining face-shape and frame-shape combinations. Retailer entries can supply a scoped `productImagePath`
+and a `vtoAssetPath` under `frame-models/{retailerId}/{frameId}/` for Storage-backed try-on.
+Use `FrameCatalog.recommendationsFor(profile, shopId)` for ranked scan results.
 The Results screen calls it on a worker thread and supports loading, empty, error/retry,
 variable-length inventory, optional scores, selection, and unavailable-item filtering.
-Return recommendations in provider order. Scores must be 0Ã¢â‚¬â€œ100 or null; null displays Not scored.
-Replace `MockFrameCatalog()` in MainActivity when ready. A Firebase adapter can bridge its async
-client using a bounded worker-side wait or evolve this interface to suspend; never wait on UI.
+Return recommendations in provider order. Scores must be 0Ã¢â‚¬â€œ100 or null. Results omits frames without scores.
+`FirebaseFrameCatalog` bridges the async client with a bounded worker-side wait.
 Enforce shop access in backend rules; a client-provided shopId alone is not authorization.
 
-FrameItem currently carries ID, name, shape, color, material, and availability. Product-image
-URLs/loading, dimensions, VTO assets, and real matching still need retailer contracts and adapters.
-The current illustrations are generic fallback drawings; VTO now reuses the mobile implementation; see VTO_INTEGRATION.md for assets and limitations.
+`FrameItem` carries an optional shop-scoped Storage preview path. Missing or failed previews use
+existing fallback artwork. Recommendations use retailer-configured face-shape scores. See
+FIREBASE_SETUP.md for provisioning, schema, rules and checks, and VTO_INTEGRATION.md for VTO.
 
 ## Checks
 

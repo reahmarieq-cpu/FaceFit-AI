@@ -152,5 +152,8 @@ class FaceAnalyzer(
         val isFaceDetected: Boolean = false,
         val shapeMeasurements: FaceShapeClassifier.Measurements? = null,
         val shapeSampleCount: Int = 1,
+        val vtoFrameTimeNanos: Long? = null,
+        val vtoMaskLandmarks: List<LandmarkPoint>? = null,
     )
 }
+

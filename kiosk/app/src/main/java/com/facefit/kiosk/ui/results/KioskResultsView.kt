@@ -1,6 +1,7 @@
 package com.facefit.kiosk.ui.results
 
 import com.facefit.kiosk.facefit.features.FacialFeatureThresholds
+import android.app.Dialog
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -8,16 +9,22 @@ import java.util.concurrent.Executors
 import com.facefit.kiosk.model.FaceScanResult
 import com.facefit.kiosk.model.FrameRecommendation
 import android.view.View
+import android.view.Window
 import com.facefit.kiosk.data.frames.FrameCatalog
 import com.facefit.kiosk.databinding.ItemFrameRecommendationBinding
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.drawable.ColorDrawable
 import android.graphics.RectF
 import android.widget.ImageView
 import androidx.core.view.doOnLayout
 import kotlin.math.max
+import kotlin.math.roundToInt
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import com.facefit.kiosk.R
+import com.facefit.kiosk.databinding.DialogResultsExplanationBinding
+import com.facefit.kiosk.facefit.recommendation.FrameExplanations
 import com.facefit.kiosk.model.FaceShape
 import com.facefit.kiosk.data.session.KioskSessionStore
 import com.facefit.kiosk.databinding.ScreenResultsBinding
@@ -37,6 +44,7 @@ class KioskResultsView(
     private val catalogExecutor = Executors.newSingleThreadExecutor()
     private var attached = false
     private var loading = false
+    private var explanationDialog: Dialog? = null
     private val profile = requireNotNull(sessionStore.analysisResult)
     private val shopId = sessionStore.activeShop?.id.orEmpty()
 
@@ -48,6 +56,7 @@ class KioskResultsView(
 
     override fun onDetachedFromWindow() {
         attached = false
+        explanationDialog?.dismiss()
         catalogExecutor.shutdownNow()
         mainHandler.removeCallbacksAndMessages(null)
         super.onDetachedFromWindow()
@@ -62,7 +71,22 @@ class KioskResultsView(
         } ?: profile.modelScores[profile.faceShape.name]?.let {
             context.getString(R.string.scan_model_score, (it * 100).toInt())
         } ?: context.getString(R.string.results_shape_note)
-        if (profile.notes.isNotEmpty()) binding.resultsProfileSummary.text = profile.notes.joinToString("\n")
+        val explanation = profile.notes.filter { it.isNotBlank() }.joinToString("\n")
+        if (explanation.isNotEmpty()) binding.resultsProfileSummary.text = explanation
+        profile.profileHeadline?.let { binding.resultsProfileTitle.text = it }
+        val suggestedStyle = profile.suggestedFrameStyle?.let {
+            context.getString(R.string.results_suggested_style, it)
+        }
+        if (suggestedStyle != null) {
+            binding.resultsSuggestedStyle.text = suggestedStyle
+            binding.resultsSuggestedStyle.visibility = View.VISIBLE
+        }
+        if (explanation.isNotEmpty()) {
+            binding.resultsProfileMore.visibility = View.VISIBLE
+            binding.resultsProfileMore.setOnClickListener {
+                showFullExplanation(explanation, suggestedStyle)
+            }
+        }
         binding.resultsFrameRetry.setOnClickListener { loadFrameMatches() }
         val thresholds = FacialFeatureThresholds.load(context)
         binding.resultsAspectText.text = metrics?.foreheadToFaceWidthRatio.featureLabel(thresholds?.upperFace)
@@ -73,6 +97,44 @@ class KioskResultsView(
             navigator.navigateTo(KioskDestination.FacePositioning)
         }
     }
+
+    private fun showFullExplanation(explanation: String, suggestedStyle: String?) {
+        if (explanationDialog?.isShowing == true || !isAttachedToWindow) return
+        val dialog = Dialog(context)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val content = DialogResultsExplanationBinding.inflate(LayoutInflater.from(context))
+        content.explanationShapeLabel.text = binding.resultsShapeLabel.text
+        content.explanationShapeName.text = binding.resultsFaceShapeText.text
+        content.explanationShapeNote.text = binding.resultsShapeNote.text
+        content.explanationWidth.text = binding.resultsAspectText.text
+        content.explanationJawline.text = binding.resultsJawText.text
+        content.explanationEyeSpacing.text = binding.resultsEyesText.text
+        content.explanationHeadline.text = binding.resultsProfileTitle.text
+        content.explanationBody.text = explanation
+        content.explanationStyleAdvice.text = profile.profileStyleExplanation
+        content.explanationStyleSection.visibility = if (profile.profileStyleExplanation.isNullOrBlank()) View.GONE else View.VISIBLE
+        content.explanationStyle.text = suggestedStyle
+        content.explanationStyle.visibility = if (suggestedStyle == null) View.GONE else View.VISIBLE
+        val (_, illustration) = faceShapePresentation(profile.faceShape)
+        bindFacePortrait(content.explanationPortrait, profile.faceShape, illustration)
+        content.explanationDone.setOnClickListener { dialog.dismiss() }
+
+        dialog.setContentView(content.root)
+        dialog.setOnDismissListener { explanationDialog = null }
+        explanationDialog = dialog
+        dialog.show()
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).roundToInt()
+        val popupWidth = (width - dp(32)).coerceIn(1, dp(840))
+        val popupHeight = (height - dp(40)).coerceIn(1, dp(780))
+        dialog.window?.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            setDimAmount(0.52f)
+            setLayout(popupWidth, popupHeight)
+        }
+    }
+
+    private val frameExplanations by lazy { FrameExplanations.load(context.applicationContext) }
 
     private fun loadFrameMatches() {
         if (loading || !attached) return
@@ -85,7 +147,13 @@ class KioskResultsView(
         binding.resultsInventorySubtitle.setText(R.string.frame_inventory_loading)
         catalogExecutor.execute {
             val result = runCatching {
-                frameCatalog.recommendationsFor(profile, shopId).filter { it.frame.isAvailable }
+                val available = frameCatalog.recommendationsFor(profile, shopId).filter { it.frame.isAvailable }
+                val catalog = available.map { it.frame.id to it.frame.shape }
+                available.filter { it.compatibilityPercent != null }.map { match ->
+                    match.copy(styleExplanation = frameExplanations.forFrame(
+                        profile.faceShape.name, match.frame.id, match.frame.shape, catalog
+                    ))
+                }
             }
             mainHandler.post {
                 if (!attached) return@post
@@ -103,7 +171,7 @@ class KioskResultsView(
         binding.resultsFrames.visibility = if (matches.isEmpty()) View.GONE else View.VISIBLE
         binding.resultsFrames.removeAllViews()
         binding.resultsInventorySubtitle.text = if (matches.isEmpty()) {
-            context.getString(R.string.frame_inventory_empty)
+            context.getString(R.string.frame_matches_empty)
         } else resources.getQuantityString(R.plurals.frame_inventory_count, matches.size, matches.size)
         // Retain provider order; the screen does not manufacture rankings or scores.
         matches.forEach { match ->
@@ -112,12 +180,10 @@ class KioskResultsView(
             row.frameShape.text = match.frame.shape
             row.frameArtwork.frameShape = match.frame.shape
             row.frameArtwork.imageAssetPath = match.frame.imageAssetPath
-            val score = match.compatibilityPercent
-            row.frameScore.text = score?.let { context.getString(R.string.frame_score, it) }
-                ?: context.getString(R.string.results_value_unavailable)
-            row.frameScoreLabel.setText(if (score == null) R.string.frame_score_pending else R.string.frame_score_label)
-            row.frameProgress.visibility = if (score == null) View.GONE else View.VISIBLE
-            row.frameProgress.progress = score ?: 0
+            row.frameArtwork.previewStoragePath = match.frame.previewStoragePath
+            val score = requireNotNull(match.compatibilityPercent)
+            row.frameScore.text = context.getString(R.string.frame_score, score)
+            row.frameProgress.progress = score
             row.frameTopMatch.visibility = View.GONE
             row.root.contentDescription = context.getString(R.string.frame_accessibility, match.frame.name, match.frame.shape)
             row.root.setOnClickListener {
@@ -127,30 +193,34 @@ class KioskResultsView(
             binding.resultsFrames.addView(row.root)
         }
     }
+    private fun faceShapePresentation(shape: FaceShape): Pair<Int, Int> = when (shape) {
+        FaceShape.Oval -> R.string.results_shape_oval to R.drawable.face_shape_oval
+        FaceShape.Round -> R.string.results_shape_round to R.drawable.face_shape_round
+        FaceShape.Square -> R.string.results_shape_square to R.drawable.face_shape_square
+        FaceShape.Heart -> R.string.results_shape_heart to R.drawable.face_shape_heart
+        FaceShape.Oblong -> R.string.results_shape_oblong to R.drawable.face_shape_oblong
+        FaceShape.Diamond -> R.string.results_shape_diamond to R.drawable.ic_results_face
+        FaceShape.Undetermined -> R.string.results_shape_unavailable to R.drawable.ic_results_face
+    }
+
     private fun bindFaceShape(shape: FaceShape) {
-        val (label, illustration) = when (shape) {
-            FaceShape.Oval -> R.string.results_shape_oval to R.drawable.face_shape_oval
-            FaceShape.Round -> R.string.results_shape_round to R.drawable.face_shape_round
-            FaceShape.Square -> R.string.results_shape_square to R.drawable.face_shape_square
-            FaceShape.Heart -> R.string.results_shape_heart to R.drawable.face_shape_heart
-            FaceShape.Oblong -> R.string.results_shape_oblong to R.drawable.face_shape_oblong
-            FaceShape.Diamond -> R.string.results_shape_diamond to R.drawable.ic_results_face
-            FaceShape.Undetermined -> R.string.results_shape_unavailable to R.drawable.ic_results_face
-        }
+        val (label, illustration) = faceShapePresentation(shape)
         binding.resultsFaceShapeText.setText(label)
-        binding.resultsFaceShapeImage.setImageResource(illustration)
         binding.resultsFaceShapeImage.contentDescription = context.getString(label)
-        val portrait = binding.resultsFaceShapeImage
+        bindFacePortrait(binding.resultsFaceShapeImage, shape, illustration)
+    }
+
+    private fun bindFacePortrait(portrait: ImageView, shape: FaceShape, illustration: Int) {
+        portrait.setImageResource(illustration)
         if (shape == FaceShape.Undetermined || shape == FaceShape.Diamond) {
             portrait.scaleType = ImageView.ScaleType.FIT_CENTER
         } else {
             portrait.scaleType = ImageView.ScaleType.MATRIX
-            portrait.doOnLayout { fitFacePortrait() }
+            portrait.doOnLayout { fitFacePortrait(portrait) }
         }
     }
 
-    private fun fitFacePortrait() {
-        val portrait = binding.resultsFaceShapeImage
+    private fun fitFacePortrait(portrait: ImageView) {
         val drawable = portrait.drawable ?: return
         val width = drawable.intrinsicWidth.toFloat()
         val height = drawable.intrinsicHeight.toFloat()

@@ -4,13 +4,14 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.os.SystemClock
 import android.util.Log
+import android.util.Size
 import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
 import com.facefit.kiosk.vto.facefit.camera.TrackingBackend
+import com.facefit.kiosk.vto.facefit.tryon.tracking.VtoDeviceProfile
 import java.util.IdentityHashMap
 
 /** Debug-only, bounded timing correlation. No images or landmark coordinates are logged.
- * Capture starts at preview readback, not sensor exposure. Render timing is CPU submission,
- * not GPU completion or the moment the display presents pixels.
+ * Timing begins at analyzer entry and ends at render CPU submission.
  * All registry access occurs on the main thread.
  */
 internal object VtoDiagnostics {
@@ -19,6 +20,9 @@ internal object VtoDiagnostics {
     private var session=0L
     private var sequence=0L
     private var lastLog=0L
+    private var cadenceStart = 0L
+    private var renderAttempts = 0
+    private var renderSubmissions = 0
     private var previousFace: Boolean?=null
     private val pending=IdentityHashMap<FaceAnalyzer.FaceMetrics,Sample>()
     data class Detection(val prepareMs: Long,val modelMs: Long,val extractMs: Long)
@@ -26,8 +30,17 @@ internal object VtoDiagnostics {
     fun start(context: Context) {
         enabled=context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         session++;sequence=0;lastLog=0;previousFace=null;pending.clear()
-        if(enabled) Log.i(TAG,"session=$session event=start scope=previewReadbackToCpuSubmit excludes=sensorAge,gpuCompletion,displayPresentation")
+        cadenceStart = 0L
+        renderAttempts = 0
+        renderSubmissions = 0
+        if(enabled) Log.i(TAG,"session=$session event=start scope=analyzerArrivalToCpuSubmit excludes=sensorToAnalyzer,gpuCompletion,displayPresentation")
     }
+    fun cameraStreams(profile: VtoDeviceProfile, preview: Size?, analysis: Size?) {
+        if (enabled) Log.i(TAG, "session=$session stage=cameraStreams tier=${profile.tier} " +
+            "preview=$preview analysis=$analysis requestedPreview=${profile.previewSize} " +
+            "requestedAnalysis=${profile.analysisSize} preferredCpuThreads=${profile.numThreads} cpuThreads=runtimeDefault")
+    }
+
     fun delivered(face: FaceAnalyzer.FaceMetrics,backend: TrackingBackend,start: Long,captured: Long,
         workerStart: Long,modelStart: Long,finished: Long,timing: Detection?,inputWidth: Int,inputHeight: Int) {
         if(!enabled) return
@@ -45,7 +58,18 @@ internal object VtoDiagnostics {
         }
     }
     fun render(face: FaceAnalyzer.FaceMetrics?,cpuStart: Long,poseDone: Long,end: Long,submitted: Boolean,visible: Boolean) {
-        if(!enabled || face==null) return
+        if (!enabled) return
+        if (cadenceStart == 0L) cadenceStart = end
+        renderAttempts++
+        if (submitted) renderSubmissions++
+        val windowMs = end - cadenceStart
+        if (windowMs >= 1000L) {
+            Log.i(TAG, "session=$session stage=renderCadence windowMs=$windowMs attempts=$renderAttempts submissions=$renderSubmissions visible=$visible")
+            cadenceStart = end
+            renderAttempts = 0
+            renderSubmissions = 0
+        }
+        if (face == null) return
         val sample=pending[face] ?: return
         if(submitted) pending.remove(face)
         if(!sample.selected) return

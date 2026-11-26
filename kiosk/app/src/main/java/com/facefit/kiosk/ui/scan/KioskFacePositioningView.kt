@@ -146,7 +146,7 @@ class KioskFacePositioningView(
                 scanSamples.reset()
                 if (isViewAttached) applyState(FacePositioningUiState.CameraUnavailable)
             },
-            onAnalysis = { onScanFrame(it) }
+            onAnalysis = { onScanFrame(it) },
         )
     }
 
@@ -167,6 +167,7 @@ class KioskFacePositioningView(
         discardStoredCapture()
         scanSamples.reset()
         collectingSamples = true
+        cameraGateway.setModelInputCaptureEnabled(true)
         binding.captureButton.isEnabled = false
         binding.captureButton.setText(R.string.scan_collecting)
     }
@@ -176,9 +177,6 @@ class KioskFacePositioningView(
         if (!isViewAttached || currentState !in listOf(FacePositioningUiState.Ready, FacePositioningUiState.CaptureFailed)) return
         val readiness = metrics.getScanReadiness()
         binding.previewMessageText.text = readiness.message
-        binding.instructionBodyText.text = readiness.message
-        binding.cameraStatusText.text = context.getString(if (readiness.canCapture) R.string.scan_status_ready else R.string.scan_quality_check)
-        binding.cameraStatusText.setBackgroundResource(if (readiness.canCapture) R.drawable.bg_status_ready_pill else R.drawable.bg_status_warning_pill)
         if (!collectingSamples) {
             binding.captureButton.isEnabled = readiness.canCapture
             binding.captureButton.setText(R.string.scan_start_stable)
@@ -191,6 +189,7 @@ class KioskFacePositioningView(
         if (update.waitingForStability) binding.tipText.setText(R.string.scan_hold_still)
         update.captured?.let { batch ->
             collectingSamples = false
+            cameraGateway.setModelInputCaptureEnabled(false)
             scanSamples.reset()
             captureStillImage(batch)
         }
@@ -209,7 +208,10 @@ class KioskFacePositioningView(
         cameraGateway.captureImage(
             outputFile = outputFile,
             onSuccess = { imageFile ->
-                if (!isViewAttached) return@captureImage
+                if (!isViewAttached) {
+                    imageFile.delete()
+                    return@captureImage
+                }
                 sessionStore.capturedScanMetrics = batch
                 sessionStore.capturedFaceImagePath = imageFile.absolutePath
                 cameraGateway.stopPreview()
@@ -252,62 +254,45 @@ class KioskFacePositioningView(
 
     private fun showCameraStartingState() {
         showLiveCameraState(
-            status = context.getString(R.string.scan_status_camera_starting),
-            body = context.getString(R.string.scan_body_camera_starting),
             tip = context.getString(R.string.scan_tip_camera_starting),
             previewMessage = context.getString(R.string.scan_preview_camera_starting),
             buttonText = context.getString(R.string.scan_capture_button),
             isButtonEnabled = false,
-            statusBackground = R.drawable.bg_status_warning_pill
         )
     }
 
     private fun showReadyState() {
         showLiveCameraState(
-            status = context.getString(R.string.scan_status_ready),
-            body = context.getString(R.string.scan_body),
             tip = context.getString(R.string.scan_tip_ready),
             previewMessage = context.getString(R.string.scan_preview_ready),
             buttonText = context.getString(R.string.scan_start_stable),
             isButtonEnabled = false,
-            statusBackground = R.drawable.bg_status_ready_pill
         )
     }
 
     private fun showCaptureInProgressState() {
         showLiveCameraState(
-            status = context.getString(R.string.scan_status_capturing),
-            body = context.getString(R.string.scan_body_capturing),
             tip = context.getString(R.string.scan_tip_capturing),
             previewMessage = context.getString(R.string.scan_preview_capturing),
             buttonText = context.getString(R.string.scan_capture_button),
             isButtonEnabled = false,
-            statusBackground = R.drawable.bg_status_warning_pill
         )
     }
 
     private fun showCaptureFailedState() {
         showLiveCameraState(
-            status = context.getString(R.string.scan_status_capture_failed),
-            body = context.getString(R.string.scan_body_capture_failed),
             tip = context.getString(R.string.scan_tip_capture_failed),
             previewMessage = context.getString(R.string.scan_preview_capture_failed),
             buttonText = context.getString(R.string.scan_start_stable),
             isButtonEnabled = false,
-            statusBackground = R.drawable.bg_status_error_pill,
-            statusTextColor = R.color.facefit_error
         )
     }
 
     private fun showLiveCameraState(
-        status: String,
-        body: String,
         tip: String,
         previewMessage: String,
         buttonText: String,
         isButtonEnabled: Boolean,
-        statusBackground: Int,
-        statusTextColor: Int = R.color.facefit_ink
     ) {
         binding.cameraPreviewView.visibility = View.VISIBLE
         binding.capturedImageView.visibility = View.GONE
@@ -315,11 +300,7 @@ class KioskFacePositioningView(
         binding.cameraIssueText.visibility = View.GONE
         binding.retakeButton.visibility = View.GONE
 
-        binding.cameraStatusText.setBackgroundResource(statusBackground)
-        binding.cameraStatusText.setTextColor(context.getColor(statusTextColor))
-        binding.cameraStatusText.text = status
         binding.previewMessageText.text = previewMessage
-        binding.instructionBodyText.text = body
         binding.tipText.text = tip
         binding.captureButton.text = buttonText
         binding.captureButton.isEnabled = isButtonEnabled
@@ -327,7 +308,6 @@ class KioskFacePositioningView(
 
     private fun showPermissionRequiredState() {
         showCameraBlockedState(
-            status = context.getString(R.string.scan_status_permission_denied),
             issue = context.getString(R.string.scan_issue_permission_denied),
             tip = context.getString(R.string.scan_tip_permission_denied),
             buttonText = context.getString(R.string.scan_request_permission_button)
@@ -336,7 +316,6 @@ class KioskFacePositioningView(
 
     private fun showPermissionPermanentlyDeniedState() {
         showCameraBlockedState(
-            status = context.getString(R.string.scan_status_permission_denied),
             issue = context.getString(R.string.scan_issue_permission_permanently_denied),
             tip = context.getString(R.string.scan_tip_permission_permanently_denied),
             buttonText = context.getString(R.string.scan_open_settings_button)
@@ -345,14 +324,13 @@ class KioskFacePositioningView(
 
     private fun showCameraUnavailableState() {
         showCameraBlockedState(
-            status = context.getString(R.string.scan_status_camera_unavailable),
             issue = context.getString(R.string.scan_issue_camera_unavailable),
             tip = context.getString(R.string.scan_tip_camera_unavailable),
             buttonText = context.getString(R.string.scan_retry_camera_button)
         )
     }
 
-    private fun showCameraBlockedState(status: String, issue: String, tip: String, buttonText: String) {
+    private fun showCameraBlockedState(issue: String, tip: String, buttonText: String) {
         binding.cameraPreviewView.visibility = View.GONE
         binding.capturedImageView.visibility = View.GONE
         binding.faceGuide.visibility = View.GONE
@@ -360,11 +338,7 @@ class KioskFacePositioningView(
         binding.cameraIssueText.text = issue
         binding.retakeButton.visibility = View.GONE
 
-        binding.cameraStatusText.setBackgroundResource(R.drawable.bg_status_error_pill)
-        binding.cameraStatusText.setTextColor(context.getColor(R.color.facefit_error))
-        binding.cameraStatusText.text = status
         binding.previewMessageText.text = context.getString(R.string.scan_preview_camera_issue)
-        binding.instructionBodyText.text = context.getString(R.string.scan_body_camera_issue)
         binding.tipText.text = tip
         binding.captureButton.text = buttonText
         binding.captureButton.isEnabled = true
@@ -378,11 +352,7 @@ class KioskFacePositioningView(
         binding.cameraIssueText.visibility = View.GONE
         binding.retakeButton.visibility = View.VISIBLE
 
-        binding.cameraStatusText.setBackgroundResource(R.drawable.bg_status_ready_pill)
-        binding.cameraStatusText.setTextColor(context.getColor(R.color.facefit_ink))
-        binding.cameraStatusText.text = context.getString(R.string.scan_status_captured)
         binding.previewMessageText.text = context.getString(R.string.scan_preview_captured)
-        binding.instructionBodyText.text = context.getString(R.string.scan_body_captured)
         binding.tipText.text = context.getString(R.string.scan_tip_captured)
         binding.captureButton.text = context.getString(R.string.scan_capture_continue_button)
         binding.captureButton.isEnabled = true

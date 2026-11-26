@@ -5,16 +5,67 @@ import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inspector.WindowInspector
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.TextView
+import androidx.lifecycle.ViewModelProvider
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
+import com.facefit.kiosk.data.auth.MockShopAuthRepository
+import com.facefit.kiosk.model.FaceScanResult
+import com.facefit.kiosk.model.FaceShape
+import com.facefit.kiosk.navigation.KioskDestination
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class KioskResultsScrollTest {
+    @SdkSuppress(minSdkVersion = 29)
+    @Test fun fullExplanationShowsTheWholeTextAndCanBeDismissed() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val explanation = "Your scan gives you a starting point for exploring frames. ".repeat(70).trim()
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val state = ViewModelProvider(activity)[KioskStateViewModel::class.java]
+                state.demoMode = true
+                state.sessionStore.activeShop = MockShopAuthRepository.demoShop
+                state.sessionStore.analysisResult = FaceScanResult(
+                    faceShape = FaceShape.Oval,
+                    notes = listOf(explanation),
+                    profileHeadline = "Balanced proportions",
+                    suggestedFrameStyle = "rectangular"
+                )
+                activity.navigateTo(KioskDestination.Results)
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertTrue(activity.findViewById<View>(R.id.resultsProfileMore).performClick())
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity {
+                val dialog = requireNotNull(WindowInspector.getGlobalWindowViews().firstOrNull {
+                    it.findViewById<View>(R.id.explanationDone) != null
+                })
+                assertEquals(explanation, dialog.findViewById<TextView>(R.id.explanationBody).text.toString())
+                assertTrue("Long explanation should scroll", dialog.findViewById<View>(R.id.explanationScroll).canScrollVertically(1))
+                val done = dialog.findViewById<View>(R.id.explanationDone)
+                assertTrue(done.isShown)
+                assertTrue(done.performClick())
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertTrue(WindowInspector.getGlobalWindowViews().none {
+                    it.findViewById<View>(R.id.explanationDone) != null
+                })
+                assertTrue(activity.findViewById<View>(R.id.resultsProfileMore).isShown)
+            }
+        }
+    }
+
     @Test fun onlyFrameListScrollsWithinFixedPanels() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.runOnMainSync {

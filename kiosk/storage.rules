@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function hasActiveKioskPlan(shop) {
+      let retailer = firestore.get(/databases/(default)/documents/retailers/$(shop.retailerId)).data;
+      return retailer.userId == request.auth.uid
+        && retailer.status == "approved"
+        && retailer.subscriptionPlan == "kioskplan"
+        && retailer.subscriptionStatus == "active";
+    }
+
+    function enabledKioskShop(shopId, retailerId) {
+      let shop = firestore.get(/databases/(default)/documents/shops/$(shopId)).data;
+      return (retailerId == null || shop.retailerId == retailerId)
+        && shop.enabled == true
+        && shop.retailerId is string
+        && shop.retailerId.matches('^[^/]+$')
+        && hasActiveKioskPlan(shop);
+    }
+
+    match /frame-models/{retailerId}/{frameId}/{asset=**} {
+      allow get: if request.auth != null && enabledKioskShop(request.auth.uid, retailerId);
+    }
+
+    match /frame-images/{retailerId}/{asset=**} {
+      allow get: if request.auth != null && enabledKioskShop(request.auth.uid, retailerId);
+    }
+
+    match /shops/{shopId}/frame-previews/{asset=**} {
+      allow get: if request.auth != null
+        && request.auth.uid == shopId
+        && enabledKioskShop(shopId, null);
+    }
+  }
+}

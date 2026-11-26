@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
-import com.facefit.kiosk.vto.facefit.camera.TrackingBackend
 import com.facefit.kiosk.vto.ui.tryon.tracking.VtoTrackingFeed
 import com.facefit.kiosk.vto.ui.camera.TryOnCameraPreview
 import com.facefit.kiosk.vto.ui.tryon.rendering.LayeredImageTryOnOverlay
@@ -43,9 +42,9 @@ import com.facefit.kiosk.vto.ui.theme.*
 
 
 @Composable
-fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit) {
+fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit, onEndSession: () -> Unit) {
     val context = LocalContext.current
-    val glbPath = frame.assetPath?.takeIf { it.endsWith(".glb", ignoreCase = true) }
+    val glbPath = frame.modelStoragePath ?: frame.assetPath?.takeIf { it.endsWith(".glb", ignoreCase = true) }
     val trackingFeed=remember(glbPath) { VtoTrackingFeed() }
     var faceDetected by remember(glbPath) { mutableStateOf(false) }
     var modelLoading by remember(glbPath) { mutableStateOf(glbPath != null) }
@@ -80,22 +79,22 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit) {
     }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         if (hasPermission && (frame.has3DModel || bitmap != null)) {
-            TryOnCameraPreview(onResult = {
+            TryOnCameraPreview(stabilizeLandmarks = glbPath == null, onResult = {
                 if(glbPath!=null) {
                     trackingFeed.publish(it)
-                    faceDetected=it.isFaceDetected
-                } else metrics=it
+                } else metrics = it.copy(landmarks = it.vtoMaskLandmarks ?: it.landmarks)
             }, onError = { cameraError = it; metrics = null; trackingFeed.publish(null); faceDetected=false },
-                backend = TrackingBackend.GPU,
                 onBackendFallback = { backendNotice = it },
                 onTrackingStatus = { trackingStatus = it })
             if (glbPath != null) {
                 FilamentGlassesOverlay(
                     assetPath = glbPath,
+                    fromStorage = frame.modelStoragePath != null,
                     state = Glasses3DState(if (cameraError == null) metrics else null, 1f, 0f,
                         headerHeight, footerHeight),
                     trackingFeed=if(cameraError==null) trackingFeed else null,
                     onReady = { modelLoading = false },
+                    onFaceVisible = { faceDetected = it },
                     onError = { modelError = it; modelLoading = false }
                 )
             } else if (frame.has3DModel) {
@@ -120,6 +119,9 @@ fun VirtualTryOnScreen(frame: VtoFrame, onBack: () -> Unit) {
                 ResultIconButton(onBack) { Icon(Icons.Outlined.ArrowBackIosNew, "Back") }
                 Text(if (frame.has3DModel) "3D Virtual Try-On" else "Virtual Try-On", Modifier.weight(1f).padding(horizontal = 12.dp),
                     color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                androidx.compose.material3.TextButton(onClick = onEndSession) {
+                    Text(androidx.compose.ui.res.stringResource(com.facefit.kiosk.R.string.kiosk_end_session), color = Color.White)
+                }
             }
         }
         if (!hasPermission) {

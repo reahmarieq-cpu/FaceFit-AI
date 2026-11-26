@@ -79,7 +79,12 @@ class FaceScanSamples {
         }
         waitingForStability = false
         val aggregate = FacialGeometry.median(frames.mapNotNull { it.shapeMeasurements })
-        return Update(1f, metrics.copy(
+        val modelFrame = frames.filter { it.shapeImageRgb != null }.minByOrNull { sample ->
+            val shape = sample.shapeMeasurements
+            if (shape == null || aggregate == null) Float.POSITIVE_INFINITY
+            else abs(shape.lengthToWidth - aggregate.lengthToWidth) + abs(shape.jawToCheek - aggregate.jawToCheek)
+        }
+        return Update(1f, (modelFrame ?: metrics).copy(
             foreheadWidth = medianValue(frames.map { it.foreheadWidth }),
             jawline = medianValue(frames.map { it.jawline }),
             eyeSpacing = medianValue(frames.map { it.eyeSpacing }),

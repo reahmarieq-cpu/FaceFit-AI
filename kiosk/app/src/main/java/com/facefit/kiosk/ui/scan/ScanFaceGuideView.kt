@@ -9,7 +9,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 
-/** A transparent guide that stays between the header and controls in either orientation. */
+/** A guide drawn in the same coordinate space as the camera preview. */
 class ScanFaceGuideView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
@@ -24,10 +24,12 @@ class ScanFaceGuideView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val guideWidth = minOf(width * 0.8f, height * 0.8f * 0.72f, 280f * density)
+        val guideWidth = minOf(width * 0.8f, height * 0.70f * 0.72f, 360f * density)
         val guideHeight = guideWidth / 0.72f
-        bounds.set((width - guideWidth) / 2, (height - guideHeight) / 2,
-            (width + guideWidth) / 2, (height + guideHeight) / 2)
+        val centerX = width / 2f
+        val centerY = height * .46f
+        bounds.set(centerX - guideWidth / 2, centerY - guideHeight / 2,
+            centerX + guideWidth / 2, centerY + guideHeight / 2)
         canvas.drawOval(bounds, outline)
     }
 }

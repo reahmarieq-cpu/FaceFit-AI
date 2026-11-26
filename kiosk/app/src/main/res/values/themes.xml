@@ -42,4 +42,12 @@
         <item name="hintTextColor">@color/facefit_ink_muted</item>
         <item name="errorTextColor">@color/facefit_error</item>
     </style>
+    <style name="Widget.FaceFit.TextInput.Login" parent="Widget.FaceFit.TextInput">
+        <item name="android:textColorHint">@android:color/white</item>
+        <item name="hintTextColor">@android:color/white</item>
+        <item name="boxStrokeColor">@color/shop_login_input_stroke</item>
+        <item name="boxStrokeWidth">1.5dp</item>
+        <item name="startIconTint">@android:color/white</item>
+        <item name="endIconTint">@android:color/white</item>
+    </style>
 </resources>

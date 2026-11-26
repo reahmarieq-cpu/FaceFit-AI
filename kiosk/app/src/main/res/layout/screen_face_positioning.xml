@@ -22,50 +22,22 @@
         android:scaleType="centerCrop"
         android:visibility="gone" />
 
+    <com.facefit.kiosk.ui.scan.ScanFaceGuideView
+        android:id="@+id/faceGuide"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/scanHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_scan_overlay_top"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/scan_title"
-                android:textColor="@android:color/white"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/cameraStatusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/bg_status_ready_pill"
-                android:text="@string/scan_status_ready"
-                android:textColor="@color/facefit_ink"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
 
         <FrameLayout
             android:id="@+id/scanGuideArea"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
-
-            <com.facefit.kiosk.ui.scan.ScanFaceGuideView
-                android:id="@+id/faceGuide"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:importantForAccessibility="no" />
 
             <TextView
                 android:id="@+id/cameraIssueText"
@@ -92,7 +64,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp">
 
                 <TextView
                     android:id="@+id/previewMessageText"
@@ -105,20 +78,10 @@
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/instructionBodyText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:gravity="center"
-                    android:text="@string/scan_body"
-                    android:textColor="#E0E9EC"
-                    android:textSize="14sp" />
-
-                <TextView
                     android:id="@+id/tipText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="2dp"
                     android:gravity="center"
                     android:text="@string/scan_tip_ready"
                     android:textColor="#E0E9EC"
@@ -127,7 +90,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="4dp"
                     android:baselineAligned="false"
                     android:orientation="horizontal">
 
@@ -148,15 +111,15 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="@string/scan_capture_button" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/endScanButton"
+                        style="@style/Widget.FaceFit.Button.ScanSecondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/scan_end_session" />
                 </LinearLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/endScanButton"
-                    style="@style/Widget.FaceFit.Button.ScanSecondary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/scan_end_session" />
             </LinearLayout>
         </com.facefit.kiosk.ui.scan.ScanControlsScrollView>
     </LinearLayout>

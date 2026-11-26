@@ -10,7 +10,10 @@ data class FaceScanResult(
     val modelId: String? = null,
     val modelScores: Map<String, Float> = emptyMap(),
     val modelDecisionPolicy: String? = null,
-    val modelAgreement: Float? = null
+    val modelAgreement: Float? = null,
+    val profileHeadline: String? = null,
+    val suggestedFrameStyle: String? = null,
+    val profileStyleExplanation: String? = null
 ) {
     init {
         require(confidencePercent == null || confidencePercent in 0..100)

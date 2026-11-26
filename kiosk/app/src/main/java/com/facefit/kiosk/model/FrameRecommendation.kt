@@ -6,7 +6,9 @@ data class FrameRecommendation(
     val explanation: List<String> = emptyList(),
     val faceShapeScore: Int? = null,
     val proportionFitScore: Int? = null,
-    val styleColorScore: Int? = null
+    val styleColorScore: Int? = null,
+    val assessorBased: Boolean = false,
+    val styleExplanation: String? = null
 ) {
     init {
         require(listOf(compatibilityPercent, faceShapeScore, proportionFitScore, styleColorScore)

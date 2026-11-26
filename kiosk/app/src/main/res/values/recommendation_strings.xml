@@ -11,7 +11,7 @@
     <string name="frame_top_match">TOP MATCH</string>
     <string name="frame_score">%1$d</string>
     <string name="frame_score_label">compatibility</string>
-    <string name="frame_score_pending">Not scored</string>
+    <string name="frame_matches_empty">No scored matches for this scan.</string>
     <string name="frame_description">Shape: %1$s\nColor: %2$s\nMaterial: %3$s</string>
     <string name="frame_back_to_matches">Back to frames</string>
     <string name="frame_accessibility">%1$s, %2$s. View details.</string>

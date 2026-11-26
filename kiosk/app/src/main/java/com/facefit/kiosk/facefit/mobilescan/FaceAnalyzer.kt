@@ -20,10 +20,12 @@ class FaceAnalyzer(
     private val reuseRgbaBuffers: Boolean = false,
     private val maxFaces: Int = 1,
     private val scanQualityChecks: Boolean = false,
+    private val captureModelInput: () -> Boolean = { false },
     private val onResult: (FaceMetrics) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     private val faceLandmarker: FaceLandmarker
+    private val shapeImageInput by lazy { FaceShapeImageInput(context.applicationContext) }
     private var lastTimestampMs = -1L
     private val imageBuffer = if (reuseRgbaBuffers) TryOnImageBuffer() else null
 
@@ -85,25 +87,27 @@ class FaceAnalyzer(
                     }
                     val shapeMeasurements = FacialGeometry.measure(landmarkPoints, bitmap.width, bitmap.height)
 
-                    onResult(
-                        FaceMetrics(
-                            foreheadWidth = distance(103, 332) / cheekWidth,
-                            jawline = distance(172, 397) / cheekWidth,
-                            eyeSpacing = distance(133, 362) / cheekWidth,
-                            faceShape = "",
-                            stabilityFeatures = ScanStabilityFeatures.extract(landmarkPoints, bitmap.width, bitmap.height)
-                                ?: emptyList(),
-                            shapeMeasurements = shapeMeasurements,
-                            landmarks = landmarkPoints,
-                            imageWidth = bitmap.width,
-                            imageHeight = bitmap.height,
-                            isFaceDetected = true,
-                            headPose = result.facialTransformationMatrixes().orElse(emptyList())
-                                .firstOrNull()?.let(FaceScanPose::angles),
-                            scanLighting = if (scanQualityChecks)
+                val metrics = FaceMetrics(
+                        foreheadWidth = distance(103, 332) / cheekWidth,
+                        jawline = distance(172, 397) / cheekWidth,
+                        eyeSpacing = distance(133, 362) / cheekWidth,
+                        faceShape = "",
+                        stabilityFeatures = ScanStabilityFeatures.extract(landmarkPoints, bitmap.width, bitmap.height)
+                            ?: emptyList(),
+                        shapeMeasurements = shapeMeasurements,
+                        landmarks = landmarkPoints,
+                        imageWidth = bitmap.width,
+                        imageHeight = bitmap.height,
+                        isFaceDetected = true,
+                        headPose = result.facialTransformationMatrixes().orElse(emptyList())
+                            .firstOrNull()?.let(FaceScanPose::angles),
+                        scanLighting = if (scanQualityChecks)
                                 FaceScanLighting.measure(bitmap, landmarkPoints) else null,
                         )
-                    )
+                    val shapeImage = if (captureModelInput() && metrics.getScanReadiness().canCapture) {
+                        prepareModelInput(bitmap, landmarkPoints)
+                    } else null
+                    onResult(if (shapeImage == null) metrics else metrics.copy(shapeImageRgb = shapeImage))
                 } else {
                     onResult(noFaceMetrics(result.faceLandmarks().size))
                 }
@@ -113,6 +117,16 @@ class FaceAnalyzer(
             if (sourceBitmap !== rotatedBitmap) sourceBitmap?.takeUnless { it.isRecycled }?.recycle()
             image.close()
         }
+    }
+
+    private fun prepareModelInput(bitmap: Bitmap, landmarks: List<LandmarkPoint>): ByteArray? = try {
+        shapeImageInput.prepare(bitmap, landmarks)
+    } catch (error: Exception) {
+        android.util.Log.e("FaceAnalyzer", "Could not prepare face model input", error)
+        null
+    } catch (error: LinkageError) {
+        android.util.Log.e("FaceAnalyzer", "Face crop runtime unavailable", error)
+        null
     }
 
     private fun Bitmap.rotate(rotationDegrees: Int): Bitmap {
@@ -162,6 +176,7 @@ class FaceAnalyzer(
         val shapeDecisionReason: String? = null,
         val shapeAgreement: Float? = null,
         val shapeFeatureSamples: List<List<Float>> = emptyList(),
+        val shapeImageRgb: ByteArray? = null,
         val detectedFaceCount: Int = if (isFaceDetected) 1 else 0,
         val shapeDecisionPolicy: String? = null,
         val headPose: FaceScanPose.Angles? = null,

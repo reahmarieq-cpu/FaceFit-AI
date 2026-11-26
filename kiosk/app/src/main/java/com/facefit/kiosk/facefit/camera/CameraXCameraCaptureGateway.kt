@@ -21,6 +21,7 @@ class CameraXCameraCaptureGateway(private val context: Context) : CameraCaptureG
     private var analysisWorker: java.util.concurrent.ExecutorService? = null
     private var releaseAnalyzer: (() -> Unit)? = null
     @Volatile private var previewGeneration = 0
+    @Volatile private var modelInputCaptureEnabled = false
 
     override fun startPreview(lifecycleOwner: LifecycleOwner, previewView: PreviewView,
         onReady: () -> Unit, onUnavailable: (Throwable?) -> Unit,
@@ -52,7 +53,8 @@ class CameraXCameraCaptureGateway(private val context: Context) : CameraCaptureG
                         nextAnalysis.setAnalyzer(worker) { image ->
                             if (generation != previewGeneration) image.close() else try {
                                 val active = detector ?: FaceAnalyzer(context.applicationContext,
-                                    reuseRgbaBuffers = true, maxFaces = 2, scanQualityChecks = true) { metrics ->
+                                    reuseRgbaBuffers = true, maxFaces = 2, scanQualityChecks = true,
+                                    captureModelInput = { modelInputCaptureEnabled }) { metrics ->
                                     main.execute { if (generation == previewGeneration) onAnalysis(metrics) }
                                 }.also { detector = it }
                                 active.analyze(image)
@@ -99,7 +101,12 @@ class CameraXCameraCaptureGateway(private val context: Context) : CameraCaptureG
             })
     }
 
+    override fun setModelInputCaptureEnabled(enabled: Boolean) {
+        modelInputCaptureEnabled = enabled
+    }
+
     override fun stopPreview() {
+        modelInputCaptureEnabled = false
         previewGeneration++
         analysis?.clearAnalyzer()
         val bound = listOfNotNull(preview, imageCapture, analysis)

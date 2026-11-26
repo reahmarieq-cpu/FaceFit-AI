@@ -1,89 +1,74 @@
 package com.facefit.kiosk.vto
 
-import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
+import com.facefit.kiosk.vto.facefit.tryon.geometry.GlassesRig
+import com.facefit.kiosk.vto.facefit.tryon.geometry.Vector3
 import com.facefit.kiosk.vto.facefit.tryon.tracking.VtoPoseSmoother
+import kotlin.math.cos
+import kotlin.math.sin
 import org.junit.Assert.*
 import org.junit.Test
 
 class VtoPoseSmootherTest {
-    private fun face(offset: Float = 0f) = FaceAnalyzer.FaceMetrics(0f,0f,0f,"",
-        List(478) { FaceAnalyzer.LandmarkPoint((if (it == 33) .4f else .6f) + offset, .4f) },
-        1000, 1600, true)
-    @Test fun firstFaceAndReacquiredFaceHaveNoInterpolationDelay() {
-        val filter = VtoPoseSmoother()
-        val first = face()
-        assertSame(first, filter.sample(first, 0L))
-        assertNull(filter.sample(null, 16_000_000L))
-        val next = face(.2f)
-        assertSame(next, filter.sample(next, 32_000_000L))
+    private fun rig(x: Float = 0f, yaw: Float = 0f) = GlassesRig(
+        Vector3(x, 0f, 0f), Vector3(cos(yaw), 0f, -sin(yaw)), Vector3(0f, 1f, 0f),
+        Vector3(sin(yaw), 0f, cos(yaw)), 100f
+    )
+
+    @Test fun firstPoseAndReacquisitionAreImmediate() {
+        val smoother = VtoPoseSmoother()
+        smoother.update(rig())
+        assertEquals(0f, smoother.latest()!!.origin.x, .0001f)
+        smoother.update(null)
+        assertNull(smoother.latest())
+        smoother.update(rig(100f))
+        assertEquals(100f, smoother.latest()!!.origin.x, .0001f)
     }
-    @Test fun quickMovementRespondsWithinOneDisplayFrame() {
-        val filter = VtoPoseSmoother()
-        filter.sample(face(), 0L)
-        val moved = requireNotNull(filter.sample(face(.05f), 16_000_000L))
-        assertTrue(moved.landmarks[33].x > .44f)
-        assertTrue(moved.landmarks[33].x <= .45f)
+
+    @Test fun restingDeadbandKeepsTheEntirePoseFrozen() {
+        val smoother = VtoPoseSmoother()
+        val initial = rig()
+        smoother.update(initial)
+        repeat(12) {
+            smoother.update(rig(if (it % 2 == 0) 1f else -1f, .02f).copy(size = 101f))
+            assertSame(initial, smoother.latest())
+        }
     }
-    @Test fun tiltWithStationaryEyeCenterRespondsWithinOneDisplayFrame() {
-        val filter = VtoPoseSmoother()
-        val first = face()
-        filter.sample(first, 0L)
-        val tilted = first.copy(landmarks = first.landmarks.mapIndexed { i, p ->
-            when (i) {
-                33 -> p.copy(y = p.y - .025f)
-                263 -> p.copy(y = p.y + .025f)
-                else -> p
-            }
-        })
-        val result = requireNotNull(filter.sample(tilted, 16_000_000L))
-        assertEquals(.375f, result.landmarks[33].y, .001f)
-        assertEquals(.425f, result.landmarks[263].y, .001f)
+
+    @Test fun motionJustOutsideTheDeadbandEasesIn() {
+        val smoother = VtoPoseSmoother()
+        smoother.update(rig())
+        smoother.update(rig(1.21f).copy(size = 110f))
+        assertEquals(.1815f, smoother.latest()!!.origin.x, .001f)
+        assertEquals(100.75f, smoother.latest()!!.size, .001f)
     }
-    @Test fun yawDepthChangesRespondWithoutCenterTranslation() {
-        val filter = VtoPoseSmoother()
-        val first = face()
-        filter.sample(first, 0L)
-        val turned = first.copy(landmarks = first.landmarks.mapIndexed { i, p ->
-            if (i == 33) p.copy(z = -.03f) else if (i == 263) p.copy(z = .03f) else p
-        })
-        val result = requireNotNull(filter.sample(turned, 16_000_000L))
-        assertEquals(-.03f, result.landmarks[33].z, .001f)
-        assertEquals(.03f, result.landmarks[263].z, .001f)
+
+    @Test fun largeTranslationSnapsOnTheFirstSample() {
+        val smoother = VtoPoseSmoother()
+        smoother.update(rig())
+        val moved = rig(10f)
+        smoother.update(moved)
+        assertSame(moved, smoother.latest())
     }
-    @Test fun stationaryJitterIsReduced() {
-        val filter = VtoPoseSmoother()
-        filter.sample(face(), 0L)
-        val changed = requireNotNull(filter.sample(face(.001f), 16_000_000L))
-        assertTrue(changed.landmarks[33].x in .4f.. .4009f)
+
+    @Test fun widthStaysDampedEvenWhenRotationSnaps() {
+        val smoother = VtoPoseSmoother()
+        smoother.update(rig().copy(faceWidth = 200f))
+        val target = rig(yaw = .5f).copy(faceWidth = 220f)
+        smoother.update(target)
+        assertEquals(target.zAxis, smoother.latest()!!.zAxis)
+        assertEquals(201.6f, smoother.latest()!!.faceWidth, .001f)
     }
-    @Test fun predictionStopsWhenUpdatesStop() {
-        val filter = VtoPoseSmoother()
-        filter.sample(face(), 0L)
-        val moved = face(.04f)
-        filter.sample(moved, 16_000_000L)
-        for (i in 2..60) filter.sample(moved, i * 16_000_000L)
-        val settled = requireNotNull(filter.sample(moved, 1_000_000_000L))
-        assertEquals(.44f, settled.landmarks[33].x, .0001f)
-    }
-    @Test fun resizedCameraInputResetsRatherThanBlendingCoordinateSpaces() {
-        val filter = VtoPoseSmoother()
-        filter.sample(face(), 0L)
-        val resized = face(.02f).copy(imageWidth = 512, imageHeight = 800)
-        assertSame(resized, filter.sample(resized, 16_000_000L))
-    }
-    @Test fun invalidLandmarksHideAndNextValidFaceResets() {
-        val filter = VtoPoseSmoother()
-        val good = face()
-        filter.sample(good, 0L)
-        val invalid = good.copy(landmarks = good.landmarks.map { it.copy(x = Float.NaN) })
-        assertNull(filter.sample(invalid, 16_000_000L))
-        assertSame(good, filter.sample(good, 32_000_000L))
-    }
-    @Test fun settledPoseReusesSourceInsteadOfAllocatingEveryDisplayFrame() {
-        val filter = VtoPoseSmoother()
-        val stationary = face()
-        filter.sample(stationary, 0L)
-        assertSame(stationary, filter.sample(stationary, 16_000_000L))
-        assertSame(stationary, filter.sample(stationary, 32_000_000L))
+
+    @Test fun largeTurnsAtFixedNoseSnapAndSmallTurnsKeepOrthonormalAxes() {
+        val smoother = VtoPoseSmoother()
+        smoother.update(rig())
+        smoother.update(rig(yaw = .15f))
+        val blended = smoother.latest()!!
+        assertTrue(blended.zAxis.x > 0f)
+        assertEquals(1f, blended.zAxis.length(), .001f)
+        assertEquals(0f, blended.xAxis.dot(blended.yAxis), .001f)
+        val target = rig(yaw = .5f)
+        smoother.update(target)
+        assertSame(target, smoother.latest())
     }
 }

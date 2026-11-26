@@ -26,4 +26,9 @@
     <string name="results_shape_heart">Heart</string>
     <string name="results_shape_oblong">Oblong</string>
     <string name="results_shape_diamond">Diamond</string>
+    <string name="results_suggested_style">Suggested style · %1$s</string>
+    <string name="results_profile_more">Read full explanation</string>
+    <string name="results_explanation_done">Done</string>
+    <string name="results_explanation_width">Upper-face width</string>
+    <string name="results_explanation_style_advice">Styles to explore</string>
 </resources>

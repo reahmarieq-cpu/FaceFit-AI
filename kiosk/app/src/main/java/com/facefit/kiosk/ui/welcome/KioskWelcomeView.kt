@@ -3,7 +3,6 @@ package com.facefit.kiosk.ui.welcome
 import android.content.Context
 import android.view.LayoutInflater
 import android.widget.FrameLayout
-import android.widget.Toast
 import com.facefit.kiosk.R
 import com.facefit.kiosk.data.session.KioskSessionStore
 import com.facefit.kiosk.databinding.ScreenKioskWelcomeBinding
@@ -24,9 +23,6 @@ class KioskWelcomeView(
         bindStepCards()
         binding.startScanButton.setOnClickListener { startScanFlow() }
         binding.touchStartPanel.setOnClickListener { startScanFlow() }
-        binding.browseFramesButton.setOnClickListener {
-            Toast.makeText(context, R.string.welcome_browse_not_ready, Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun bindShopState() {

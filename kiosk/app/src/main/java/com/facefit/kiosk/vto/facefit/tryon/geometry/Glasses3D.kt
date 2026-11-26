@@ -13,7 +13,7 @@ data class Vector3(val x: Float, val y: Float, val z: Float) {
     fun isFinite() = x.isFinite() && y.isFinite() && z.isFinite()
 }
 
-data class GlassesRig(val origin: Vector3, val xAxis: Vector3, val yAxis: Vector3, val zAxis: Vector3, val size: Float) {
+data class GlassesRig(val origin: Vector3, val xAxis: Vector3, val yAxis: Vector3, val zAxis: Vector3, val size: Float, val faceWidth: Float = 0f) {
     fun transform(point: Vector3) = origin + (xAxis * point.x + yAxis * point.y + zAxis * point.z) * size
     fun matrix() = floatArrayOf(
         xAxis.x * size, xAxis.y * size, xAxis.z * size, 0f,
@@ -305,3 +305,4 @@ object GlbParser {
         return list
     }
 }
+

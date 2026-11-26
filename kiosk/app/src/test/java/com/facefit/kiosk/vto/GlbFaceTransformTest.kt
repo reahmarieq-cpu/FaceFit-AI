@@ -3,6 +3,8 @@ package com.facefit.kiosk.vto
 import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
 import com.facefit.kiosk.vto.facefit.tryon.geometry.GlbFaceTransform
 import com.facefit.kiosk.vto.facefit.tryon.geometry.Vector3
+import com.facefit.kiosk.vto.facefit.tryon.geometry.VtoAutomaticFit
+import com.facefit.kiosk.vto.facefit.tryon.tracking.VtoHeadPose
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -46,11 +48,23 @@ class GlbFaceTransformTest {
         val initial = transform(matrix()!!, p)
         val moved = transform(matrix(face(shiftX = 0.1f))!!, p)
         assertEquals(80f, moved.x-initial.x, 0.01f)
-        assertEquals(initial.y-40f, transform(matrix(offset = 0.2f)!!, p).y, 0.01f)
+        val rig = requireNotNull(VtoHeadPose.rig(face(), 800, 1000, 1f, 0f))
+        assertEquals(initial.y - 40f * rig.yAxis.y, transform(matrix(offset = 0.2f)!!, p).y, 0.01f)
         val m = matrix(scale = 1.2f)!!
         assertEquals(480f, (transform(m, Vector3(70f, center[1], 2.75f)) -
             transform(m, Vector3(-70f, center[1], 2.75f))).length(), 0.01f)
     }
+    @Test fun levelHeadDoesNotAngleStraightTempleArmsDown() {
+        val levelFace = face()
+        val landmarks = levelFace.landmarks.toMutableList()
+        landmarks[168] = landmarks[168].copy(z = 0f)
+        val m = requireNotNull(matrix(levelFace.copy(landmarks = landmarks)))
+        val hinge = transform(m, Vector3(65f, 0f, 0f))
+        val arm = transform(m, Vector3(65f, 0f, -120f))
+        assertEquals(hinge.y, arm.y, .01f)
+        assertTrue(arm.z < hinge.z)
+    }
+
     @Test fun turnsPreserveRigidMeshAndReverseTempleMotion() {
         val a = Vector3(65f, 0f, -140f)
         val b = Vector3(-65f, 0f, -140f)
@@ -58,10 +72,44 @@ class GlbFaceTransformTest {
         for (yaw in listOf(-45f, 45f)) {
             val m = matrix(face(yaw))!!
             assertTrue(m.all { it.isFinite() })
-            assertEquals(baseline, (transform(m,a)-transform(m,b)).length(), 0.01f)
+            assertEquals(baseline * cos(Math.toRadians(yaw.toDouble())).toFloat(),
+                (transform(m,a)-transform(m,b)).length(), 0.01f)
         }
         assertTrue(transform(matrix(face(-45f))!!, a).x < transform(matrix(face(45f))!!, a).x)
     }
+    @Test fun templeArmProjectsTowardTheEarOnEitherTurn() {
+        for (yaw in listOf(-45f, 45f)) {
+            val m = requireNotNull(matrix(face(yaw)))
+            val hinge = transform(m, Vector3(65f, 0f, 0f))
+            val temple = transform(m, Vector3(65f, 0f, -120f))
+            val arm = temple - hinge
+            assertTrue(arm.x * yaw > 0f)
+            assertTrue(kotlin.math.abs(arm.x) >= .65f * arm.length())
+        }
+    }
+
+    @Test fun authoredBridgeSaddleStaysAheadOfTheFaceThroughYaw() {
+        val anchor = Vector3(8f, 15f, -5f)
+        val calibration = VtoAutomaticFit.ModelAnchors(
+            Vector3(-35f, 0f, 0f), Vector3(35f, 0f, 0f), bridge = anchor
+        )
+        for (yaw in listOf(-45f, 0f, 45f)) {
+            val base = face(yaw)
+            val points = base.landmarks.toMutableList()
+            points[168] = FaceAnalyzer.LandmarkPoint(.54f, .37f, -.08f)
+            val tracked = base.copy(landmarks = points)
+            val rig = requireNotNull(VtoHeadPose.rig(tracked, 800, 1000, 1f, 0f))
+            val m = requireNotNull(GlbFaceTransform.matrix(
+                tracked, 800, 1000, center, extent, 1f, 0f, calibration
+            ))
+            val bridge = transform(m, anchor)
+            assertEquals(rig.origin.x, bridge.x, .01f)
+            assertEquals(1000f - rig.origin.y, bridge.y, .01f)
+            assertEquals(-2000f - rig.origin.z + 12f, bridge.z, .01f)
+            assertEquals(-2000f + 64f * .6f * VtoHeadPose.DEPTH_WEIGHT + 12f, bridge.z, .01f)
+        }
+    }
+
     @Test fun missingOrInvalidFaceHidesModel() {
         assertNull(matrix(null))
         assertNull(matrix(face().copy(isFaceDetected = false)))

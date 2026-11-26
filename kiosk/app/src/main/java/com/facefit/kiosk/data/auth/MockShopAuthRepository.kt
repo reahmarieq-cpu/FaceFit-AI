@@ -2,24 +2,19 @@ package com.facefit.kiosk.data.auth
 
 import com.facefit.kiosk.model.ShopAccount
 
-class          MockShopAuthRepository : ShopAuthRepository {
+class MockShopAuthRepository : ShopAuthRepository {
 
-    override fun signIn(email: String, password: String): AuthResult {
+    override suspend fun signIn(email: String, password: String): AuthResult {
         val normalizedEmail = email.trim().lowercase()
         return if (normalizedEmail == DEMO_EMAIL && password.isNotBlank()) {
-            AuthResult.Success(
-                ShopAccount(
-                    id = "demo-shop",
-                    displayName = "FaceFit Optical",
-                    email = DEMO_EMAIL
-                )
-            )
+            AuthResult.Success(demoShop)
         } else {
             AuthResult.InvalidCredentials
         }
     }
 
-    private companion object {
-        const val DEMO_EMAIL = "demo@facefit.local"
+    companion object {
+        private const val DEMO_EMAIL = "demo@facefit.local"
+        val demoShop = ShopAccount("demo-shop", "FaceFit Optical (Demo)", DEMO_EMAIL)
     }
 }

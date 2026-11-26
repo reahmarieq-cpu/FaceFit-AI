@@ -1,85 +1,52 @@
 package com.facefit.kiosk.vto.facefit.tryon.tracking
 
-import com.facefit.kiosk.vto.facefit.analysis.FaceAnalyzer
+import com.facefit.kiosk.vto.facefit.tryon.geometry.GlassesRig
+import kotlin.math.abs
 
-import kotlin.math.exp
-import kotlin.math.hypot
-
-/** VTO-only filtering: react to rotation as well as translation, without queuing old poses. */
+/** Holds small changes at rest and follows larger changes in the stabilized rig. */
 internal class VtoPoseSmoother {
-    private var source: FaceAnalyzer.FaceMetrics? = null
-    private var displayed: FaceAnalyzer.FaceMetrics? = null
-    private var sourceTime = 0L
-    private var frameTime = 0L
-    private var velocity = FloatArray(0)
-    private var motionSpeed = 0f
+    private var displayed: GlassesRig? = null
 
-    fun sample(face: FaceAnalyzer.FaceMetrics?, now: Long): FaceAnalyzer.FaceMetrics? {
-        if (face?.isFaceDetected != true || face.landmarks.size < 468) {
-            source = null; displayed = null; velocity.fill(0f); motionSpeed = 0f
-            frameTime = now
-            return face
+    fun update(measured: GlassesRig?) {
+        val current = displayed
+        if (measured == null || current == null) {
+            displayed = measured
+            return
         }
-        if (face.landmarks.any { !it.x.isFinite() || !it.y.isFinite() || !it.z.isFinite() }) {
-            source = null; displayed = null; velocity.fill(0f); motionSpeed = 0f
-            frameTime = now
-            return null
+
+        val displacement = measured.origin - current.origin
+        val positionDelta = displacement.length()
+        val rotationDelta = abs(1f - measured.xAxis.dot(current.xAxis)) +
+            abs(1f - measured.yAxis.dot(current.yAxis))
+
+        if (positionDelta < 1.2f && rotationDelta < .002f) return
+
+        val positionProgress = ((positionDelta - 1.2f) / 8.8f).coerceIn(0f, 1f)
+        val rotationProgress = ((rotationDelta - .002f) / .018f).coerceIn(0f, 1f)
+        val progress = maxOf(positionProgress, rotationProgress)
+        val eased = progress * progress * (3f - 2f * progress)
+        val factor = .15f + .85f * eased
+
+        // Damp width even on a fast turn so the fitting scale does not jump with yaw.
+        val width = current.faceWidth + (measured.faceWidth - current.faceWidth) * .08f
+        if (factor >= .99f) {
+            displayed = if (width == measured.faceWidth) measured else measured.copy(faceWidth = width)
+            return
         }
-        val old = source
-        val elapsed = (now - frameTime).coerceAtLeast(0L) / 1_000_000_000f
-        frameTime = now
-        if (old == null || displayed == null || elapsed > .25f || old.landmarks.size != face.landmarks.size ||
-            old.imageWidth != face.imageWidth || old.imageHeight != face.imageHeight) {
-            return reset(face, now)
-        }
-        if (face !== old) {
-            val seconds = ((now - sourceTime) / 1_000_000_000f).coerceIn(.008f, .25f)
-            val dx = centerX(face) - centerX(old)
-            val dy = centerY(face) - centerY(old)
-            if (hypot(dx, dy) > .18f) return reset(face, now)
-            motionSpeed = 0f
-            for (i in face.landmarks.indices) {
-                val a = old.landmarks[i]
-                val b = face.landmarks[i]
-                velocity[i * 3] = (b.x - a.x) / seconds
-                velocity[i * 3 + 1] = (b.y - a.y) / seconds
-                velocity[i * 3 + 2] = (b.z - a.z) / seconds
-            }
-            // Eyes, bridge, forehead and chin reveal roll/yaw/pitch even at a fixed center.
-            for (i in intArrayOf(33, 133, 263, 362, 168, 10, 152)) {
-                motionSpeed = maxOf(motionSpeed,
-                    hypot(velocity[i * 3], velocity[i * 3 + 1]), kotlin.math.abs(velocity[i * 3 + 2]))
-            }
-            source = face; sourceTime = now
-        }
-        val age = (now - sourceTime).coerceAtLeast(0L) / 1_000_000_000f
-        val lead = minOf(age, .020f) * exp(-maxOf(age - .04f, 0f) * 40f)
-        val tau = if (motionSpeed > .12f) .003f else .020f
-        val alpha = (1f - exp(-elapsed / tau)).coerceIn(0f, 1f)
-        val previous = requireNotNull(displayed)
-        // Keep the same pose object once settled so the renderer can skip redundant geometry work.
-        if ((lead < .000001f || velocity.all { kotlin.math.abs(it) < .00001f }) &&
-            face.landmarks.indices.all { i ->
-                val a = previous.landmarks[i]; val b = face.landmarks[i]
-                kotlin.math.abs(a.x - b.x) < .00001f && kotlin.math.abs(a.y - b.y) < .00001f &&
-                    kotlin.math.abs(a.z - b.z) < .00001f
-            }) return face.also { displayed = it }
-        return face.copy(landmarks = face.landmarks.mapIndexed { i, target ->
-            val point = previous.landmarks[i]
-            val px = (velocity[i * 3] * lead).coerceIn(-.020f, .020f)
-            val py = (velocity[i * 3 + 1] * lead).coerceIn(-.020f, .020f)
-            val pz = (velocity[i * 3 + 2] * lead).coerceIn(-.015f, .015f)
-            FaceAnalyzer.LandmarkPoint(
-                point.x + (target.x + px - point.x) * alpha,
-                point.y + (target.y + py - point.y) * alpha,
-                point.z + (target.z + pz - point.z) * alpha)
-        }).also { displayed = it }
+
+        val right = (current.xAxis + (measured.xAxis - current.xAxis) * factor).normalized()
+        val downHint = current.yAxis + (measured.yAxis - current.yAxis) * factor
+        val behind = right.cross(downHint).normalized()
+        val down = behind.cross(right).normalized()
+        displayed = measured.copy(
+            origin = current.origin + displacement * factor,
+            xAxis = right,
+            yAxis = down,
+            zAxis = behind,
+            size = current.size + (measured.size - current.size) * (factor * .5f),
+            faceWidth = width
+        )
     }
-    private fun reset(face: FaceAnalyzer.FaceMetrics, now: Long): FaceAnalyzer.FaceMetrics {
-        source = face; displayed = face; sourceTime = now
-        velocity = FloatArray(face.landmarks.size * 3); motionSpeed = 0f
-        return face
-    }
-    private fun centerX(face: FaceAnalyzer.FaceMetrics) = (face.landmarks[33].x + face.landmarks[263].x) * .5f
-    private fun centerY(face: FaceAnalyzer.FaceMetrics) = (face.landmarks[33].y + face.landmarks[263].y) * .5f
+
+    fun latest(): GlassesRig? = displayed
 }
