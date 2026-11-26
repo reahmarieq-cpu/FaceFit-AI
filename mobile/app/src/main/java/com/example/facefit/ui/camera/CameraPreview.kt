@@ -27,6 +27,7 @@ import androidx.camera.view.transform.OutputTransform
 import com.example.facefit.facefit.analysis.FaceScanGuide
 import com.example.facefit.facefit.analysis.FacialGeometry
 import com.example.facefit.facefit.analysis.getScanReadiness
+import com.example.facefit.facefit.analysis.facingDiagnostics
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -56,6 +57,8 @@ fun CameraPreview(
     onDistanceHint: (ScanDistanceGuide.Hint?) -> Unit = {},
     /** Outline half-width (screen px) that an average face fills at 45 cm; null until known. */
     onGuideHalfWidth: (Float?) -> Unit = {},
+    /** Called just before the result of an automatic capture (no tap) is delivered. */
+    onAutoCapture: () -> Unit = {},
     onResult: (FaceAnalyzer.FaceMetrics, Boolean?) -> Unit
 ) {
     val context = LocalContext.current
@@ -66,6 +69,7 @@ fun CameraPreview(
     val onErrorCallback by rememberUpdatedState(onError)
     val onDistanceHintCallback by rememberUpdatedState(onDistanceHint)
     val onGuideHalfWidthCallback by rememberUpdatedState(onGuideHalfWidth)
+    val onAutoCaptureCallback by rememberUpdatedState(onAutoCapture)
     val previewView = remember(context) {
         PreviewView(context).apply {
             implementationMode = PreviewView.ImplementationMode.COMPATIBLE
@@ -128,16 +132,21 @@ fun CameraPreview(
                     }
                 }
                 var lastPreviewMs = 0L  // analysis executor only
-                // Frozen capture: the last frames before the tap, processed afterwards.
+                // Set from the tap until the capture is evaluated; pauses the live guide.
                 val isCapturing = AtomicBoolean(false)
-                val recentFrames = RecentFrames(GRAB_FRAMES + 1)  // analysis executor only
                 var tapMs = 0L  // analysis executor only
+                // Live frames already fully analysed while the person lines up (analysis executor
+                // only). A tap uses the good ones from just before it, so capture is immediate and
+                // movement after the tap is ignored.
+                val liveResults = ArrayDeque<LiveResult>()
+                var liveTransform: OutputTransform? = null  // analysis executor only
+                var liveTimeMs = 0L  // analysis executor only
 
                 fun logTiming(success: Boolean, timing: CaptureTiming, classifierFrames: Int, featureFrames: Int) {
                     Log.i("FACEFIT_FEATURE_JSON", org.json.JSONObject()
                         .put("type", "capture_timing").put("scan_id", "timing_${System.currentTimeMillis()}")
                         .put("success", success)
-                        .put("mode", "frozen_burst")
+                        .put("mode", "live_frames")
                         .put("frames_from", timing.source)
                         .put("frame_span_ms", timing.grabMs)
                         .put("wait_after_tap_ms", timing.waitMs)
@@ -149,25 +158,33 @@ fun CameraPreview(
                         .toString())
                 }
 
-                /** Main thread: applies the same frame checks as before to the frozen frames. */
-                fun evaluateFrozen(results: List<Pair<FaceAnalyzer.FaceMetrics, OutputTransform?>>, timing: CaptureTiming) {
+                /** Main thread: whether the face in [result] is inside the dashed outline on screen. */
+                fun insideGuide(result: FaceAnalyzer.FaceMetrics, source: OutputTransform?): Boolean? {
                     val target = previewView.outputTransform
+                    if (source == null || target == null || !result.isFaceDetected) return null
+                    val points = FloatArray(result.landmarks.size * 2)
+                    result.landmarks.forEachIndexed { index, point ->
+                        points[index * 2] = point.x * result.imageWidth
+                        points[index * 2 + 1] = point.y * result.imageHeight
+                    }
+                    CoordinateTransform(source, target).mapPoints(points)
+                    return FaceScanGuide.containsFace(previewView.width, previewView.height, points, guideHalfWidth)
+                }
+
+                /**
+                 * Main thread: applies the same frame checks as before to the frozen frames. With
+                 * [silent] (automatic capture), a failure is not reported; returns whether it succeeded.
+                 */
+                fun evaluateFrozen(
+                    results: List<Pair<FaceAnalyzer.FaceMetrics, OutputTransform?>>, timing: CaptureTiming,
+                    silent: Boolean = false,
+                ): Boolean {
                     val classifierFrames = mutableListOf<FaceAnalyzer.FaceMetrics>()
                     val fallbackClassifierFrames = mutableListOf<FaceAnalyzer.FaceMetrics>()
                     val classifierRejectedReasons = mutableListOf<String>()
                     val featureCollector = FacialFeatureMeasurement.Collector(featureTarget)
                     for ((result, source) in results) {
-                        val insideGuide = if (source == null || target == null || !result.isFaceDetected) {
-                            null
-                        } else {
-                            val points = FloatArray(result.landmarks.size * 2)
-                            result.landmarks.forEachIndexed { index, point ->
-                                points[index * 2] = point.x * result.imageWidth
-                                points[index * 2 + 1] = point.y * result.imageHeight
-                            }
-                            CoordinateTransform(source, target).mapPoints(points)
-                            FaceScanGuide.containsFace(previewView.width, previewView.height, points, guideHalfWidth)
-                        }
+                        val insideGuide = insideGuide(result, source)
                         val readiness = result.getScanReadiness()
                         val framed = readiness.canCapture && insideGuide == true
                         // Face-shape classifier frames: same rule as before (frontal within 4 degrees
@@ -194,11 +211,17 @@ fun CameraPreview(
                     }
                     val aggregate = featureCollector.aggregate()
                     val success = classifierFrames.size >= MIN_CLASSIFIER_FRAMES && aggregate != null
+                    if (silent && !success) return false
                     logTiming(success, timing, classifierFrames.size, featureCollector.acceptedCount)
                     if (success) {
+                        if (silent) {
+                            isCapturing.set(true)
+                            frozenPhoto = previewView.bitmap?.asImageBitmap()
+                            onAutoCaptureCallback()
+                        }
                         onResultCallback(consolidateBurstFrames(classifierFrames.toList(),
                             classifierRejectedReasons.toList(), requireNotNull(aggregate)), true)
-                        return
+                        return true
                     }
                     val stage = if (classifierFrames.size < MIN_CLASSIFIER_FRAMES) "classifier_frames" else "feature_frames"
                     val guidance = if (stage == "classifier_frames") {
@@ -211,17 +234,57 @@ fun CameraPreview(
                     onResultCallback(FaceAnalyzer.FaceMetrics(foreheadWidth = 0f, jawline = 0f, eyeSpacing = 0f,
                         faceShape = "", isFaceDetected = false,
                         captureGuidance = guidance ?: "Hold still and look straight at the camera"), false)
+                    return false
                 }
+
+                // Automatic capture (main thread only): consecutive live frames that pass every check.
+                val autoRun = ArrayDeque<LiveResult>()
+                var lastFacingLogMs = 0L  // main thread only
 
                 val faceAnalyzer = FaceAnalyzer(context, reuseRgbaBuffers = true, maxFaces = 2,
                     scanQualityChecks = true) { result ->
-                    // Live analysis is only used for the distance/expression/pose guide before capture.
+                    // Called on the analysis executor, inside analyze(). Full results are kept for
+                    // the next capture; they also drive the distance/expression/pose guide.
+                    val live = LiveResult(result, liveTransform, liveTimeMs)
+                    liveResults.addLast(live)
+                    while (liveResults.size > LIVE_FRAMES_KEPT) liveResults.removeFirst()
                     mainExecutor.execute {
                         if (!disposed && !isCapturing.get()) {
                             val frame = result.featureFrame?.takeIf { result.isFaceDetected }
-                            onDistanceHintCallback(distanceGuide.update(frame?.cheekDistanceCm,
+                            val inside = insideGuide(result, live.transform)
+                            val hint = distanceGuide.update(frame?.cheekDistanceCm,
                                 SystemClock.elapsedRealtime(), frame?.smileScore, frame?.upperLipRaise,
-                                frame?.pitchDeg, frame?.yawDeg))
+                                frame?.pitchDeg, frame?.yawDeg)
+                            // The capture also checks the outline and the face checks (facing the
+                            // camera, lighting...), so show their message live instead of green.
+                            val readiness = result.getScanReadiness()
+                            onDistanceHintCallback(when {
+                                hint?.inRange == true && result.isFaceDetected && !readiness.canCapture ->
+                                    hint.copy(text = readiness.message,
+                                        inRange = false, poseRefusal = readiness.message)
+                                hint?.inRange == true && inside == false ->
+                                    hint.copy(text = "Keep your face inside the outline",
+                                        inRange = false, poseRefusal = "Keep your full face inside the dashed outline.")
+                                else -> hint
+                            })
+                            val nowMs = SystemClock.elapsedRealtime()
+                            if (readiness.message == "Face the camera directly" && nowMs - lastFacingLogMs > 1000L) {
+                                lastFacingLogMs = nowMs
+                                Log.i("FACEFIT_FEATURE_JSON", result.facingDiagnostics()
+                                    .put("type", "facing_rejected").put("scan_id", "live_$nowMs").toString())
+                            }
+                            if (live.metrics.passesCaptureChecks() && inside == true) autoRun.addLast(live)
+                            else autoRun.clear()
+                            while (autoRun.size > GRAB_FRAMES) autoRun.removeFirst()
+                            if (autoRun.size >= MIN_LIVE_FRAMES) {
+                                val used = autoRun.toList()
+                                val timing = CaptureTiming(used.last().timeMs - used.first().timeMs, 0L,
+                                    emptyList(), "auto", waitMs = 0L)
+                                // Not good enough together (e.g. small movement): slide on, no retake.
+                                if (evaluateFrozen(used.map { it.metrics to it.transform }, timing, silent = true)) {
+                                    autoRun.clear()
+                                } else autoRun.removeFirst()
+                            }
                         }
                     }
                 }
@@ -239,11 +302,30 @@ fun CameraPreview(
                         }
                     }
                     val now = SystemClock.elapsedRealtime()
-                    // Keep the most recent frames so Capture uses what was on screen before the tap.
-                    try {
-                        recentFrames.add(image, transformFactory.getOutputTransform(image), now)
-                    } catch (error: Exception) {
-                        Log.w("CameraPreview", "Could not keep camera frame", error)
+                    /**
+                     * Uses the analysed frames that pass every per-frame check, from shortly before
+                     * the tap onwards. Returns false while still waiting for enough of them.
+                     */
+                    fun finishCapture(): Boolean {
+                        val window = liveResults.filter { it.timeMs >= tapMs - LIVE_WINDOW_MS }
+                        val good = window.filter { it.metrics.passesCaptureChecks() }.takeLast(GRAB_FRAMES)
+                        val waited = SystemClock.elapsedRealtime() - tapMs
+                        if (good.size < MIN_LIVE_FRAMES && waited < MAX_WAIT_MS) return false
+                        // Too few good frames in time: evaluate the latest ones for the guidance message.
+                        val used = if (good.size >= MIN_LIVE_FRAMES) good else window.takeLast(GRAB_FRAMES)
+                        val source = when {
+                            used.isEmpty() -> "none"
+                            used.last().timeMs <= tapMs -> "live_pre_tap"
+                            else -> "live_after_tap"
+                        }
+                        val span = if (used.isEmpty()) 0L else used.last().timeMs - used.first().timeMs
+                        val timing = CaptureTiming(span, 0L, emptyList(), source, waitMs = waited)
+                        liveResults.clear()
+                        isCapturing.set(false)
+                        mainExecutor.execute {
+                            if (!disposed) evaluateFrozen(used.map { it.metrics to it.transform }, timing)
+                        }
+                        return true
                     }
                     if (captureRequested.compareAndSet(true, false)) {
                         tapMs = now
@@ -252,55 +334,26 @@ fun CameraPreview(
                         mainExecutor.execute {
                             if (!disposed) frozenPhoto = previewView.bitmap?.asImageBitmap()
                         }
-                    }
-                    if (isCapturing.get()) {
-                        image.close()
-                        // Normally the frames from just before the tap are enough; right after the
-                        // camera opens there may be fewer, so wait for the next ones.
-                        val frames = recentFrames.since(tapMs - PRE_TAP_WINDOW_MS)
-                        if (frames.size < GRAB_FRAMES && now - tapMs < MAX_WAIT_MS) return@setAnalyzer
-                        val selected = frames.filter { it.timeMs <= tapMs }.takeLast(GRAB_FRAMES)
-                            .takeIf { it.size == GRAB_FRAMES } ?: frames.take(GRAB_FRAMES)
-                        val source = if (selected.all { it.timeMs <= tapMs }) "pre_tap" else "post_tap"
-                        val processStart = SystemClock.elapsedRealtime()
-                        val frameMs = mutableListOf<Long>()
-                        // Frozen: run MediaPipe and the measurements on the kept frames.
-                        val results = selected.map { frame ->
-                            val t = SystemClock.elapsedRealtime()
-                            val metrics = try {
-                                val upright = frame.bitmap.rotated(frame.rotationDegrees)
-                                try {
-                                    faceAnalyzer.analyzeFrozen(upright)
-                                } finally {
-                                    if (upright !== frame.bitmap) upright.recycle()
-                                }
-                            } catch (error: Exception) {
-                                Log.e("CameraPreview", "Frozen frame analysis failed", error)
-                                FaceAnalyzer.FaceMetrics(0f, 0f, 0f, "", isFaceDetected = false)
-                            }
-                            frameMs += SystemClock.elapsedRealtime() - t
-                            metrics to frame.transform
+                        // Normal case: enough good frames from just before the tap; nothing to wait for.
+                        if (finishCapture()) {
+                            image.close()
+                            return@setAnalyzer
                         }
-                        val spanMs = if (selected.isEmpty()) 0L else selected.last().timeMs - selected.first().timeMs
-                        val timing = CaptureTiming(spanMs, SystemClock.elapsedRealtime() - processStart, frameMs,
-                            source, waitMs = processStart - tapMs)
-                        recentFrames.clear()
-                        // Back to live preview frames; the result is evaluated on the main thread.
-                        isCapturing.set(false)
-                        mainExecutor.execute {
-                            if (!disposed) evaluateFrozen(results, timing)
-                        }
-                        return@setAnalyzer
                     }
-                    // Before capture: a few lightweight frames per second for the live guide.
-                    if (now - lastPreviewMs < PREVIEW_INTERVAL_MS) {
+                    // Waiting after a tap: analyse every frame until enough good ones arrive.
+                    val waiting = isCapturing.get()
+                    if (!waiting && now - lastPreviewMs < PREVIEW_INTERVAL_MS) {
                         image.close()
                         return@setAnalyzer
                     }
                     lastPreviewMs = now
-                    faceAnalyzer.previewOnly = true
+                    // Full analysis (classifier image and lighting included) so this frame can be
+                    // used directly if Capture is tapped next.
+                    faceAnalyzer.previewOnly = false
                     try {
                         val transform = transformFactory.getOutputTransform(image)
+                        liveTransform = transform
+                        liveTimeMs = now
                         val turned = image.imageInfo.rotationDegrees % 180 != 0
                         val uprightWidth = if (turned) image.height else image.width
                         val uprightHeight = if (turned) image.width else image.height
@@ -313,6 +366,7 @@ fun CameraPreview(
                     } catch (error: Exception) {
                         Log.w("CameraPreview", "Preview distance frame failed", error)
                     }
+                    if (waiting) finishCapture()
                 }
                 boundPreview = preview
                 boundAnalysis = imageAnalysis
@@ -352,64 +406,46 @@ fun CameraPreview(
 private const val CLASSIFIER_FRAMES = 5
 /** Fewest face-shape frames accepted, as with the old capture's timeout rule. */
 private const val MIN_CLASSIFIER_FRAMES = 4
-/**
- * Camera frames used per capture: the last ones before the tap (about 0.5 s at the test phone's
- * 13 fps). Seven leaves room for two rejected frames while the feature median gets its five.
- */
+/** Most good frames used per capture; five feed the feature median, the rest allow for outliers. */
 private const val GRAB_FRAMES = 7
+/** Analysed live frames kept (about 4 s at 4 per second), enough to pick good ones from. */
+private const val LIVE_FRAMES_KEPT = 16
+/** Good frames from up to this long before the tap may be used. */
+private const val LIVE_WINDOW_MS = 2500L
+/** Fewest good frames for a capture (the feature median needs five). */
+private const val MIN_LIVE_FRAMES = 5
+/** After a tap without enough good frames, keep collecting for at most this long. */
+private const val MAX_WAIT_MS = 3000L
 
-/** Frames from up to this long before the tap may be used for the capture. */
-private const val PRE_TAP_WINDOW_MS = 1200L
-/** If too few frames were kept (camera just opened), wait at most this long for new ones. */
-private const val MAX_WAIT_MS = 1500L
-
-private class KeptFrame(val bitmap: Bitmap, val transform: OutputTransform?, val rotationDegrees: Int, val timeMs: Long)
+private class LiveResult(val metrics: FaceAnalyzer.FaceMetrics, val transform: OutputTransform?, val timeMs: Long)
 
 /**
- * Rolling copies of the latest camera frames, so a capture uses what was on screen before the
- * tap. Analysis executor only; the oldest frame's bitmap is reused for the newest.
+ * The per-frame checks a capture applies (readiness, plus pose, distance and expression for the
+ * feature measurement), so only frames that will be accepted are picked. Guide-outline and
+ * motion checks still run when the capture is evaluated.
  */
-private class RecentFrames(private val capacity: Int) {
-    private val frames = ArrayDeque<KeptFrame>()
-
-    fun add(image: androidx.camera.core.ImageProxy, transform: OutputTransform?, timeMs: Long) {
-        val plane = image.planes[0]
-        val reuse = if (frames.size >= capacity) frames.removeFirst().bitmap else null
-        val bitmap = if (plane.pixelStride == 4 && plane.rowStride == image.width * 4) {
-            (reuse?.takeIf { it.width == image.width && it.height == image.height && !it.isRecycled }
-                ?: Bitmap.createBitmap(image.width, image.height, Bitmap.Config.ARGB_8888))
-                .also { it.copyPixelsFromBuffer(plane.buffer.duplicate().apply { rewind() }) }
-        } else {
-            image.toBitmap()  // rows are padded: let CameraX repack them
-        }
-        frames.addLast(KeptFrame(bitmap, transform, image.imageInfo.rotationDegrees, timeMs))
-    }
-
-    fun since(timeMs: Long): List<KeptFrame> = frames.filter { it.timeMs >= timeMs }
-
-    fun clear() = frames.clear()
-}
+private fun FaceAnalyzer.FaceMetrics.passesCaptureChecks(): Boolean =
+    getScanReadiness().canCapture && shapeImageRgb != null && featureRejection == null &&
+        featureFrame?.let { FacialFeatureMeasurement.assess(it) == null } == true
 
 private class CaptureTiming(
     /** Time between the first and last frame used. */
     val grabMs: Long,
     val processMs: Long,
     val frameMs: List<Long>,
-    /** "pre_tap": frames from before the tap; "post_tap": camera had just opened. */
+    /** "live_pre_tap": all frames from before the tap; "live_after_tap": waited for more. */
     val source: String,
     /** Time from the tap until processing started (0-ish when pre-tap frames were ready). */
     val waitMs: Long,
 )
 
-private fun Bitmap.rotated(rotationDegrees: Int): Bitmap {
-    if (rotationDegrees == 0) return this
-    val matrix = android.graphics.Matrix().apply { postRotate(rotationDegrees.toFloat()) }
-    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
-}
-/** Distance-guide sampling before capture (about 4 per second). */
+/** Live analysis before capture (about 4 per second); every frame while waiting after a tap. */
 private const val PREVIEW_INTERVAL_MS = 250L
-/** Stop collecting feature frames early once each median's standard error is this share of its band. */
-private const val TARGET_SE_BAND_FRACTION = 0.15f
+/**
+ * Stop collecting feature frames early once each median's standard error is this share of its band.
+ * 0.10 keeps the jawline (P30-P70 band) at least as precise as 0.15 of its former P33-P67 band.
+ */
+private const val TARGET_SE_BAND_FRACTION = 0.10f
 
 private fun featureStandardErrorTarget(context: android.content.Context): FacialFeatureMeasurement.Ratios? =
     FacialFeatureThresholds.load(context)?.let {

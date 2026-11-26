@@ -107,6 +107,26 @@ internal fun FaceAnalyzer.FaceMetrics?.getScanReadiness(): ScanReadiness {
     }
 }
 
+/** The numbers behind "Face the camera directly", for tuning that check from phone logs. */
+internal fun FaceAnalyzer.FaceMetrics.facingDiagnostics(): org.json.JSONObject {
+    val json = org.json.JSONObject()
+    if (landmarks.size <= 454 || imageWidth <= 0 || imageHeight <= 0) return json
+    val xs = landmarks.map { it.x }
+    val width = (xs.max() - xs.min()).takeIf { it > 0f } ?: return json
+    fun distance(a: Int, b: Int) = kotlin.math.hypot(
+        (landmarks[a].x - landmarks[b].x) * imageWidth, (landmarks[a].y - landmarks[b].y) * imageHeight)
+    val leftNose = distance(234, 1)
+    val rightNose = distance(454, 1)
+    val cheek = distance(234, 454)
+    return json.put("yaw", headPose?.yaw?.toDouble()).put("pitch", headPose?.pitch?.toDouble())
+        .put("roll", headPose?.roll?.toDouble())
+        // Limits: nose offset 0.24 of face width, asymmetry 0.12, depth difference 0.25.
+        .put("nose_offset", (kotlin.math.abs(landmarks[1].x - (xs.max() + xs.min()) / 2f) / width).toDouble())
+        .put("asymmetry", (kotlin.math.abs(leftNose - rightNose) / (leftNose + rightNose)).toDouble())
+        .put("depth_difference", (kotlin.math.abs(landmarks[234].z - landmarks[454].z) * imageWidth / cheek).toDouble())
+        .put("face_center_x", ((xs.max() + xs.min()) / 2f).toDouble())
+}
+
 private data class FaceBounds(
     val minX: Float,
     val maxX: Float,

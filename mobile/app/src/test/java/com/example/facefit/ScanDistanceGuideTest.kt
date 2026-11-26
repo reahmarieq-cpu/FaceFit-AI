@@ -9,15 +9,16 @@ import org.junit.Test
 
 class ScanDistanceGuideTest {
     @Test fun messagesMatchTheTargetRange() {
-        assertEquals("44 cm · Move a little farther (need 45)", ScanDistanceGuide.hintFor(44.2f).text)
-        assertEquals("46 cm · Move a little closer (need 45)", ScanDistanceGuide.hintFor(45.8f).text)
+        assertEquals("Move a little farther", ScanDistanceGuide.hintFor(44.2f).text)
+        assertEquals("Move a little closer", ScanDistanceGuide.hintFor(45.8f).text)
         val good = ScanDistanceGuide.hintFor(45.2f)
-        assertEquals("45 cm · Good, hold still and tap Capture", good.text)
+        assertEquals("Good, hold still…", good.text)
         assertTrue(good.inRange)
+        // Anything shown as 45 cm is accepted.
         assertTrue(ScanDistanceGuide.hintFor(44.6f).inRange)
         assertTrue(ScanDistanceGuide.hintFor(45.4f).inRange)
         assertFalse(ScanDistanceGuide.hintFor(44.4f).inRange)
-        assertFalse(ScanDistanceGuide.hintFor(47f).inRange)
+        assertFalse(ScanDistanceGuide.hintFor(45.6f).inRange)
     }
 
     @Test fun medianSmoothingIgnoresASingleJump() {
@@ -55,7 +56,7 @@ class ScanDistanceGuideTest {
     @Test fun tiltedOrTurnedHeadBlocksCapture() {
         val down = ScanDistanceGuide.hintFor(45f, pitchDeg = 4f)
         assertFalse(down.inRange)
-        assertEquals("45 cm · Lift your chin slightly", down.text)
+        assertEquals("Lift your chin slightly", down.text)
         assertEquals("Lift your chin slightly", down.refusal)
         assertEquals("Lower your chin slightly", ScanDistanceGuide.hintFor(45f, pitchDeg = -4f).refusal)
         assertEquals("Turn to face the camera", ScanDistanceGuide.hintFor(45f, pitchDeg = 0f, yawDeg = 7f).refusal)
@@ -63,7 +64,7 @@ class ScanDistanceGuideTest {
         assertTrue(ScanDistanceGuide.hintFor(45f, pitchDeg = -2.4f, yawDeg = 5f).inRange)
         assertFalse(ScanDistanceGuide.hintFor(45f, pitchDeg = -2.8f).inRange)
         // Distance and smile messages come first.
-        assertEquals("Move slightly closer", ScanDistanceGuide.hintFor(47f, pitchDeg = 5f).refusal)
+        assertEquals("Move slightly closer", ScanDistanceGuide.hintFor(49.5f, pitchDeg = 5f).refusal)
         assertTrue(ScanDistanceGuide.hintFor(45f, smileScore = 0.5f, pitchDeg = 5f).smiling)
     }
 
@@ -88,6 +89,6 @@ class ScanDistanceGuideTest {
         val capture = SyntheticFace.canonical().capture(45.0)
         val frame = com.example.facefit.facefit.analysis.FacialFeatureMeasurement.measure(
             capture.points, 480, 640, capture.poseMatrix, 487.5f, "test")!!
-        assertEquals("45 cm · Good, hold still and tap Capture", ScanDistanceGuide.hintFor(frame.cheekDistanceCm).text)
+        assertEquals("Good, hold still…", ScanDistanceGuide.hintFor(frame.cheekDistanceCm).text)
     }
 }

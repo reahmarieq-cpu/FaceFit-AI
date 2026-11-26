@@ -119,6 +119,14 @@ fun ScanScreen(
                                 }
                             }
                         },
+                        onAutoCapture = {
+                            // Captured automatically after enough steady, good frames.
+                            if (attempt == cameraAttempt && capturedMetrics == null && !capturing) {
+                                tapRefusal = null
+                                retakeMessage = null
+                                capturing = true
+                            }
+                        },
                         onReady = {
                             if (attempt == cameraAttempt && capturedMetrics == null) {
                                 cameraReady = true
@@ -172,10 +180,10 @@ fun ScanScreen(
                             // Wrong distance, pose or expression: refuse before taking a photo.
                             tapRefusal = hint.refusal
                         } else if (cameraReady && !capturing && capturedMetrics == null) {
-                            tapRefusal = null
+                            // The photo is taken automatically after a moment of good, steady frames;
+                            // a tap would only succeed in the same case, so it never forces a retake.
                             retakeMessage = null
-                            capturing = true
-                            captureRequested.set(true)
+                            tapRefusal = "Hold still — the photo is taken automatically"
                         }
                     }
                 )

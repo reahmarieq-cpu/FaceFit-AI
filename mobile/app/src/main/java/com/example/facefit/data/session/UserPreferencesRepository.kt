@@ -108,7 +108,10 @@ class UserPreferencesRepository(
         if (!isHistoryEnabled()) return
         val shape = normalize(metrics.faceShape) ?: return
         val prefix = accountPrefix()
-        preferences.edit().putString(prefix + ".shape", shape)
+        // Each scan stands on its own: remove any earlier-scan data a previous version kept.
+        val oldKeys = preferences.all.keys.filter { it.endsWith(".recent") || it.endsWith(".shownFeatures") }
+        preferences.edit().apply { oldKeys.forEach(::remove) }
+            .putString(prefix + ".shape", shape)
             .putString(prefix + ".result", encodeMetrics(metrics.copy(faceShape = shape)))
             .putBoolean(prefix + ".restoreCloud", true)
             .putLong(prefix + ".time", System.currentTimeMillis()).apply()

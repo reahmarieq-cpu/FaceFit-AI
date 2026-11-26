@@ -236,7 +236,8 @@ class FacialFeatureStabilityTest {
         val random = Random(2026)
         fun g() = SyntheticFace.gaussian(random)
         val face = SyntheticFace.variant(widthScale = 0.97, depthScale = 1.05)
-        val target = FacialFeatureMeasurement.Ratios(bands[0].width * .15f, bands[1].width * .15f, bands[2].width * .15f)
+        // Same share of the band as the app's early-stop target (TARGET_SE_BAND_FRACTION).
+        val target = FacialFeatureMeasurement.Ratios(bands[0].width * .10f, bands[1].width * .10f, bands[2].width * .10f)
         val singles = mutableListOf<FacialFeatureMeasurement.Ratios>()
         val medians = mutableListOf<FacialFeatureMeasurement.Ratios>()
         repeat(10) {
@@ -331,7 +332,8 @@ class FacialFeatureStabilityTest {
     private companion object {
         // SHA-256 with CRLF normalised to LF, recorded before the change.
         const val FACE_SHAPE_IMAGE_MODEL = "1f1b33a7c69ba986794ec492ae0565277f053efd4c0fce12591f76a340b59bd5"
-        const val FACE_SHAPE_IMAGE_INPUT = "76b2244c990a9abd01869681d16e61416640b951b584377ef14e4a1679f6cb49"
+        // Deliberately updated: the crop now straightens the face (eye line level) before cropping.
+        const val FACE_SHAPE_IMAGE_INPUT = "2dacd29c3e97f90d048ad37983448469f5b4fedf08f575dc4f920874109d0220"
         const val FACE_SHAPE_DECISION = "0c0d6621ae63087aa46c4902e0feb15ff0aee2eaec823d90a3e3f51e390b3f08"
         const val FACIAL_GEOMETRY = "1c5d099b00808464484e31fa10974f0bb27798c4ee9ca4bd13db89f19ce60463"
     }

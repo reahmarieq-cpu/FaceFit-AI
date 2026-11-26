@@ -28,30 +28,36 @@ internal object FaceScanGuide {
         }
 
     /**
-     * Room around an average face at the target distance: its cheek points sit about 4 % inside
-     * each side, so a face filling the outline is at 45 cm and a slightly closer one still fits.
+     * Room around an average face at the target distance: its cheek points sit about 10 % inside
+     * each side, so small head movements do not take the face outside the outline. (It was 4 %,
+     * and "face moved outside guide outline" was the most common reason a capture failed.)
      */
-    const val FIT_MARGIN = 1.08f
+    const val FIT_MARGIN = 1.20f
+
+    /**
+     * Distance (cm) the dashed outline is drawn for. The scan itself requires 45 cm; the outline is
+     * sized for 46 cm, so at 45 cm the face fills it slightly more and still fits with room to spare.
+     */
+    const val GUIDE_DISTANCE_CM = 46f
 
     /** Largest half-width that keeps the outline above the bottom controls. */
     private fun maxHalfWidth(width: Float, height: Float) = minOf(width * .45f, height * .52f / 2.84f)
 
     /**
-     * Half-width (screen px) of the outline an average face fills at the target distance.
+     * Half-width (screen px) of the outline an average face fills at [GUIDE_DISTANCE_CM].
      * [focalLengthPx] is for the upright analysis image; [analysisToScreenScale] converts its
-     * pixels to screen pixels. Uses the same average face as the distance estimate, so filling
-     * the outline and the chip reading 45 cm coincide for every face width.
+     * pixels to screen pixels. Uses the same average face as the distance estimate.
      */
     fun halfWidthForTargetDistance(focalLengthPx: Float, analysisToScreenScale: Float): Float? {
         val cheekScreenPx = focalLengthPx * FacialFeatureMeasurement.CANONICAL_CHEEK_WIDTH_CM /
-            FacialFeatureMeasurement.TARGET_DISTANCE_CM * analysisToScreenScale
+            GUIDE_DISTANCE_CM * analysisToScreenScale
         return (cheekScreenPx / 2f * FIT_MARGIN).takeIf { it.isFinite() && it > 0f }
     }
 
     /** [halfWidth] null keeps the original fixed size (camera geometry not known yet). */
     fun points(width: Float, height: Float, halfWidth: Float? = null): List<Point> {
         val halfWidth = halfWidth?.takeIf { it.isFinite() && it > 0f }?.coerceAtMost(maxHalfWidth(width, height))
-            ?: minOf(width * .31f, height * .52f / 2.84f)
+            ?: minOf(width * .34f, height * .52f / 2.84f)
         val halfHeight = halfWidth * 1.42f
         val centerY = height * .22f + halfHeight
         return outline.map { Point(width / 2 + it.x * halfWidth, centerY + it.y * halfHeight) }

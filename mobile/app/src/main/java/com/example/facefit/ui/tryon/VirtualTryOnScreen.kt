@@ -201,7 +201,7 @@ fun VirtualTryOnScreen(
                     frame.lensAnchors,frame.leftArmAnchors,frame.rightArmAnchors)
             } else if (bitmap != null) {
                 TryOnOverlay(metrics = if (cameraError == null) metrics else null, front = bitmap,
-                    temple = templeBitmap, anchors = frame.lensAnchors, scale = 1f, heightOffset = 0f)
+                    temple = templeBitmap, anchors = frame.lensAnchors, scale = frame.tryOnScale, heightOffset = 0f)
             }
         }
         Box(Modifier.align(Alignment.TopStart).statusBarsPadding()

@@ -33,7 +33,9 @@ class FrameCatalogAssetsTest {
     }
     @Test fun newGlbCalibrationsMatchTheExportedLensAnchors() {
         val assets=InstrumentationRegistry.getInstrumentation().targetContext.assets
-        for(path in listOf("frames/cat-eye/model.glb","frames/Round/model.glb")) {
+        val glbs=sampleFrames.mapNotNull { it.assetPath }.filter { it.endsWith(".glb") && it!="frames/square_tortoise/SquareTortoise.glb" }
+        assertTrue(glbs.size>=9)
+        for(path in glbs) {
             val bytes=assets.open(path).use { it.readBytes() }
             val buffer=ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
             assertEquals(0x46546c67,buffer.getInt(0))

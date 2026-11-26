@@ -63,10 +63,10 @@ class ScanDistanceGuide(private val window: Int = 5, private val staleAfterMs: L
             val hint = when {
                 FacialFeatureMeasurement.isSmiling(smileScore, upperLipRaise) ->
                     Hint(cm, "No smile please, relax your face", inRange = false, smiling = true)
-                distanceCm < TARGET_MIN_CM -> Hint(cm, "$cm cm · Move a little farther (need 45)", false)
-                distanceCm > TARGET_MAX_CM -> Hint(cm, "$cm cm · Move a little closer (need 45)", false)
-                pose != null -> Hint(cm, "$cm cm · $pose", false, poseRefusal = pose)
-                else -> Hint(cm, "$cm cm · Good, hold still and tap Capture", true)
+                distanceCm < TARGET_MIN_CM -> Hint(cm, "Move a little farther", false)
+                distanceCm > TARGET_MAX_CM -> Hint(cm, "Move a little closer", false)
+                pose != null -> Hint(cm, pose, false, poseRefusal = pose)
+                else -> Hint(cm, "Good, hold still…", true)
             }
             return hint.copy(smileScore = smileScore, upperLipRaise = upperLipRaise,
                 pitchDeg = pitchDeg, yawDeg = yawDeg)

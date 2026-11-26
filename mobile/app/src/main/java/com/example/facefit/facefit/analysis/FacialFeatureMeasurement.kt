@@ -54,14 +54,16 @@ object FacialFeatureMeasurement {
     const val UPPER_FACE_PITCH_SLOPE_PER_DEG = 0.0023f
 
     /**
-     * Required camera distance to the cheek plane: 45 cm, i.e. anything the guide would show as
-     * "45 cm" (44.5-45.5). The estimate is repeatable to about 1 cm for one person but may be a
-     * few cm off in absolute terms, so this fixes the position, not a true 45 cm.
+     * Allowed camera distance to the cheek plane: 45 cm, i.e. anything the guide would show as
+     * "45 cm" (44.5-45.5). The estimate is repeatable to about 1 cm for one person
+     * but may be a few cm off in absolute terms, so this fixes the position, not a true distance.
+     * The outline is sized for [TARGET_DISTANCE_CM]; a face farther away is smaller and still fits.
      */
     const val TARGET_DISTANCE_CM = 45f
     const val DISTANCE_TOLERANCE_CM = 0.5f
+    const val MAX_DISTANCE_CM = 45f
     const val TARGET_MIN_CM = TARGET_DISTANCE_CM - DISTANCE_TOLERANCE_CM
-    const val TARGET_MAX_CM = TARGET_DISTANCE_CM + DISTANCE_TOLERANCE_CM
+    const val TARGET_MAX_CM = MAX_DISTANCE_CM + DISTANCE_TOLERANCE_CM
 
     /**
      * Highest accepted MediaPipe smile score (mean of mouthSmileLeft/Right, 0-1). On the test

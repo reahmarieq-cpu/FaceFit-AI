@@ -23,6 +23,27 @@ internal object VtoAutomaticFit {
         "frames/Round/model.glb" -> ModelAnchors(
             Vector3(-.036751699f,-.008271000f,-.000996900f),
             Vector3(.036751699f,-.008271000f,-.000996900f))
+        "frames/aviator/model.glb" -> ModelAnchors(
+            Vector3(-.036817696f,-.010438301f,-.001024200f),
+            Vector3(.036817696f,-.010438301f,-.001024200f))
+        "frames/wayfarer/model.glb" -> ModelAnchors(
+            Vector3(-.035410527f,-.011039601f,-.000928100f),
+            Vector3(.035410527f,-.011039601f,-.000928100f))
+        "frames/geometric/model.glb" -> ModelAnchors(
+            Vector3(-.036991198f,-.008910201f,-.001006900f),
+            Vector3(.036991198f,-.008910201f,-.001006900f))
+        "frames/oval/model.glb" -> ModelAnchors(
+            Vector3(-.035191555f,-.007830201f,-.000906000f),
+            Vector3(.035191555f,-.007830201f,-.000906000f))
+        "frames/oval/model1.glb" -> ModelAnchors(
+            Vector3(-.036738995f,-.008527300f,-.000993400f),
+            Vector3(.036738995f,-.008527300f,-.000993400f))
+        "frames/browline/browline_crystal_frame_049.glb" -> ModelAnchors(
+            Vector3(-.035270598f,-.009932201f,-.000933700f),
+            Vector3(.035270598f,-.009932201f,-.000933700f))
+        "frames/rectangle/rectangle_rose_gold_metal_frame_028.glb" -> ModelAnchors(
+            Vector3(-.036232699f,-.009775400f,-.000996400f),
+            Vector3(.036232699f,-.009775400f,-.000996400f))
         else -> null // Uncalibrated models retain their existing eye-based placement.
     }
 }

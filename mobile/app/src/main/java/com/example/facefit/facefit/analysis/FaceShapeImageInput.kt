@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
+import org.opencv.core.Core
 import org.opencv.core.Mat
 import org.opencv.core.MatOfRect
+import org.opencv.core.Point
 import org.opencv.core.Rect
 import org.opencv.core.Size
 import org.opencv.imgproc.Imgproc
@@ -37,21 +39,38 @@ internal class FaceShapeImageInput(context: Context) {
         val faces = MatOfRect()
         val resized = Mat()
         val rgb = Mat()
+        val aligned = Mat()
         var crop: Mat? = null
         try {
             Utils.bitmapToMat(bitmap, rgba)
+            var source = rgba
 
             val rect = if (landmarks != null && landmarks.size >= 454) {
-                // High-precision landmark-based face bounding box (immune to lighting and angle jitter):
-                val leftCheek = landmarks[234]
-                val rightCheek = landmarks[454]
-                val forehead = landmarks[10]
-                val chin = landmarks[152]
+                // Straighten the face first: rotate so the outer eye corners are level, so a small
+                // sideways head tilt does not reach the classifier as a rotated face.
+                val pivotX = (landmarks[234].x + landmarks[454].x) / 2f * bitmap.width
+                val pivotY = (landmarks[10].y + landmarks[152].y) / 2f * bitmap.height
+                val tilt = FaceAlignment.eyeLineDegrees(landmarks, bitmap.width, bitmap.height)
+                    ?.takeIf { abs(it) in FaceAlignment.MIN_DEGREES..FaceAlignment.MAX_DEGREES }
+                if (tilt != null) {
+                    val matrix = Imgproc.getRotationMatrix2D(Point(pivotX.toDouble(), pivotY.toDouble()), tilt.toDouble(), 1.0)
+                    Imgproc.warpAffine(rgba, aligned, matrix, rgba.size(), Imgproc.INTER_LINEAR, Core.BORDER_REPLICATE)
+                    matrix.release()
+                    source = aligned
+                }
+                fun point(index: Int) = FaceAlignment.rotate(landmarks[index].x * bitmap.width,
+                    landmarks[index].y * bitmap.height, pivotX, pivotY, tilt ?: 0f)
 
-                val centerX = (leftCheek.x + rightCheek.x) / 2f * bitmap.width
-                val centerY = (forehead.y + chin.y) / 2f * bitmap.height
-                val faceW = abs(rightCheek.x - leftCheek.x) * bitmap.width
-                val faceH = abs(chin.y - forehead.y) * bitmap.height
+                // High-precision landmark-based face bounding box (immune to lighting and angle jitter):
+                val leftCheek = point(234)
+                val rightCheek = point(454)
+                val forehead = point(10)
+                val chin = point(152)
+
+                val centerX = (leftCheek.first + rightCheek.first) / 2f
+                val centerY = (forehead.second + chin.second) / 2f
+                val faceW = abs(rightCheek.first - leftCheek.first)
+                val faceH = abs(chin.second - forehead.second)
 
                 val targetSize = maxOf(faceW * 1.55f, faceH * 1.25f).toInt().coerceAtLeast(50)
                 var left = (centerX - targetSize / 2f).toInt()
@@ -104,13 +123,14 @@ internal class FaceShapeImageInput(context: Context) {
             }
 
             require(rect.width >= 10 && rect.height >= 10)
-            crop = rgba.submat(rect)
+            crop = source.submat(rect)
             Imgproc.resize(crop, resized, Size(256.0, 256.0), 0.0, 0.0, Imgproc.INTER_AREA)
             Imgproc.cvtColor(resized, rgb, Imgproc.COLOR_RGBA2RGB)
             return ByteArray(256 * 256 * 3).also { rgb.get(0, 0, it) }
         } finally {
             crop?.release()
             rgb.release()
+            aligned.release()
             resized.release()
             faces.release()
             gray.release()
